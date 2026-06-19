@@ -116,7 +116,10 @@
           <td>${stat.symbol} ${stat.name || ''}</td>
           <td><span class="badge badge-${stat.market === 'TW' ? 'tw' : 'us'}">${stat.market === 'TW' ? '台股' : '美股'}</span></td>
           <td>${stat.remainingQty}</td>
+          <td>${stat.avgCost.toFixed(2)} ${currency}</td>
           <td>${stat.currentPrice.toFixed(2)} ${currency} <span class="${badgeClass}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span></td>
+          <td>${formatMoney(stat.costBasisHeld, displayCurrency)}</td>
+          <td>${formatMoney(stat.marketValue, displayCurrency)}</td>
           <td class="${signedClass(stat.realizedGain)}">${withSign(formatMoney(stat.realizedGain, displayCurrency), stat.realizedGain)}</td>
           <td class="${signedClass(stat.unrealizedGain)}">${withSign(formatMoney(stat.unrealizedGain, displayCurrency), stat.unrealizedGain)}</td>
           <td class="${signedClass(stat.roiPct)}">${withSign(formatPct(stat.roiPct), stat.roiPct)}</td>

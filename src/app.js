@@ -42,12 +42,6 @@
 
     const converted = roi.convertSummaryToDisplayCurrency(filteredSummary.byMarket, state.filters.displayCurrency, fxRate);
 
-    const perSymbolConverted = filteredSummary.perSymbol.map((s) => ({
-      symbol: s.symbol,
-      realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-      unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-    }));
-
     const allocationData = {
       TW: roi.convertAmount(filteredSummary.byMarket.TW.costBasisHeld, 'TWD', state.filters.displayCurrency, fxRate),
       US: roi.convertAmount(filteredSummary.byMarket.US.costBasisHeld, 'USD', state.filters.displayCurrency, fxRate),
@@ -58,8 +52,11 @@
       name: s.name,
       market: s.market,
       remainingQty: s.remainingQty,
+      avgCost: s.avgCost,
       currentPrice: s.currentPrice,
       priceSource: s.priceSource,
+      costBasisHeld: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      marketValue: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       roiPct: s.roiPct,
@@ -69,7 +66,7 @@
       .filter((s) => s.remainingQty > 0)
       .map((s) => ({
         symbol: s.symbol,
-        value: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+        value: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       }));
 
     ui.renderFilterControls(state);
@@ -84,7 +81,6 @@
     ui.renderBackupReminderBanner(storage.loadUnexportedChangeCount(), BACKUP_REMINDER_THRESHOLD);
     ui.renderDemoModeBanner(state.demoMode);
     document.body.classList.toggle('demo-mode-active', state.demoMode);
-    charts.renderRoiBarChart(document.getElementById('roi-bar-chart'), perSymbolConverted, state.filters.displayCurrency);
     charts.renderAllocationChart(document.getElementById('allocation-chart'), allocationData, state.filters.displayCurrency);
     charts.renderSymbolAllocationChart(document.getElementById('symbol-allocation-chart'), symbolAllocationData, state.filters.displayCurrency);
 

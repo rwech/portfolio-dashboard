@@ -215,8 +215,9 @@ body.demo-mode-active .override-clear-btn {
   height: 110px;
 }
 
-.symbol-bar-chart-wrap {
-  height: 160px;
+.symbol-allocation-chart-wrap {
+  height: 320px;
+  max-width: 420px;
 }
 
 .hint {

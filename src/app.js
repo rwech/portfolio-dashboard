@@ -139,18 +139,26 @@
     render();
   }
 
-  function handleImportText(text, market) {
+  function loadRowsIntoMarket(rows, market, mode) {
+    if (mode === 'replace') {
+      storage.replaceTransactions(market, rows);
+    } else {
+      rows.forEach((row) => storage.addTransaction(market, row));
+    }
+  }
+
+  function handleImportText(text, market, mode) {
     const { rows, errors } = csv.parseCsv(text, market);
-    rows.forEach((row) => storage.addTransaction(market, row));
+    loadRowsIntoMarket(rows, market, mode);
     reloadTransactionsFromStorage();
     ui.renderImportErrors(errors);
     render();
   }
 
-  async function handleLoadExample() {
+  async function handleLoadExample(mode) {
     for (const market of ['TW', 'US']) {
       const { rows } = await csv.fetchExampleCsv(market);
-      rows.forEach((row) => storage.addTransaction(market, row));
+      loadRowsIntoMarket(rows, market, mode);
     }
     reloadTransactionsFromStorage();
     render();
@@ -198,14 +206,17 @@
       handleExport('US');
     });
 
-    document.getElementById('load-example-btn').addEventListener('click', handleLoadExample);
+    document.getElementById('load-example-btn').addEventListener('click', () => {
+      handleLoadExample(document.getElementById('import-mode-select').value);
+    });
 
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const market = document.getElementById('import-market-select').value;
+      const mode = document.getElementById('import-mode-select').value;
       const reader = new FileReader();
-      reader.onload = () => handleImportText(String(reader.result), market);
+      reader.onload = () => handleImportText(String(reader.result), market, mode);
       reader.readAsText(file);
       e.target.value = '';
     });

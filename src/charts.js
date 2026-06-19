@@ -51,11 +51,13 @@
       allocationChart.destroy();
       allocationChart = null;
     }
-    const amounts = [byMarketTotals.TW || 0, byMarketTotals.US || 0];
+    const amounts = [byMarketTotals.TW, byMarketTotals.US];
+    if (amounts.some((v) => !Number.isFinite(v))) return;
     const total = amounts[0] + amounts[1];
-    if (!total) return;
+    if (total <= 0) return;
 
     const labels = ['台股', '美股'];
+    const colors = ['#ffd166', '#b14aff'];
 
     allocationChart = new Chart(canvasEl, {
       type: 'bar',
@@ -64,7 +66,7 @@
         datasets: labels.map((label, i) => ({
           label,
           data: [(amounts[i] / total) * 100],
-          backgroundColor: ['#ffd166', '#b14aff'][i],
+          backgroundColor: colors[i],
         })),
       },
       options: {
@@ -92,11 +94,11 @@
       symbolAllocationChart.destroy();
       symbolAllocationChart = null;
     }
-    const held = perSymbolAmounts.filter((s) => s.value > 0);
-    const total = held.reduce((sum, s) => sum + s.value, 0);
-    if (!total) return;
+    if (perSymbolAmounts.some((s) => !Number.isFinite(s.value))) return;
+    const total = perSymbolAmounts.reduce((sum, s) => sum + s.value, 0);
+    if (total <= 0) return;
 
-    const sorted = [...held].sort((a, b) => b.value - a.value);
+    const sorted = [...perSymbolAmounts].sort((a, b) => b.value - a.value);
 
     symbolAllocationChart = new Chart(canvasEl, {
       type: 'bar',

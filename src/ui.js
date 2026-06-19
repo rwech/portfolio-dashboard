@@ -16,6 +16,15 @@
     return `${value.toFixed(2)}%`;
   }
 
+  function signedClass(value) {
+    if (value === null || value === undefined || Number.isNaN(value)) return '';
+    return value > 0 ? 'positive' : value < 0 ? 'negative' : '';
+  }
+
+  function withSign(text, value) {
+    return value > 0 ? `+${text}` : text;
+  }
+
   function populateYearOptions(selectEl, allTx, selectedYear) {
     const years = Array.from(new Set(allTx.map((tx) => tx.date.slice(0, 4)))).sort((a, b) => b.localeCompare(a));
     const options = ['<option value="all">全部年度</option>']
@@ -44,14 +53,14 @@
   function renderSummaryCards(summary) {
     const container = document.getElementById('summary-cards');
     const cards = [
-      ['總投入成本', formatMoney(summary.totalInvested, summary.currency)],
-      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency)],
-      ['已實現損益', formatMoney(summary.realizedGain, summary.currency)],
-      ['未實現損益', formatMoney(summary.unrealizedGain, summary.currency)],
-      ['ROI%', formatPct(summary.roiPct)],
+      ['總投入成本', formatMoney(summary.totalInvested, summary.currency), ''],
+      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency), ''],
+      ['已實現損益', withSign(formatMoney(summary.realizedGain, summary.currency), summary.realizedGain), signedClass(summary.realizedGain)],
+      ['未實現損益', withSign(formatMoney(summary.unrealizedGain, summary.currency), summary.unrealizedGain), signedClass(summary.unrealizedGain)],
+      ['ROI%', withSign(formatPct(summary.roiPct), summary.roiPct), signedClass(summary.roiPct)],
     ];
     container.innerHTML = cards
-      .map(([label, value]) => `<div class="summary-card"><div class="label">${label}</div><div class="value">${value}</div></div>`)
+      .map(([label, value, cls]) => `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`)
       .join('');
   }
 
@@ -62,10 +71,10 @@
       .map(
         (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
           <td>${tx.date}</td>
-          <td>${tx.market === 'TW' ? '台股' : '美股'}</td>
+          <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
           <td>${tx.symbol}</td>
           <td>${tx.name || ''}</td>
-          <td>${tx.action === 'buy' ? '買進' : '賣出'}</td>
+          <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
           <td>${tx.quantity}</td>
           <td>${tx.price}</td>
           <td>${tx.fee}</td>

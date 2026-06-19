@@ -13,6 +13,7 @@
   --accent-hover: #6ea3ff;
   --danger: #f28b82;
   --warning: #fdd663;
+  --success: #81c995;
 }
 
 body {
@@ -115,6 +116,9 @@ section {
   font-size: 1.25rem;
   font-weight: 600;
 }
+
+.value.positive { color: var(--success); }
+.value.negative { color: var(--danger); }
 
 #charts {
   display: flex;
@@ -237,6 +241,11 @@ button[type="submit"]:hover {
 .badge-cache { background: rgba(251, 188, 4, 0.18); color: #fdd663; }
 .badge-estimate { background: rgba(234, 67, 53, 0.18); color: #f28b82; }
 .badge-override { background: rgba(76, 139, 245, 0.18); color: #8ab4f8; }
+
+.badge-buy { background: rgba(52, 168, 83, 0.18); color: #81c995; }
+.badge-sell { background: rgba(234, 67, 53, 0.18); color: #f28b82; }
+.badge-tw { background: rgba(251, 188, 4, 0.18); color: #fdd663; }
+.badge-us { background: rgba(76, 139, 245, 0.18); color: #8ab4f8; }
 
 #import-errors {
   background: rgba(234, 67, 53, 0.12);

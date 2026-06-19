@@ -98,6 +98,7 @@
         const resolved = resolvePrice(stat.symbol, { priceOverrides, priceCache, avgCost: stat.avgCost });
         stat.currentPrice = resolved.value;
         stat.priceSource = resolved.source;
+        stat.priceFetchedAt = resolved.fetchedAt;
         stat.unrealizedGain = (resolved.value - stat.avgCost) * stat.remainingQty;
         stat.marketValue = resolved.value * stat.remainingQty;
         stat.roiPct = roiPct(stat.realizedGain, stat.unrealizedGain, stat.totalInvested);
@@ -156,5 +157,6 @@
     computePortfolioSummary,
     convertSummaryToDisplayCurrency,
     convertAmount,
+    roiPct,
   };
 })();

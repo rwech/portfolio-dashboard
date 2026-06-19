@@ -47,6 +47,7 @@
   }
 
   function twdToUsd(amountTwd, rate) {
+    if (!rate) return NaN;
     return amountTwd / rate;
   }
 

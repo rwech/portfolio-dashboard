@@ -28,3 +28,7 @@
 - **僅測試非現價功能**：執行 `python3 -m http.server 8000`，瀏覽器開啟 `http://localhost:8000/`。此模式下 `/api/stock-price` 會回傳 404，現價會自動走 fallback 鏈（快取或估計值），其餘功能不受影響。
 
 > 注意：直接用瀏覽器以 `file://` 開啟 `index.html` 會因為 `fetch('db/...')` 等請求被 CORS 擋下而無法正常載入初始資料，請務必透過上述任一種簡易伺服器開啟。
+
+## 自動化測試
+
+執行 `npm install` 後，使用 `npm test` 跑 `src/` 下核心邏輯（CSV 解析、ROI 計算、現價/匯率轉換、表格渲染的 XSS 防護與報價過期標示）的單元測試，測試框架為 [Vitest](https://vitest.dev/)。

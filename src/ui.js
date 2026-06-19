@@ -6,6 +6,12 @@
     override: '手動覆寫',
   };
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
   function formatMoney(value, currency) {
     if (value === null || value === undefined || Number.isNaN(value)) return '—';
     return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
@@ -79,6 +85,16 @@
       .join('');
   }
 
+  function priceUpdatedTitle(stat) {
+    if (!stat.priceFetchedAt) return '尚未取得即時報價';
+    return `最後更新：${new Date(stat.priceFetchedAt).toLocaleString()}`;
+  }
+
+  function staleBadge(stat) {
+    const isStale = window.PFD.stockPrice.isPriceStale(stat.priceSource, stat.priceFetchedAt);
+    return isStale ? ` <span class="badge badge-stale" title="${escapeHtml(priceUpdatedTitle(stat))}">報價已過期</span>` : '';
+  }
+
   function renderTransactionTable(transactions, onDelete) {
     const tbody = document.querySelector('#transactions-table tbody');
     const sorted = [...transactions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
@@ -87,8 +103,8 @@
         (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
           <td>${tx.date}</td>
           <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
-          <td>${tx.symbol}</td>
-          <td>${tx.name || ''}</td>
+          <td>${escapeHtml(tx.symbol)}</td>
+          <td>${escapeHtml(tx.name || '')}</td>
           <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
           <td>${tx.quantity}</td>
           <td>${tx.price}</td>
@@ -112,14 +128,14 @@
       .map((stat) => {
         const currency = stat.market === 'TW' ? 'TWD' : 'USD';
         const badgeClass = `badge badge-${stat.priceSource}`;
-        return `<tr data-symbol="${stat.symbol}" data-market="${stat.market}">
-          <td>${stat.symbol} ${stat.name || ''}</td>
+        return `<tr data-symbol="${escapeHtml(stat.symbol)}" data-market="${stat.market}">
+          <td>${escapeHtml(stat.symbol)} ${escapeHtml(stat.name || '')}</td>
           <td><span class="badge badge-${stat.market === 'TW' ? 'tw' : 'us'}">${stat.market === 'TW' ? '台股' : '美股'}</span></td>
           <td class="${signedClass(stat.roiPct)}">${withSign(formatPct(stat.roiPct), stat.roiPct)}</td>
           <td class="${signedClass(stat.realizedGain)}">${withSign(formatMoney(stat.realizedGain, displayCurrency), stat.realizedGain)}</td>
           <td class="${signedClass(stat.unrealizedGain)}">${withSign(formatMoney(stat.unrealizedGain, displayCurrency), stat.unrealizedGain)}</td>
           <td>${stat.remainingQty}</td>
-          <td>${stat.currentPrice.toFixed(2)} ${currency} <span class="${badgeClass}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span></td>
+          <td>${stat.currentPrice.toFixed(2)} ${currency} <span class="${badgeClass}" title="${priceUpdatedTitle(stat)}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span>${staleBadge(stat)}</td>
           <td>${formatMoney(stat.marketValue, displayCurrency)}</td>
           <td>${stat.avgCost.toFixed(2)} ${currency}</td>
           <td>${formatMoney(stat.costBasisHeld, displayCurrency)}</td>
@@ -136,11 +152,11 @@
       .map((stat) => {
         const hasOverride = typeof priceOverrides[stat.symbol] === 'number';
         const badgeClass = `badge badge-${stat.priceSource}`;
-        return `<tr data-symbol="${stat.symbol}" data-market="${stat.market}">
-          <td>${stat.symbol} ${stat.name || ''}</td>
+        return `<tr data-symbol="${escapeHtml(stat.symbol)}" data-market="${stat.market}">
+          <td>${escapeHtml(stat.symbol)} ${escapeHtml(stat.name || '')}</td>
           <td>${stat.market === 'TW' ? '台股' : '美股'}</td>
           <td>${stat.currentPrice.toFixed(2)}</td>
-          <td><span class="${badgeClass}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span></td>
+          <td><span class="${badgeClass}" title="${priceUpdatedTitle(stat)}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span>${staleBadge(stat)}</td>
           <td><input type="number" class="override-input" min="0" step="any" value="${hasOverride ? priceOverrides[stat.symbol] : ''}" placeholder="手動輸入現價" /></td>
           <td>
             <button type="button" class="override-save-btn">儲存</button>
@@ -234,5 +250,6 @@
     initTabs,
     formatMoney,
     formatPct,
+    escapeHtml,
   };
 })();

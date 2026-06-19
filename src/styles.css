@@ -398,6 +398,7 @@ button[type="submit"]:hover {
 .badge-cache { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
 .badge-estimate { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
 .badge-override { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
+.badge-stale { background: rgba(255, 77, 109, 0.18); color: var(--danger); border: 1px solid var(--danger); }
 
 .badge-buy { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }
 .badge-sell { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
@@ -419,4 +420,40 @@ button[type="submit"]:hover {
 footer {
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+@media (max-width: 720px) {
+  body {
+    padding: 0 0.6rem 1.5rem;
+  }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #filters,
+  #fx-status,
+  .toolbar,
+  #add-transaction-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #add-transaction-form label {
+    width: 100%;
+  }
+
+  select, input, button, .file-input-label {
+    width: 100%;
+  }
+
+  .summary-card .value {
+    font-size: 1.05rem;
+  }
+
+  th, td {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.45rem;
+  }
 }

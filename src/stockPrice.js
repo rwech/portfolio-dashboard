@@ -1,5 +1,6 @@
 (function () {
   const FETCH_TIMEOUT_MS = 6000;
+  const PRICE_STALE_THRESHOLD_MS = 30 * 60 * 1000; // 30 min
 
   function toYahooSymbol(symbol, market) {
     return market === 'TW' ? `${symbol}.TW` : symbol;
@@ -52,13 +53,19 @@
 
   function resolveCurrentPrice(symbol, { priceOverrides, priceCache, avgCost }) {
     if (typeof priceOverrides[symbol] === 'number') {
-      return { value: priceOverrides[symbol], source: 'override' };
+      return { value: priceOverrides[symbol], source: 'override', fetchedAt: null };
     }
     const cached = priceCache[symbol];
     if (cached && typeof cached.price === 'number') {
-      return { value: cached.price, source: cached.source === 'live' ? 'live' : 'cache' };
+      return { value: cached.price, source: cached.source === 'live' ? 'live' : 'cache', fetchedAt: cached.fetchedAt || null };
     }
-    return { value: avgCost, source: 'estimate' };
+    return { value: avgCost, source: 'estimate', fetchedAt: null };
+  }
+
+  function isPriceStale(source, fetchedAt) {
+    if (source === 'override') return false;
+    if (!fetchedAt) return true;
+    return Date.now() - new Date(fetchedAt).getTime() > PRICE_STALE_THRESHOLD_MS;
   }
 
   window.PFD = window.PFD || {};
@@ -66,5 +73,7 @@
     toYahooSymbol,
     refreshPrices,
     resolveCurrentPrice,
+    isPriceStale,
+    PRICE_STALE_THRESHOLD_MS,
   };
 })();

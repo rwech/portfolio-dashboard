@@ -55,6 +55,7 @@
       avgCost: s.avgCost,
       currentPrice: s.currentPrice,
       priceSource: s.priceSource,
+      priceFetchedAt: s.priceFetchedAt,
       costBasisHeld: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       marketValue: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
       realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),

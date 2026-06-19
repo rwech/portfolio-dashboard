@@ -444,7 +444,16 @@ footer {
     width: 100%;
   }
 
-  select, input, button, .file-input-label {
+  #filters select,
+  #fx-status select,
+  #fx-status button,
+  .toolbar select,
+  .toolbar input,
+  .toolbar button,
+  .toolbar .file-input-label,
+  #add-transaction-form select,
+  #add-transaction-form input,
+  #add-transaction-form button {
     width: 100%;
   }
 

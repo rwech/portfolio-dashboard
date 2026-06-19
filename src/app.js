@@ -15,10 +15,17 @@
     priceCache: {},
     fxResult: null,
     filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
+    demoMode: false,
   };
 
   function reloadTransactionsFromStorage() {
     state.transactions = [...storage.loadTransactions('TW'), ...storage.loadTransactions('US')];
+  }
+
+  function blockIfDemoMode() {
+    if (!state.demoMode) return false;
+    alert('示範模式僅供瀏覽範例資料，請先關閉示範模式再進行此操作。');
+    return true;
   }
 
   function currencyFor(market) {
@@ -75,6 +82,8 @@
       onOverrideClear: handlePriceOverrideClear,
     });
     ui.renderBackupReminderBanner(storage.loadUnexportedChangeCount(), BACKUP_REMINDER_THRESHOLD);
+    ui.renderDemoModeBanner(state.demoMode);
+    document.body.classList.toggle('demo-mode-active', state.demoMode);
     charts.renderRoiBarChart(document.getElementById('roi-bar-chart'), perSymbolConverted, state.filters.displayCurrency);
     charts.renderAllocationChart(document.getElementById('allocation-chart'), allocationData, state.filters.displayCurrency);
     charts.renderSymbolAllocationChart(document.getElementById('symbol-allocation-chart'), symbolAllocationData, state.filters.displayCurrency);
@@ -88,6 +97,7 @@
   }
 
   function handleAddTransaction(market, tx) {
+    if (blockIfDemoMode()) return;
     storage.addTransaction(market, tx);
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
@@ -95,6 +105,7 @@
   }
 
   function handleDeleteTransaction(id, market) {
+    if (blockIfDemoMode()) return;
     storage.deleteTransaction(market, id);
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
@@ -102,12 +113,14 @@
   }
 
   function handlePriceOverrideChange(symbol, value) {
+    if (blockIfDemoMode()) return;
     storage.savePriceOverride(symbol, value);
     state.priceOverrides = storage.loadPriceOverrides();
     render();
   }
 
   function handlePriceOverrideClear(symbol) {
+    if (blockIfDemoMode()) return;
     storage.clearPriceOverride(symbol);
     state.priceOverrides = storage.loadPriceOverrides();
     render();
@@ -133,6 +146,7 @@
   }
 
   function handleExport(market) {
+    if (blockIfDemoMode()) return;
     const list = storage.loadTransactions(market);
     csv.downloadCsv(csv.fileNameFor(market, ''), csv.stringifyCsv(list));
     storage.resetUnexportedChanges();
@@ -148,6 +162,7 @@
   }
 
   function handleReplaceImportText(text, market) {
+    if (blockIfDemoMode()) return;
     const { rows, errors } = csv.parseCsv(text, market);
     loadRowsIntoMarket(rows, market, 'replace');
     reloadTransactionsFromStorage();
@@ -156,24 +171,25 @@
     render();
   }
 
-  async function handleLoadExample() {
-    for (const market of ['TW', 'US']) {
-      const { rows } = await csv.fetchExampleCsv(market);
-      loadRowsIntoMarket(rows, market, 'replace');
-    }
-    reloadTransactionsFromStorage();
-    ui.renderImportFeedback('import-errors', { notice: '已使用範例資料取代現有的台股與美股交易紀錄' });
-    render();
-    await handleRefreshAllPrices();
-  }
-
   function handleAppendImportText(text, market) {
+    if (blockIfDemoMode()) return;
     const { rows, errors } = csv.parseCsv(text, market);
     loadRowsIntoMarket(rows, market, 'append');
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     const marketLabel = market === 'TW' ? '台股' : '美股';
     ui.renderImportFeedback('add-tx-import-feedback', { notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`, errors });
+    render();
+  }
+
+  async function setDemoMode(enabled) {
+    state.demoMode = enabled;
+    if (enabled) {
+      const [tw, us] = await Promise.all([csv.fetchExampleCsv('TW'), csv.fetchExampleCsv('US')]);
+      state.transactions = [...tw.rows, ...us.rows];
+    } else {
+      reloadTransactionsFromStorage();
+    }
     render();
   }
 
@@ -218,7 +234,7 @@
       handleExport('US');
     });
 
-    document.getElementById('load-example-btn').addEventListener('click', handleLoadExample);
+    document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
 
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];

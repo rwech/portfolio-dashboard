@@ -9,7 +9,15 @@
 <body>
   <header>
     <h1>投資績效儀表板</h1>
+    <label class="demo-mode-toggle">
+      <input type="checkbox" id="demo-mode-toggle" />
+      示範模式
+    </label>
   </header>
+
+  <div id="demo-mode-banner" class="banner banner-info" hidden>
+    <span>目前為示範模式，顯示的是範例資料，不會影響或覆蓋你的真實交易紀錄；新增、刪除、匯入與覆寫等操作已暫時停用。</span>
+  </div>
 
   <div id="backup-reminder-banner" class="banner banner-warning" hidden>
     <span id="backup-reminder-text"></span>
@@ -161,7 +169,7 @@
   <div class="tab-panel" data-tab-panel="transactions" hidden>
     <section id="transactions" aria-label="交易紀錄">
       <h2>交易紀錄</h2>
-      <p class="hint">匯入 CSV 與載入範例資料會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。</p>
+      <p class="hint">匯入 CSV 會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。若只是想瀏覽範例資料，請開啟頁首的「示範模式」，不會修改你的真實資料。</p>
       <details class="csv-format-help">
         <summary>CSV 格式說明</summary>
         <p>第一列為標題列，需依序包含以下欄位：</p>
@@ -190,7 +198,6 @@
           <option value="TW">匯入為台股</option>
           <option value="US">匯入為美股</option>
         </select>
-        <button id="load-example-btn" type="button">載入範例資料（取代）</button>
       </div>
       <div id="import-errors" class="import-feedback" hidden></div>
       <div class="table-scroll">

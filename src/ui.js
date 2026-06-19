@@ -161,6 +161,10 @@
     });
   }
 
+  function renderDemoModeBanner(enabled) {
+    document.getElementById('demo-mode-banner').hidden = !enabled;
+  }
+
   function renderBackupReminderBanner(count, threshold) {
     const banner = document.getElementById('backup-reminder-banner');
     const text = document.getElementById('backup-reminder-text');
@@ -222,6 +226,7 @@
     renderSymbolPnlTable,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
+    renderDemoModeBanner,
     renderImportFeedback,
     initTabs,
     formatMoney,

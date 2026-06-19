@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 :root {
   --bg: #0a0e17;
   --surface: #11141f;
@@ -25,8 +29,25 @@ body {
   background: var(--bg);
 }
 
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 header h1 {
   font-size: 1.5rem;
+}
+
+.demo-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 
 section {
@@ -52,6 +73,23 @@ section {
   background: rgba(255, 209, 102, 0.12);
   border: 1px solid var(--warning);
   color: var(--warning);
+}
+
+.banner-info {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+body.demo-mode-active #add-transaction-form,
+body.demo-mode-active #export-tw-btn,
+body.demo-mode-active #export-us-btn,
+body.demo-mode-active .file-input-label,
+body.demo-mode-active .delete-tx-btn,
+body.demo-mode-active .override-save-btn,
+body.demo-mode-active .override-clear-btn {
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 #filters {

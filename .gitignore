@@ -3,3 +3,4 @@ db/*.csv
 !db/us-stock.example.csv
 .vercel
 .claude
+node_modules

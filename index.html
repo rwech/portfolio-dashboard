@@ -60,12 +60,14 @@
   <div class="tab-panel" data-tab-panel="symbols" hidden>
     <section id="symbol-pnl" aria-label="個股損益">
       <h2>個股損益</h2>
-      <table id="symbol-pnl-table">
-        <thead>
-          <tr><th>標的</th><th>市場</th><th>持有股數</th><th>現價</th><th>已實現損益</th><th>未實現損益</th><th>ROI%</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="symbol-pnl-table">
+          <thead>
+            <tr><th>標的</th><th>市場</th><th>持有股數</th><th>現價</th><th>已實現損益</th><th>未實現損益</th><th>ROI%</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
   </div>
 
@@ -73,12 +75,14 @@
     <section id="price-overrides" aria-label="持股現價">
       <h2>持股現價</h2>
       <button id="refresh-all-prices-btn" type="button">重新整理全部現價</button>
-      <table id="price-override-table">
-        <thead>
-          <tr><th>標的</th><th>市場</th><th>現價</th><th>來源</th><th>手動覆寫</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="price-override-table">
+          <thead>
+            <tr><th>標的</th><th>市場</th><th>現價</th><th>來源</th><th>手動覆寫</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
   </div>
 
@@ -137,12 +141,14 @@
         <button id="load-example-btn" type="button">載入範例資料</button>
       </div>
       <div id="import-errors" hidden></div>
-      <table id="transactions-table">
-        <thead>
-          <tr><th>日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table id="transactions-table">
+          <thead>
+            <tr><th>日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
   </div>
 

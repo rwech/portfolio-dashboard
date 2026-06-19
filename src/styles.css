@@ -72,6 +72,9 @@ section {
   gap: 0.25rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-wrap: nowrap;
 }
 
 .tab-btn {
@@ -82,6 +85,7 @@ section {
   color: var(--text-muted);
   padding: 0.6rem 1rem;
   font-size: 0.95rem;
+  flex-shrink: 0;
 }
 
 .tab-btn:hover {
@@ -131,7 +135,13 @@ section {
 }
 
 #charts canvas {
+  width: 100%;
   max-width: 480px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {

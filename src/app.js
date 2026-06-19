@@ -17,6 +17,7 @@
     filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
     demoMode: false,
     sort: { column: null, direction: 'asc' },
+    txSort: { column: 'date', direction: 'desc' },
   };
 
   function compareForSort(a, b, column) {
@@ -30,7 +31,7 @@
     return an - bn;
   }
 
-  function sortSymbolPnl(rows, sort) {
+  function sortRows(rows, sort) {
     if (!sort.column) return rows;
     const sorted = [...rows].sort((a, b) => compareForSort(a, b, sort.column));
     return sort.direction === 'desc' ? sorted.reverse() : sorted;
@@ -91,8 +92,9 @@
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
-    ui.renderTransactionTable(filteredTx, handleDeleteTransaction);
-    ui.renderSymbolPnlTable(sortSymbolPnl(symbolPnl, state.sort), state.filters.displayCurrency);
+    ui.renderTransactionTable(sortRows(filteredTx, state.txSort), handleDeleteTransaction);
+    ui.updateSortIndicators('transactions-table', state.txSort);
+    ui.renderSymbolPnlTable(sortRows(symbolPnl, state.sort), state.filters.displayCurrency);
     ui.updateSortIndicators('symbol-pnl-table', state.sort);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
@@ -236,6 +238,18 @@
           state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
         } else {
           state.sort = { column: key, direction: 'asc' };
+        }
+        render();
+      });
+    });
+
+    document.querySelectorAll('#transactions-table thead th[data-sort-key]').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (state.txSort.column === key) {
+          state.txSort.direction = state.txSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.txSort = { column: key, direction: 'asc' };
         }
         render();
       });

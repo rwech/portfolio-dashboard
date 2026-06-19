@@ -58,6 +58,13 @@
       roiPct: s.roiPct,
     }));
 
+    const symbolAllocationData = filteredSummary.perSymbol
+      .filter((s) => s.remainingQty > 0)
+      .map((s) => ({
+        symbol: s.symbol,
+        value: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      }));
+
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
@@ -70,6 +77,7 @@
     ui.renderBackupReminderBanner(storage.loadUnexportedChangeCount(), BACKUP_REMINDER_THRESHOLD);
     charts.renderRoiBarChart(document.getElementById('roi-bar-chart'), perSymbolConverted, state.filters.displayCurrency);
     charts.renderAllocationChart(document.getElementById('allocation-chart'), allocationData, state.filters.displayCurrency);
+    charts.renderSymbolAllocationChart(document.getElementById('symbol-allocation-chart'), symbolAllocationData, state.filters.displayCurrency);
 
     storage.saveUiFilters(state.filters);
   }

@@ -139,6 +139,10 @@ section {
   max-width: 480px;
 }
 
+#symbol-charts canvas {
+  width: 100%;
+}
+
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

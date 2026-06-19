@@ -171,7 +171,7 @@
         panels.forEach((panel) => {
           panel.hidden = panel.dataset.tabPanel !== target;
         });
-        if (target === 'overview') {
+        if (target === 'overview' || target === 'symbols') {
           window.PFD.charts.resizeCharts();
         }
       });

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>投資績效儀表板</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>投資績效儀表板</h1>
+  </header>
+
+  <div id="backup-reminder-banner" class="banner banner-warning" hidden>
+    <span id="backup-reminder-text"></span>
+    <button id="backup-reminder-export-btn" type="button">立即匯出</button>
+  </div>
+
+  <section id="filters" aria-label="篩選條件">
+    <label>年度
+      <select id="filter-year"></select>
+    </label>
+    <label>市場
+      <select id="filter-market">
+        <option value="all">全部</option>
+        <option value="TW">台股</option>
+        <option value="US">美股</option>
+      </select>
+    </label>
+    <label>顯示幣別
+      <select id="filter-currency">
+        <option value="TWD">TWD</option>
+        <option value="USD">USD</option>
+      </select>
+    </label>
+  </section>
+
+  <section id="fx-status" aria-label="匯率轉換統計">
+    <span id="fx-status-text">匯率載入中...</span>
+    <button id="fx-refresh-btn" type="button">重新整理匯率</button>
+  </section>
+
+  <section id="summary-cards" aria-label="績效總覽"></section>
+
+  <section id="charts" aria-label="圖表">
+    <canvas id="roi-bar-chart"></canvas>
+    <canvas id="allocation-chart"></canvas>
+  </section>
+
+  <section id="price-overrides" aria-label="持股現價">
+    <h2>持股現價</h2>
+    <button id="refresh-all-prices-btn" type="button">重新整理全部現價</button>
+    <table id="price-override-table">
+      <thead>
+        <tr><th>標的</th><th>市場</th><th>現價</th><th>來源</th><th>手動覆寫</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="add-transaction" aria-label="新增交易">
+    <h2>新增交易</h2>
+    <form id="add-transaction-form">
+      <label>市場
+        <select name="market" required>
+          <option value="TW">台股</option>
+          <option value="US">美股</option>
+        </select>
+      </label>
+      <label>日期
+        <input type="date" name="date" required />
+      </label>
+      <label>代號
+        <input type="text" name="symbol" required />
+      </label>
+      <label>名稱
+        <input type="text" name="name" />
+      </label>
+      <label>買賣
+        <select name="action" required>
+          <option value="buy">買進</option>
+          <option value="sell">賣出</option>
+        </select>
+      </label>
+      <label>股數
+        <input type="number" name="quantity" min="0" step="any" required />
+      </label>
+      <label>單價
+        <input type="number" name="price" min="0" step="any" required />
+      </label>
+      <label>手續費
+        <input type="number" name="fee" min="0" step="any" value="0" />
+      </label>
+      <button type="submit">新增</button>
+    </form>
+  </section>
+
+  <section id="transactions" aria-label="交易紀錄">
+    <h2>交易紀錄</h2>
+    <div class="toolbar">
+      <button id="export-tw-btn" type="button">匯出台股 CSV</button>
+      <button id="export-us-btn" type="button">匯出美股 CSV</button>
+      <label class="file-input-label">匯入 CSV
+        <input id="import-csv-input" type="file" accept=".csv" hidden />
+      </label>
+      <select id="import-market-select">
+        <option value="TW">匯入為台股</option>
+        <option value="US">匯入為美股</option>
+      </select>
+      <button id="load-example-btn" type="button">載入範例資料</button>
+    </div>
+    <div id="import-errors" hidden></div>
+    <table id="transactions-table">
+      <thead>
+        <tr><th>日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>資料僅儲存於瀏覽器 localStorage，請定期使用「匯出 CSV」備份。股價來自非官方來源，重要決策請自行核對。</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="src/storage.js"></script>
+  <script src="src/csv.js"></script>
+  <script src="src/exchangeRate.js"></script>
+  <script src="src/stockPrice.js"></script>
+  <script src="src/roi.js"></script>
+  <script src="src/charts.js"></script>
+  <script src="src/ui.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+date,symbol,name,action,quantity,price,fee
+2023-04-01,AAPL,Apple Inc.,buy,10,165.3,1
+2023-09-12,AAPL,Apple Inc.,buy,5,175.2,1
+2024-03-01,AAPL,Apple Inc.,sell,3,190,1
+2024-05-15,VOO,Vanguard S&P 500 ETF,buy,8,440.1,1

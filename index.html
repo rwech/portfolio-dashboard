@@ -73,7 +73,7 @@
       <div class="table-scroll">
         <table id="symbol-pnl-table">
           <thead>
-            <tr><th>標的</th><th>市場</th><th>持有股數</th><th>平均成本</th><th>現價</th><th>持有成本</th><th>市場價值</th><th>已實現損益</th><th>未實現損益</th><th>ROI%</th></tr>
+            <tr><th>標的</th><th>市場</th><th>ROI%</th><th>已實現損益</th><th>未實現損益</th><th>股數</th><th>最後價</th><th>市場價值</th><th>平均成本</th><th>持有成本</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -188,15 +188,14 @@
         <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
       </details>
       <div class="toolbar">
-        <button id="export-tw-btn" type="button">匯出台股 CSV</button>
-        <button id="export-us-btn" type="button">匯出美股 CSV</button>
-        <label class="file-input-label">匯入 CSV（取代）
+        <select id="tx-market-select">
+          <option value="TW">台股</option>
+          <option value="US">美股</option>
+        </select>
+        <button id="export-btn" type="button" class="export-btn">匯出 CSV</button>
+        <label class="file-input-label import-btn">匯入 CSV（取代）
           <input id="import-csv-input" type="file" accept=".csv" hidden />
         </label>
-        <select id="import-market-select">
-          <option value="TW">匯入為台股</option>
-          <option value="US">匯入為美股</option>
-        </select>
       </div>
       <div id="import-errors" class="import-feedback" hidden></div>
       <div class="table-scroll">

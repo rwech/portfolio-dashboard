@@ -80,6 +80,12 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 800,
+          easing: 'easeOutQuart',
+        },
         plugins: {
           title: { display: true, text: '個股持股市值占比' },
           legend: { position: 'bottom' },

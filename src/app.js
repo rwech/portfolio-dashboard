@@ -223,8 +223,9 @@
       form.reset();
     });
 
-    document.getElementById('export-tw-btn').addEventListener('click', () => handleExport('TW'));
-    document.getElementById('export-us-btn').addEventListener('click', () => handleExport('US'));
+    document.getElementById('export-btn').addEventListener('click', () => {
+      handleExport(document.getElementById('tx-market-select').value);
+    });
     document.getElementById('backup-reminder-export-btn').addEventListener('click', () => {
       handleExport('TW');
       handleExport('US');
@@ -235,7 +236,7 @@
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const market = document.getElementById('import-market-select').value;
+      const market = document.getElementById('tx-market-select').value;
       const reader = new FileReader();
       reader.onload = () => handleReplaceImportText(String(reader.result), market);
       reader.readAsText(file);

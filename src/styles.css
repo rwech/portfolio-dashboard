@@ -82,8 +82,7 @@ section {
 }
 
 body.demo-mode-active #add-transaction-form,
-body.demo-mode-active #export-tw-btn,
-body.demo-mode-active #export-us-btn,
+body.demo-mode-active #export-btn,
 body.demo-mode-active .file-input-label,
 body.demo-mode-active .delete-tx-btn,
 body.demo-mode-active .override-save-btn,
@@ -196,12 +195,19 @@ body.demo-mode-active .override-clear-btn {
 #charts {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 1rem;
 }
 
 #charts canvas {
   width: 100%;
   max-width: 480px;
+}
+
+#symbol-charts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 #symbol-charts canvas {
@@ -213,6 +219,7 @@ body.demo-mode-active .override-clear-btn {
   width: 100%;
   max-width: 480px;
   height: 110px;
+  margin: 0 auto;
 }
 
 .symbol-allocation-chart-wrap {
@@ -352,6 +359,30 @@ button[type="submit"]:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
   box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
+}
+
+.export-btn {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.export-btn:hover {
+  background: rgba(0, 229, 255, 0.22);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+.import-btn {
+  background: rgba(177, 74, 255, 0.12);
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.import-btn:hover {
+  background: rgba(177, 74, 255, 0.22);
+  border-color: var(--accent-2);
+  box-shadow: 0 0 10px rgba(177, 74, 255, 0.4);
 }
 
 .delete-tx-btn,

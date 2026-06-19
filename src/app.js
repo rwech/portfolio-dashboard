@@ -233,6 +233,12 @@
 
     document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
 
+    document.getElementById('theme-select').addEventListener('change', (e) => {
+      const theme = e.target.value;
+      document.documentElement.setAttribute('data-theme', theme);
+      storage.saveTheme(theme);
+    });
+
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -262,6 +268,10 @@
   }
 
   async function init() {
+    const theme = storage.loadTheme();
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-select').value = theme;
+
     reloadTransactionsFromStorage();
     if (state.transactions.length === 0) {
       const [tw, us] = await Promise.all([csv.fetchInitialCsv('TW'), csv.fetchInitialCsv('US')]);

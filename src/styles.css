@@ -14,11 +14,41 @@
   --text-muted: #7d8aa8;
   --border: rgba(0, 229, 255, 0.25);
   --accent: #00e5ff;
+  --accent-rgb: 0, 229, 255;
   --accent-hover: #5cf2ff;
   --accent-2: #b14aff;
+  --accent-2-rgb: 177, 74, 255;
   --danger: #ff4d6d;
   --warning: #ffd166;
   --success: #39ff8f;
+}
+
+:root[data-theme="midnight"] {
+  --bg: #070b18;
+  --surface: #0e1428;
+  --surface-alt: #141b35;
+  --text: #e8edff;
+  --text-muted: #8089ab;
+  --border: rgba(77, 141, 255, 0.25);
+  --accent: #4d8dff;
+  --accent-rgb: 77, 141, 255;
+  --accent-hover: #7aaaff;
+  --accent-2: #8a6dff;
+  --accent-2-rgb: 138, 109, 255;
+}
+
+:root[data-theme="forest"] {
+  --bg: #07140d;
+  --surface: #0d1f15;
+  --surface-alt: #142a1c;
+  --text: #e7f5ec;
+  --text-muted: #7fa28d;
+  --border: rgba(255, 179, 71, 0.22);
+  --accent: #ffb347;
+  --accent-rgb: 255, 179, 71;
+  --accent-hover: #ffc670;
+  --accent-2: #6bd98a;
+  --accent-2-rgb: 107, 217, 138;
 }
 
 body {
@@ -56,7 +86,7 @@ section {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 12px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 12px rgba(var(--accent-rgb), 0.08);
 }
 
 .banner {
@@ -76,7 +106,7 @@ section {
 }
 
 .banner-info {
-  background: rgba(0, 229, 255, 0.1);
+  background: rgba(var(--accent-rgb), 0.1);
   border: 1px solid var(--accent);
   color: var(--accent);
 }
@@ -148,7 +178,7 @@ body.demo-mode-active .override-clear-btn {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.75rem;
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.08);
 }
 
 .summary-card .label {
@@ -307,7 +337,7 @@ select, input {
 select:focus, input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
 }
 
 button,
@@ -329,7 +359,7 @@ button:hover,
 .file-input-label:hover {
   background: #2f343f;
   border-color: var(--accent);
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
 }
 
 button:disabled {
@@ -342,37 +372,37 @@ button[type="submit"] {
   border-color: var(--accent);
   color: #0b1021;
   font-weight: 600;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
 }
 
 button[type="submit"]:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
-  box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.7);
 }
 
 .export-btn {
-  background: rgba(0, 229, 255, 0.12);
+  background: rgba(var(--accent-rgb), 0.12);
   border-color: var(--accent);
   color: var(--accent);
 }
 
 .export-btn:hover {
-  background: rgba(0, 229, 255, 0.22);
+  background: rgba(var(--accent-rgb), 0.22);
   border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.4);
 }
 
 .import-btn {
-  background: rgba(177, 74, 255, 0.12);
+  background: rgba(var(--accent-2-rgb), 0.12);
   border-color: var(--accent-2);
   color: var(--accent-2);
 }
 
 .import-btn:hover {
-  background: rgba(177, 74, 255, 0.22);
+  background: rgba(var(--accent-2-rgb), 0.22);
   border-color: var(--accent-2);
-  box-shadow: 0 0 10px rgba(177, 74, 255, 0.4);
+  box-shadow: 0 0 10px rgba(var(--accent-2-rgb), 0.4);
 }
 
 .delete-tx-btn,

@@ -97,8 +97,7 @@
 
   function renderTransactionTable(transactions, onDelete) {
     const tbody = document.querySelector('#transactions-table tbody');
-    const sorted = [...transactions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    tbody.innerHTML = sorted
+    tbody.innerHTML = transactions
       .map(
         (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
           <td>${tx.date}</td>

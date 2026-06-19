@@ -45,7 +45,7 @@
 
   <section id="fx-status" aria-label="匯率轉換統計">
     <span id="fx-status-text">匯率載入中...</span>
-    <button id="fx-refresh-btn" type="button">重新整理匯率</button>
+    <button id="refresh-all-btn" type="button">重新整理匯率與現價</button>
   </section>
 
   <nav id="tab-nav" role="tablist" aria-label="內容分頁">
@@ -82,7 +82,6 @@
   <div class="tab-panel" data-tab-panel="prices" hidden>
     <section id="price-overrides" aria-label="持股現價">
       <h2>持股現價</h2>
-      <button id="refresh-all-prices-btn" type="button">重新整理全部現價</button>
       <div class="table-scroll">
         <table id="price-override-table">
           <thead>

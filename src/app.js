@@ -122,11 +122,6 @@
     render();
   }
 
-  async function handleFxRefresh() {
-    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
-    render();
-  }
-
   function currentlyHeldSymbols() {
     const priceCtx = { priceOverrides: state.priceOverrides, priceCache: state.priceCache };
     const fullSummary = roi.computePortfolioSummary(state.transactions, priceCtx, { year: 'all', market: 'all' });
@@ -135,10 +130,15 @@
       .map((s) => ({ symbol: s.symbol, market: s.market }));
   }
 
-  async function handleRefreshAllPrices() {
+  async function refreshAllPrices() {
     await stockPrice.refreshPrices(currentlyHeldSymbols());
     state.priceCache = storage.loadPriceCache();
     render();
+  }
+
+  async function handleRefreshAll() {
+    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
+    await refreshAllPrices();
   }
 
   function handleExport(market) {
@@ -196,8 +196,7 @@
     document.getElementById('filter-market').addEventListener('change', (e) => handleFilterChange({ market: e.target.value }));
     document.getElementById('filter-currency').addEventListener('change', (e) => handleFilterChange({ displayCurrency: e.target.value }));
 
-    document.getElementById('fx-refresh-btn').addEventListener('click', handleFxRefresh);
-    document.getElementById('refresh-all-prices-btn').addEventListener('click', handleRefreshAllPrices);
+    document.getElementById('refresh-all-btn').addEventListener('click', handleRefreshAll);
 
     document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -281,7 +280,7 @@
     state.fxResult = await exchangeRate.getExchangeRate();
     render();
 
-    await handleRefreshAllPrices();
+    await refreshAllPrices();
   }
 
   init();

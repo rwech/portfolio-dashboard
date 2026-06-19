@@ -15,10 +15,17 @@
     priceCache: {},
     fxResult: null,
     filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
+    demoMode: false,
   };
 
   function reloadTransactionsFromStorage() {
     state.transactions = [...storage.loadTransactions('TW'), ...storage.loadTransactions('US')];
+  }
+
+  function blockIfDemoMode() {
+    if (!state.demoMode) return false;
+    alert('示範模式僅供瀏覽範例資料，請先關閉示範模式再進行此操作。');
+    return true;
   }
 
   function currencyFor(market) {
@@ -35,28 +42,47 @@
 
     const converted = roi.convertSummaryToDisplayCurrency(filteredSummary.byMarket, state.filters.displayCurrency, fxRate);
 
-    const perSymbolConverted = filteredSummary.perSymbol.map((s) => ({
-      symbol: s.symbol,
-      realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-      unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-    }));
-
     const allocationData = {
       TW: roi.convertAmount(filteredSummary.byMarket.TW.costBasisHeld, 'TWD', state.filters.displayCurrency, fxRate),
       US: roi.convertAmount(filteredSummary.byMarket.US.costBasisHeld, 'USD', state.filters.displayCurrency, fxRate),
     };
 
+    const symbolPnl = filteredSummary.perSymbol.map((s) => ({
+      symbol: s.symbol,
+      name: s.name,
+      market: s.market,
+      remainingQty: s.remainingQty,
+      avgCost: s.avgCost,
+      currentPrice: s.currentPrice,
+      priceSource: s.priceSource,
+      costBasisHeld: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      marketValue: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      roiPct: s.roiPct,
+    }));
+
+    const symbolAllocationData = filteredSummary.perSymbol
+      .filter((s) => s.remainingQty > 0)
+      .map((s) => ({
+        symbol: s.symbol,
+        value: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      }));
+
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
     ui.renderTransactionTable(filteredTx, handleDeleteTransaction);
+    ui.renderSymbolPnlTable(symbolPnl, state.filters.displayCurrency);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
       onOverrideClear: handlePriceOverrideClear,
     });
     ui.renderBackupReminderBanner(storage.loadUnexportedChangeCount(), BACKUP_REMINDER_THRESHOLD);
-    charts.renderRoiBarChart(document.getElementById('roi-bar-chart'), perSymbolConverted, state.filters.displayCurrency);
+    ui.renderDemoModeBanner(state.demoMode);
+    document.body.classList.toggle('demo-mode-active', state.demoMode);
     charts.renderAllocationChart(document.getElementById('allocation-chart'), allocationData, state.filters.displayCurrency);
+    charts.renderSymbolAllocationChart(document.getElementById('symbol-allocation-chart'), symbolAllocationData, state.filters.displayCurrency);
 
     storage.saveUiFilters(state.filters);
   }
@@ -67,6 +93,7 @@
   }
 
   function handleAddTransaction(market, tx) {
+    if (blockIfDemoMode()) return;
     storage.addTransaction(market, tx);
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
@@ -74,6 +101,7 @@
   }
 
   function handleDeleteTransaction(id, market) {
+    if (blockIfDemoMode()) return;
     storage.deleteTransaction(market, id);
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
@@ -81,19 +109,16 @@
   }
 
   function handlePriceOverrideChange(symbol, value) {
+    if (blockIfDemoMode()) return;
     storage.savePriceOverride(symbol, value);
     state.priceOverrides = storage.loadPriceOverrides();
     render();
   }
 
   function handlePriceOverrideClear(symbol) {
+    if (blockIfDemoMode()) return;
     storage.clearPriceOverride(symbol);
     state.priceOverrides = storage.loadPriceOverrides();
-    render();
-  }
-
-  async function handleFxRefresh() {
-    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
     render();
   }
 
@@ -105,44 +130,73 @@
       .map((s) => ({ symbol: s.symbol, market: s.market }));
   }
 
-  async function handleRefreshAllPrices() {
+  async function refreshAllPrices() {
     await stockPrice.refreshPrices(currentlyHeldSymbols());
     state.priceCache = storage.loadPriceCache();
     render();
   }
 
+  async function handleRefreshAll() {
+    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
+    await refreshAllPrices();
+  }
+
   function handleExport(market) {
+    if (blockIfDemoMode()) return;
     const list = storage.loadTransactions(market);
     csv.downloadCsv(csv.fileNameFor(market, ''), csv.stringifyCsv(list));
     storage.resetUnexportedChanges();
     render();
   }
 
-  function handleImportText(text, market) {
+  function loadRowsIntoMarket(rows, market, mode) {
+    if (mode === 'replace') {
+      storage.replaceTransactions(market, rows);
+    } else {
+      rows.forEach((row) => storage.addTransaction(market, row));
+    }
+  }
+
+  function handleReplaceImportText(text, market) {
+    if (blockIfDemoMode()) return;
     const { rows, errors } = csv.parseCsv(text, market);
-    rows.forEach((row) => storage.addTransaction(market, row));
+    loadRowsIntoMarket(rows, market, 'replace');
     reloadTransactionsFromStorage();
-    ui.renderImportErrors(errors);
+    const marketLabel = market === 'TW' ? '台股' : '美股';
+    ui.renderImportFeedback('import-errors', { notice: `已使用匯入資料取代現有的${marketLabel}交易紀錄（${rows.length} 筆）`, errors });
     render();
   }
 
-  async function handleLoadExample() {
-    for (const market of ['TW', 'US']) {
-      const { rows } = await csv.fetchExampleCsv(market);
-      rows.forEach((row) => storage.addTransaction(market, row));
-    }
+  function handleAppendImportText(text, market) {
+    if (blockIfDemoMode()) return;
+    const { rows, errors } = csv.parseCsv(text, market);
+    loadRowsIntoMarket(rows, market, 'append');
     reloadTransactionsFromStorage();
+    storage.incrementUnexportedChanges();
+    const marketLabel = market === 'TW' ? '台股' : '美股';
+    ui.renderImportFeedback('add-tx-import-feedback', { notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`, errors });
     render();
-    await handleRefreshAllPrices();
+  }
+
+  async function setDemoMode(enabled) {
+    state.demoMode = enabled;
+    if (enabled) {
+      const [tw, us] = await Promise.all([csv.fetchExampleCsv('TW'), csv.fetchExampleCsv('US')]);
+      state.transactions = [...tw.rows, ...us.rows];
+    } else {
+      reloadTransactionsFromStorage();
+    }
+    render();
   }
 
   function wireStaticHandlers() {
+    ui.initTabs();
+
     document.getElementById('filter-year').addEventListener('change', (e) => handleFilterChange({ year: e.target.value }));
     document.getElementById('filter-market').addEventListener('change', (e) => handleFilterChange({ market: e.target.value }));
     document.getElementById('filter-currency').addEventListener('change', (e) => handleFilterChange({ displayCurrency: e.target.value }));
 
-    document.getElementById('fx-refresh-btn').addEventListener('click', handleFxRefresh);
-    document.getElementById('refresh-all-prices-btn').addEventListener('click', handleRefreshAllPrices);
+    document.getElementById('refresh-all-btn').addEventListener('click', handleRefreshAll);
 
     document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
       e.preventDefault();
@@ -168,21 +222,32 @@
       form.reset();
     });
 
-    document.getElementById('export-tw-btn').addEventListener('click', () => handleExport('TW'));
-    document.getElementById('export-us-btn').addEventListener('click', () => handleExport('US'));
+    document.getElementById('export-btn').addEventListener('click', () => {
+      handleExport(document.getElementById('tx-market-select').value);
+    });
     document.getElementById('backup-reminder-export-btn').addEventListener('click', () => {
       handleExport('TW');
       handleExport('US');
     });
 
-    document.getElementById('load-example-btn').addEventListener('click', handleLoadExample);
+    document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
 
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const market = document.getElementById('import-market-select').value;
+      const market = document.getElementById('tx-market-select').value;
       const reader = new FileReader();
-      reader.onload = () => handleImportText(String(reader.result), market);
+      reader.onload = () => handleReplaceImportText(String(reader.result), market);
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('add-tx-import-csv-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const market = document.getElementById('add-tx-import-market-select').value;
+      const reader = new FileReader();
+      reader.onload = () => handleAppendImportText(String(reader.result), market);
       reader.readAsText(file);
       e.target.value = '';
     });
@@ -215,7 +280,7 @@
     state.fxResult = await exchangeRate.getExchangeRate();
     render();
 
-    await handleRefreshAllPrices();
+    await refreshAllPrices();
   }
 
   init();

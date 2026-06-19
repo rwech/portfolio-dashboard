@@ -47,6 +47,12 @@
     return withId;
   }
 
+  function replaceTransactions(market, rows) {
+    const withIds = rows.map((tx) => ({ ...tx, id: crypto.randomUUID(), market }));
+    saveTransactions(market, withIds);
+    return withIds;
+  }
+
   function deleteTransaction(market, id) {
     const list = loadTransactions(market).filter((tx) => tx.id !== id);
     saveTransactions(market, list);
@@ -112,6 +118,7 @@
     loadTransactions,
     saveTransactions,
     addTransaction,
+    replaceTransactions,
     deleteTransaction,
     loadPriceCache,
     savePriceCache,

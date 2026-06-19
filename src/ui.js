@@ -16,6 +16,15 @@
     return `${value.toFixed(2)}%`;
   }
 
+  function signedClass(value) {
+    if (value === null || value === undefined || Number.isNaN(value)) return '';
+    return value > 0 ? 'positive' : value < 0 ? 'negative' : '';
+  }
+
+  function withSign(text, value) {
+    return value > 0 ? `+${text}` : text;
+  }
+
   function populateYearOptions(selectEl, allTx, selectedYear) {
     const years = Array.from(new Set(allTx.map((tx) => tx.date.slice(0, 4)))).sort((a, b) => b.localeCompare(a));
     const options = ['<option value="all">全部年度</option>']
@@ -43,15 +52,30 @@
 
   function renderSummaryCards(summary) {
     const container = document.getElementById('summary-cards');
+    const totalGain = summary.realizedGain + summary.unrealizedGain;
     const cards = [
-      ['總投入成本', formatMoney(summary.totalInvested, summary.currency)],
-      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency)],
-      ['已實現損益', formatMoney(summary.realizedGain, summary.currency)],
-      ['未實現損益', formatMoney(summary.unrealizedGain, summary.currency)],
-      ['ROI%', formatPct(summary.roiPct)],
+      ['總投入成本', formatMoney(summary.totalInvested, summary.currency), '', null],
+      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency), '', null],
+      [
+        '總損益',
+        withSign(formatMoney(totalGain, summary.currency), totalGain),
+        signedClass(totalGain),
+        [
+          ['已實現', withSign(formatMoney(summary.realizedGain, summary.currency), summary.realizedGain), signedClass(summary.realizedGain)],
+          ['未實現', withSign(formatMoney(summary.unrealizedGain, summary.currency), summary.unrealizedGain), signedClass(summary.unrealizedGain)],
+        ],
+      ],
+      ['ROI%', withSign(formatPct(summary.roiPct), summary.roiPct), signedClass(summary.roiPct), null],
     ];
     container.innerHTML = cards
-      .map(([label, value]) => `<div class="summary-card"><div class="label">${label}</div><div class="value">${value}</div></div>`)
+      .map(([label, value, cls, subFields]) => {
+        const subHtml = subFields
+          ? `<div class="sub-fields">${subFields
+              .map(([sLabel, sValue, sCls]) => `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`)
+              .join('')}</div>`
+          : '';
+        return `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div>${subHtml}</div>`;
+      })
       .join('');
   }
 
@@ -62,10 +86,10 @@
       .map(
         (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
           <td>${tx.date}</td>
-          <td>${tx.market === 'TW' ? '台股' : '美股'}</td>
+          <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
           <td>${tx.symbol}</td>
           <td>${tx.name || ''}</td>
-          <td>${tx.action === 'buy' ? '買進' : '賣出'}</td>
+          <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
           <td>${tx.quantity}</td>
           <td>${tx.price}</td>
           <td>${tx.fee}</td>
@@ -80,6 +104,28 @@
         onDelete(tr.dataset.id, tr.dataset.market);
       });
     });
+  }
+
+  function renderSymbolPnlTable(perSymbolStats, displayCurrency) {
+    const tbody = document.querySelector('#symbol-pnl-table tbody');
+    tbody.innerHTML = perSymbolStats
+      .map((stat) => {
+        const currency = stat.market === 'TW' ? 'TWD' : 'USD';
+        const badgeClass = `badge badge-${stat.priceSource}`;
+        return `<tr data-symbol="${stat.symbol}" data-market="${stat.market}">
+          <td>${stat.symbol} ${stat.name || ''}</td>
+          <td><span class="badge badge-${stat.market === 'TW' ? 'tw' : 'us'}">${stat.market === 'TW' ? '台股' : '美股'}</span></td>
+          <td class="${signedClass(stat.roiPct)}">${withSign(formatPct(stat.roiPct), stat.roiPct)}</td>
+          <td class="${signedClass(stat.realizedGain)}">${withSign(formatMoney(stat.realizedGain, displayCurrency), stat.realizedGain)}</td>
+          <td class="${signedClass(stat.unrealizedGain)}">${withSign(formatMoney(stat.unrealizedGain, displayCurrency), stat.unrealizedGain)}</td>
+          <td>${stat.remainingQty}</td>
+          <td>${stat.currentPrice.toFixed(2)} ${currency} <span class="${badgeClass}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span></td>
+          <td>${formatMoney(stat.marketValue, displayCurrency)}</td>
+          <td>${stat.avgCost.toFixed(2)} ${currency}</td>
+          <td>${formatMoney(stat.costBasisHeld, displayCurrency)}</td>
+        </tr>`;
+      })
+      .join('');
   }
 
   function renderPriceOverridePanel(perSymbolStats, priceOverrides, handlers) {
@@ -118,6 +164,10 @@
     });
   }
 
+  function renderDemoModeBanner(enabled) {
+    document.getElementById('demo-mode-banner').hidden = !enabled;
+  }
+
   function renderBackupReminderBanner(count, threshold) {
     const banner = document.getElementById('backup-reminder-banner');
     const text = document.getElementById('backup-reminder-text');
@@ -129,17 +179,45 @@
     }
   }
 
-  function renderImportErrors(errors) {
-    const el = document.getElementById('import-errors');
-    if (!errors || errors.length === 0) {
+  function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('active', isActive);
+          b.setAttribute('aria-selected', String(isActive));
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.tabPanel !== target;
+        });
+        if (target === 'overview') {
+          window.PFD.charts.resizeCharts();
+        }
+      });
+    });
+  }
+
+  function renderImportFeedback(elId, { notice, errors } = {}) {
+    const el = document.getElementById(elId);
+    const parts = [];
+    if (notice) parts.push(`<div class="import-notice">${notice}</div>`);
+    if (errors && errors.length) {
+      parts.push(
+        `<div class="import-error-list">匯入時略過 ${errors.length} 列：<ul>${errors
+          .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
+          .join('')}</ul></div>`
+      );
+    }
+    if (!parts.length) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
     el.hidden = false;
-    el.innerHTML = `匯入時略過 ${errors.length} 列：<ul>${errors
-      .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
-      .join('')}</ul>`;
+    el.innerHTML = parts.join('');
   }
 
   window.PFD = window.PFD || {};
@@ -148,9 +226,12 @@
     renderFxStatusPanel,
     renderSummaryCards,
     renderTransactionTable,
+    renderSymbolPnlTable,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
-    renderImportErrors,
+    renderDemoModeBanner,
+    renderImportFeedback,
+    initTabs,
     formatMoney,
     formatPct,
   };

@@ -1,5 +1,61 @@
 date,symbol,name,action,quantity,price,fee
-2023-04-01,AAPL,Apple Inc.,buy,10,165.3,1
-2023-09-12,AAPL,Apple Inc.,buy,5,175.2,1
-2024-03-01,AAPL,Apple Inc.,sell,3,190,1
-2024-05-15,VOO,Vanguard S&P 500 ETF,buy,8,440.1,1
+2023-02-15,AAPL,Apple Inc.,buy,30,184.06,1
+2023-08-21,AAPL,Apple Inc.,buy,30,179.9,1
+2024-02-24,AAPL,Apple Inc.,buy,10,178.08,1
+2024-06-24,AAPL,Apple Inc.,sell,20,177.04,1
+2024-12-17,AAPL,Apple Inc.,buy,10,188.87,1
+2025-04-08,AAPL,Apple Inc.,buy,10,204.32,1
+2023-04-25,MSFT,Microsoft Corp.,buy,10,335,1
+2023-09-02,MSFT,Microsoft Corp.,buy,15,337.68,1
+2024-02-12,MSFT,Microsoft Corp.,buy,15,337.29,1
+2024-07-14,MSFT,Microsoft Corp.,sell,5,315.34,1
+2024-09-11,MSFT,Microsoft Corp.,buy,15,334.42,1
+2025-06-03,MSFT,Microsoft Corp.,sell,15,312.1,1
+2023-05-17,GOOGL,Alphabet Inc.,buy,16,125.08,1
+2023-09-08,GOOGL,Alphabet Inc.,buy,16,120.81,1
+2024-03-14,GOOGL,Alphabet Inc.,sell,15,123.89,1
+2024-08-25,GOOGL,Alphabet Inc.,sell,8,116.46,1
+2024-10-07,GOOGL,Alphabet Inc.,buy,16,111.84,1
+2025-02-23,GOOGL,Alphabet Inc.,buy,8,109.66,1
+2023-04-04,AMZN,Amazon.com Inc.,buy,24,125.08,1
+2023-09-12,AMZN,Amazon.com Inc.,buy,16,135.59,1
+2023-12-26,AMZN,Amazon.com Inc.,sell,16,128.15,1
+2024-05-06,AMZN,Amazon.com Inc.,sell,8,136.35,1
+2024-12-17,AMZN,Amazon.com Inc.,sell,8,139.23,1
+2025-04-21,AMZN,Amazon.com Inc.,buy,24,128.09,1
+2023-03-07,TSLA,Tesla Inc.,buy,10,247.24,1
+2023-07-05,TSLA,Tesla Inc.,buy,5,261.53,1
+2023-11-24,TSLA,Tesla Inc.,sell,5,233.09,1
+2024-05-13,TSLA,Tesla Inc.,buy,10,237.19,1
+2024-12-19,TSLA,Tesla Inc.,buy,15,216.44,1
+2025-05-10,TSLA,Tesla Inc.,buy,15,200.52,1
+2023-03-10,NVDA,NVIDIA Corp.,buy,5,247.9,1
+2023-08-14,NVDA,NVIDIA Corp.,buy,10,212.41,1
+2023-12-02,NVDA,NVIDIA Corp.,buy,10,245.95,1
+2024-06-22,NVDA,NVIDIA Corp.,buy,10,211.84,1
+2024-09-14,NVDA,NVIDIA Corp.,buy,10,216.47,1
+2025-06-16,NVDA,NVIDIA Corp.,buy,5,183.61,1
+2023-04-17,META,Meta Platforms Inc.,buy,10,278.29,1
+2023-06-02,META,Meta Platforms Inc.,buy,10,286.46,1
+2023-12-13,META,Meta Platforms Inc.,sell,8,308.22,1
+2024-07-26,META,Meta Platforms Inc.,buy,5,337.74,1
+2025-01-25,META,Meta Platforms Inc.,buy,10,305,1
+2025-03-19,META,Meta Platforms Inc.,buy,15,313.02,1
+2023-04-22,VOO,Vanguard S&P 500 ETF,buy,5,388.37,1
+2023-10-27,VOO,Vanguard S&P 500 ETF,buy,10,372.25,1
+2024-03-24,VOO,Vanguard S&P 500 ETF,buy,5,380.78,1
+2024-08-23,VOO,Vanguard S&P 500 ETF,buy,10,380.92,1
+2025-01-07,VOO,Vanguard S&P 500 ETF,buy,15,369.73,1
+2025-06-02,VOO,Vanguard S&P 500 ETF,sell,10,358.19,1
+2023-04-19,JPM,JPMorgan Chase & Co.,buy,8,153.63,1
+2023-10-16,JPM,JPMorgan Chase & Co.,buy,16,163.3,1
+2024-01-11,JPM,JPMorgan Chase & Co.,buy,8,172.26,1
+2024-07-13,JPM,JPMorgan Chase & Co.,buy,8,174.18,1
+2024-12-17,JPM,JPMorgan Chase & Co.,buy,24,165.02,1
+2025-02-12,JPM,JPMorgan Chase & Co.,buy,16,168.4,1
+2023-03-16,KO,Coca-Cola Co.,buy,20,58.45,1
+2023-06-25,KO,Coca-Cola Co.,sell,10,59.95,1
+2024-03-25,KO,Coca-Cola Co.,buy,10,57.79,1
+2024-04-15,KO,Coca-Cola Co.,buy,20,55.98,1
+2024-12-01,KO,Coca-Cola Co.,buy,20,55.78,1
+2025-05-06,KO,Coca-Cola Co.,buy,10,57.09,1

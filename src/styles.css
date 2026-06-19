@@ -187,6 +187,32 @@ section {
   margin: 0 0 0.5rem;
 }
 
+.csv-format-help {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.csv-format-help summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.csv-format-help table {
+  margin-top: 0.5rem;
+}
+
+.csv-format-help code {
+  background: var(--surface);
+  border-radius: 4px;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.85em;
+}
+
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

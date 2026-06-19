@@ -127,6 +127,24 @@
       </form>
 
       <h3>批次匯入 CSV（新增至現有資料）</h3>
+      <details class="csv-format-help">
+        <summary>CSV 格式說明</summary>
+        <p>第一列為標題列，需依序包含以下欄位：</p>
+        <table>
+          <thead><tr><th>欄位</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td>date</td><td>交易日期，格式 <code>YYYY-MM-DD</code></td></tr>
+            <tr><td>symbol</td><td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td></tr>
+            <tr><td>name</td><td>顯示名稱，可空白</td></tr>
+            <tr><td>action</td><td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td></tr>
+            <tr><td>quantity</td><td>股數，必須大於 0</td></tr>
+            <tr><td>price</td><td>單股成交價，需大於等於 0（台股為 TWD，美股為 USD，依匯入時選擇的市場決定）</td></tr>
+            <tr><td>fee</td><td>手續費，可空白（視為 0）</td></tr>
+          </tbody>
+        </table>
+        <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
+        <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
+      </details>
       <div class="toolbar">
         <label class="file-input-label">匯入 CSV
           <input id="add-tx-import-csv-input" type="file" accept=".csv" hidden />
@@ -144,6 +162,24 @@
     <section id="transactions" aria-label="交易紀錄">
       <h2>交易紀錄</h2>
       <p class="hint">匯入 CSV 與載入範例資料會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。</p>
+      <details class="csv-format-help">
+        <summary>CSV 格式說明</summary>
+        <p>第一列為標題列，需依序包含以下欄位：</p>
+        <table>
+          <thead><tr><th>欄位</th><th>說明</th></tr></thead>
+          <tbody>
+            <tr><td>date</td><td>交易日期，格式 <code>YYYY-MM-DD</code></td></tr>
+            <tr><td>symbol</td><td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td></tr>
+            <tr><td>name</td><td>顯示名稱，可空白</td></tr>
+            <tr><td>action</td><td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td></tr>
+            <tr><td>quantity</td><td>股數，必須大於 0</td></tr>
+            <tr><td>price</td><td>單股成交價，需大於等於 0（台股為 TWD，美股為 USD，依匯入時選擇的市場決定）</td></tr>
+            <tr><td>fee</td><td>手續費，可空白（視為 0）</td></tr>
+          </tbody>
+        </table>
+        <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
+        <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
+      </details>
       <div class="toolbar">
         <button id="export-tw-btn" type="button">匯出台股 CSV</button>
         <button id="export-us-btn" type="button">匯出美股 CSV</button>

@@ -129,6 +129,27 @@
     }
   }
 
+  function initTabs() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+    tabBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+        tabBtns.forEach((b) => {
+          const isActive = b === btn;
+          b.classList.toggle('active', isActive);
+          b.setAttribute('aria-selected', String(isActive));
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.tabPanel !== target;
+        });
+        if (target === 'overview') {
+          window.PFD.charts.resizeCharts();
+        }
+      });
+    });
+  }
+
   function renderImportErrors(errors) {
     const el = document.getElementById('import-errors');
     if (!errors || errors.length === 0) {
@@ -151,6 +172,7 @@
     renderPriceOverridePanel,
     renderBackupReminderBanner,
     renderImportErrors,
+    initTabs,
     formatMoney,
     formatPct,
   };

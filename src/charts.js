@@ -1,6 +1,14 @@
 (function () {
+  Chart.defaults.color = '#e8eaed';
+  Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.12)';
+
   let roiChart = null;
   let allocationChart = null;
+
+  function resizeCharts() {
+    if (roiChart) roiChart.resize();
+    if (allocationChart) allocationChart.resize();
+  }
 
   function renderRoiBarChart(canvasEl, perSymbolStats, displayCurrency) {
     if (roiChart) {
@@ -59,5 +67,6 @@
   window.PFD.charts = {
     renderRoiBarChart,
     renderAllocationChart,
+    resizeCharts,
   };
 })();

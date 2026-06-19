@@ -137,6 +137,8 @@
   }
 
   function wireStaticHandlers() {
+    ui.initTabs();
+
     document.getElementById('filter-year').addEventListener('change', (e) => handleFilterChange({ year: e.target.value }));
     document.getElementById('filter-market').addEventListener('change', (e) => handleFilterChange({ market: e.target.value }));
     document.getElementById('filter-currency').addEventListener('change', (e) => handleFilterChange({ displayCurrency: e.target.value }));

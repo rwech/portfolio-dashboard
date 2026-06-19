@@ -2,12 +2,25 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #14161b;
+  --surface: #1e2128;
+  --surface-alt: #262a33;
+  --text: #e8eaed;
+  --text-muted: #9aa0a6;
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #4c8bf5;
+  --accent-hover: #6ea3ff;
+  --danger: #f28b82;
+  --warning: #fdd663;
+}
+
 body {
   font-family: -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
   margin: 0;
   padding: 0 1rem 2rem;
-  color: #202124;
-  background: #f7f8fa;
+  color: var(--text);
+  background: var(--bg);
 }
 
 header h1 {
@@ -15,11 +28,12 @@ header h1 {
 }
 
 section {
-  background: #fff;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .banner {
@@ -33,8 +47,9 @@ section {
 }
 
 .banner-warning {
-  background: #fef7e0;
-  border: 1px solid #f9ab00;
+  background: rgba(253, 214, 99, 0.12);
+  border: 1px solid var(--warning);
+  color: var(--warning);
 }
 
 #filters {
@@ -47,6 +62,35 @@ section {
   display: flex;
   align-items: center;
   gap: 1rem;
+  color: var(--text-muted);
+}
+
+#tab-nav {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-muted);
+  padding: 0.6rem 1rem;
+  font-size: 0.95rem;
+}
+
+.tab-btn:hover {
+  background: var(--surface-alt);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
 }
 
 #summary-cards {
@@ -56,14 +100,15 @@ section {
 }
 
 .summary-card {
-  background: #f1f3f4;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.75rem;
 }
 
 .summary-card .label {
   font-size: 0.8rem;
-  color: #5f6368;
+  color: var(--text-muted);
 }
 
 .summary-card .value {
@@ -90,8 +135,13 @@ table {
 th, td {
   text-align: left;
   padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border);
   font-size: 0.9rem;
+}
+
+th {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 #add-transaction-form {
@@ -116,21 +166,81 @@ th, td {
   margin-bottom: 0.5rem;
 }
 
+select, input {
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.4rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+button,
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+button:hover,
+.file-input-label:hover {
+  background: #2f343f;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button[type="submit"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b1021;
+  font-weight: 600;
+}
+
+button[type="submit"]:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.delete-tx-btn,
+.override-clear-btn {
+  color: var(--danger);
+  border-color: rgba(242, 139, 130, 0.4);
+}
+
+.delete-tx-btn:hover,
+.override-clear-btn:not(:disabled):hover {
+  background: rgba(242, 139, 130, 0.12);
+  border-color: var(--danger);
+}
+
 .badge {
   font-size: 0.7rem;
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
-  background: #e8eaed;
+  background: var(--surface-alt);
 }
 
-.badge-live { background: #e6f4ea; color: #137333; }
-.badge-cache { background: #fef7e0; color: #b06000; }
-.badge-estimate { background: #fce8e6; color: #c5221f; }
-.badge-override { background: #e8f0fe; color: #1967d2; }
+.badge-live { background: rgba(52, 168, 83, 0.18); color: #81c995; }
+.badge-cache { background: rgba(251, 188, 4, 0.18); color: #fdd663; }
+.badge-estimate { background: rgba(234, 67, 53, 0.18); color: #f28b82; }
+.badge-override { background: rgba(76, 139, 245, 0.18); color: #8ab4f8; }
 
 #import-errors {
-  background: #fce8e6;
-  color: #c5221f;
+  background: rgba(234, 67, 53, 0.12);
+  color: #f28b82;
   padding: 0.5rem;
   border-radius: 6px;
   font-size: 0.85rem;
@@ -138,6 +248,6 @@ th, td {
 }
 
 footer {
-  color: #5f6368;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }

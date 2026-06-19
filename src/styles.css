@@ -255,7 +255,7 @@ body.demo-mode-active .override-clear-btn {
 }
 
 table {
-  width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
 }
@@ -265,6 +265,7 @@ th, td {
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid var(--border);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 th {
@@ -392,6 +393,7 @@ button[type="submit"]:hover {
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
   background: var(--surface-alt);
+  white-space: nowrap;
 }
 
 .badge-live { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }

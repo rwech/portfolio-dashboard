@@ -99,6 +99,7 @@
         stat.currentPrice = resolved.value;
         stat.priceSource = resolved.source;
         stat.unrealizedGain = (resolved.value - stat.avgCost) * stat.remainingQty;
+        stat.roiPct = roiPct(stat.realizedGain, stat.unrealizedGain, stat.totalInvested);
         perSymbol.push(stat);
       });
     });

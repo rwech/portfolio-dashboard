@@ -91,6 +91,25 @@
     });
   }
 
+  function renderSymbolPnlTable(perSymbolStats, displayCurrency) {
+    const tbody = document.querySelector('#symbol-pnl-table tbody');
+    tbody.innerHTML = perSymbolStats
+      .map((stat) => {
+        const currency = stat.market === 'TW' ? 'TWD' : 'USD';
+        const badgeClass = `badge badge-${stat.priceSource}`;
+        return `<tr data-symbol="${stat.symbol}" data-market="${stat.market}">
+          <td>${stat.symbol} ${stat.name || ''}</td>
+          <td><span class="badge badge-${stat.market === 'TW' ? 'tw' : 'us'}">${stat.market === 'TW' ? '台股' : '美股'}</span></td>
+          <td>${stat.remainingQty}</td>
+          <td>${stat.currentPrice.toFixed(2)} ${currency} <span class="${badgeClass}">${SOURCE_LABEL[stat.priceSource] || stat.priceSource}</span></td>
+          <td class="${signedClass(stat.realizedGain)}">${withSign(formatMoney(stat.realizedGain, displayCurrency), stat.realizedGain)}</td>
+          <td class="${signedClass(stat.unrealizedGain)}">${withSign(formatMoney(stat.unrealizedGain, displayCurrency), stat.unrealizedGain)}</td>
+          <td class="${signedClass(stat.roiPct)}">${withSign(formatPct(stat.roiPct), stat.roiPct)}</td>
+        </tr>`;
+      })
+      .join('');
+  }
+
   function renderPriceOverridePanel(perSymbolStats, priceOverrides, handlers) {
     const tbody = document.querySelector('#price-override-table tbody');
     const held = perSymbolStats.filter((s) => s.remainingQty > 0);
@@ -178,6 +197,7 @@
     renderFxStatusPanel,
     renderSummaryCards,
     renderTransactionTable,
+    renderSymbolPnlTable,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
     renderImportErrors,

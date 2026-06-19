@@ -42,6 +42,7 @@
 
   <nav id="tab-nav" role="tablist" aria-label="內容分頁">
     <button type="button" class="tab-btn active" data-tab="overview" aria-selected="true">總覽</button>
+    <button type="button" class="tab-btn" data-tab="symbols" aria-selected="false">個股損益</button>
     <button type="button" class="tab-btn" data-tab="prices" aria-selected="false">持股現價</button>
     <button type="button" class="tab-btn" data-tab="add-tx" aria-selected="false">新增交易</button>
     <button type="button" class="tab-btn" data-tab="transactions" aria-selected="false">交易紀錄</button>
@@ -53,6 +54,18 @@
     <section id="charts" aria-label="圖表">
       <canvas id="roi-bar-chart"></canvas>
       <canvas id="allocation-chart"></canvas>
+    </section>
+  </div>
+
+  <div class="tab-panel" data-tab-panel="symbols" hidden>
+    <section id="symbol-pnl" aria-label="個股損益">
+      <h2>個股損益</h2>
+      <table id="symbol-pnl-table">
+        <thead>
+          <tr><th>標的</th><th>市場</th><th>持有股數</th><th>現價</th><th>已實現損益</th><th>未實現損益</th><th>ROI%</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </section>
   </div>
 

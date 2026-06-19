@@ -3,17 +3,18 @@
 }
 
 :root {
-  --bg: #14161b;
-  --surface: #1e2128;
-  --surface-alt: #262a33;
-  --text: #e8eaed;
-  --text-muted: #9aa0a6;
-  --border: rgba(255, 255, 255, 0.12);
-  --accent: #4c8bf5;
-  --accent-hover: #6ea3ff;
-  --danger: #f28b82;
-  --warning: #fdd663;
-  --success: #81c995;
+  --bg: #0a0e17;
+  --surface: #11141f;
+  --surface-alt: #171b29;
+  --text: #e6f1ff;
+  --text-muted: #7d8aa8;
+  --border: rgba(0, 229, 255, 0.25);
+  --accent: #00e5ff;
+  --accent-hover: #5cf2ff;
+  --accent-2: #b14aff;
+  --danger: #ff4d6d;
+  --warning: #ffd166;
+  --success: #39ff8f;
 }
 
 body {
@@ -34,7 +35,7 @@ section {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 12px rgba(0, 229, 255, 0.08);
 }
 
 .banner {
@@ -48,7 +49,7 @@ section {
 }
 
 .banner-warning {
-  background: rgba(253, 214, 99, 0.12);
+  background: rgba(255, 209, 102, 0.12);
   border: 1px solid var(--warning);
   color: var(--warning);
 }
@@ -92,6 +93,7 @@ section {
 .tab-btn.active {
   color: var(--text);
   border-bottom-color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
 }
 
 #summary-cards {
@@ -105,6 +107,7 @@ section {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0.75rem;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.08);
 }
 
 .summary-card .label {
@@ -115,10 +118,11 @@ section {
 .summary-card .value {
   font-size: 1.25rem;
   font-weight: 600;
+  text-shadow: 0 0 6px currentColor;
 }
 
-.value.positive { color: var(--success); }
-.value.negative { color: var(--danger); }
+.positive { color: var(--success); }
+.negative { color: var(--danger); }
 
 #charts {
   display: flex;
@@ -180,6 +184,12 @@ select, input {
   font-size: 0.9rem;
 }
 
+select:focus, input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.4);
+}
+
 button,
 .file-input-label {
   display: inline-flex;
@@ -198,7 +208,8 @@ button,
 button:hover,
 .file-input-label:hover {
   background: #2f343f;
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
 }
 
 button:disabled {
@@ -211,22 +222,24 @@ button[type="submit"] {
   border-color: var(--accent);
   color: #0b1021;
   font-weight: 600;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
 button[type="submit"]:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.7);
 }
 
 .delete-tx-btn,
 .override-clear-btn {
   color: var(--danger);
-  border-color: rgba(242, 139, 130, 0.4);
+  border-color: rgba(255, 77, 109, 0.4);
 }
 
 .delete-tx-btn:hover,
 .override-clear-btn:not(:disabled):hover {
-  background: rgba(242, 139, 130, 0.12);
+  background: rgba(255, 77, 109, 0.12);
   border-color: var(--danger);
 }
 
@@ -237,19 +250,19 @@ button[type="submit"]:hover {
   background: var(--surface-alt);
 }
 
-.badge-live { background: rgba(52, 168, 83, 0.18); color: #81c995; }
-.badge-cache { background: rgba(251, 188, 4, 0.18); color: #fdd663; }
-.badge-estimate { background: rgba(234, 67, 53, 0.18); color: #f28b82; }
-.badge-override { background: rgba(76, 139, 245, 0.18); color: #8ab4f8; }
+.badge-live { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }
+.badge-cache { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
+.badge-estimate { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
+.badge-override { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
 
-.badge-buy { background: rgba(52, 168, 83, 0.18); color: #81c995; }
-.badge-sell { background: rgba(234, 67, 53, 0.18); color: #f28b82; }
-.badge-tw { background: rgba(251, 188, 4, 0.18); color: #fdd663; }
-.badge-us { background: rgba(76, 139, 245, 0.18); color: #8ab4f8; }
+.badge-buy { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }
+.badge-sell { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
+.badge-tw { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
+.badge-us { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
 
 #import-errors {
-  background: rgba(234, 67, 53, 0.12);
-  color: #f28b82;
+  background: rgba(255, 77, 109, 0.12);
+  color: var(--danger);
   padding: 0.5rem;
   border-radius: 6px;
   font-size: 0.85rem;

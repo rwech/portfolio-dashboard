@@ -1,6 +1,6 @@
 (function () {
-  Chart.defaults.color = '#e8eaed';
-  Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.12)';
+  Chart.defaults.color = '#e6f1ff';
+  Chart.defaults.borderColor = 'rgba(0, 229, 255, 0.15)';
 
   let roiChart = null;
   let allocationChart = null;
@@ -25,12 +25,12 @@
           {
             label: `已實現損益 (${displayCurrency})`,
             data: perSymbolStats.map((s) => s.realizedGain),
-            backgroundColor: '#4c8bf5',
+            backgroundColor: '#00e5ff',
           },
           {
             label: `未實現損益 (${displayCurrency})`,
             data: perSymbolStats.map((s) => s.unrealizedGain),
-            backgroundColor: '#34a853',
+            backgroundColor: '#b14aff',
           },
         ],
       },
@@ -54,7 +54,7 @@
       type: 'doughnut',
       data: {
         labels: [`台股 (${displayCurrency})`, `美股 (${displayCurrency})`],
-        datasets: [{ data, backgroundColor: ['#fbbc04', '#ea4335'] }],
+        datasets: [{ data, backgroundColor: ['#ffd166', '#b14aff'] }],
       },
       options: {
         responsive: true,

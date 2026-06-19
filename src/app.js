@@ -46,10 +46,23 @@
       US: roi.convertAmount(filteredSummary.byMarket.US.costBasisHeld, 'USD', state.filters.displayCurrency, fxRate),
     };
 
+    const symbolPnl = filteredSummary.perSymbol.map((s) => ({
+      symbol: s.symbol,
+      name: s.name,
+      market: s.market,
+      remainingQty: s.remainingQty,
+      currentPrice: s.currentPrice,
+      priceSource: s.priceSource,
+      realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      roiPct: s.roiPct,
+    }));
+
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
     ui.renderTransactionTable(filteredTx, handleDeleteTransaction);
+    ui.renderSymbolPnlTable(symbolPnl, state.filters.displayCurrency);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
       onOverrideClear: handlePriceOverrideClear,

@@ -204,16 +204,6 @@ body.demo-mode-active .override-clear-btn {
   max-width: 480px;
 }
 
-#symbol-charts {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-#symbol-charts canvas {
-  width: 100%;
-}
-
 .bar-chart-wrap {
   position: relative;
   width: 100%;

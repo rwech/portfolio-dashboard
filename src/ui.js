@@ -144,6 +144,16 @@
       .join('');
   }
 
+  function updateSortIndicators(tableId, sort) {
+    document.querySelectorAll(`#${tableId} thead th[data-sort-key]`).forEach((th) => {
+      if (th.dataset.sortKey === sort.column) {
+        th.dataset.sortDirection = sort.direction;
+      } else {
+        delete th.dataset.sortDirection;
+      }
+    });
+  }
+
   function renderPriceOverridePanel(perSymbolStats, priceOverrides, handlers) {
     const tbody = document.querySelector('#price-override-table tbody');
     const held = perSymbolStats.filter((s) => s.remainingQty > 0);
@@ -243,6 +253,7 @@
     renderSummaryCards,
     renderTransactionTable,
     renderSymbolPnlTable,
+    updateSortIndicators,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
     renderDemoModeBanner,

@@ -303,6 +303,34 @@ th {
   font-weight: 600;
 }
 
+th[data-sort-key] {
+  cursor: pointer;
+  user-select: none;
+}
+
+th[data-sort-key]::after {
+  display: inline-block;
+  width: 1em;
+  margin-left: 0.25rem;
+  content: '';
+}
+
+th[data-sort-direction="asc"]::after {
+  content: '▲';
+}
+
+th[data-sort-direction="desc"]::after {
+  content: '▼';
+}
+
+.table-scroll th:first-child,
+.table-scroll td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
 #add-transaction-form {
   display: flex;
   flex-wrap: wrap;

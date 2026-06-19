@@ -16,7 +16,25 @@
     fxResult: null,
     filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
     demoMode: false,
+    sort: { column: null, direction: 'asc' },
   };
+
+  function compareForSort(a, b, column) {
+    const av = a[column];
+    const bv = b[column];
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return String(av ?? '').localeCompare(String(bv ?? ''));
+    }
+    const an = Number.isFinite(av) ? av : -Infinity;
+    const bn = Number.isFinite(bv) ? bv : -Infinity;
+    return an - bn;
+  }
+
+  function sortSymbolPnl(rows, sort) {
+    if (!sort.column) return rows;
+    const sorted = [...rows].sort((a, b) => compareForSort(a, b, sort.column));
+    return sort.direction === 'desc' ? sorted.reverse() : sorted;
+  }
 
   function reloadTransactionsFromStorage() {
     state.transactions = [...storage.loadTransactions('TW'), ...storage.loadTransactions('US')];
@@ -74,7 +92,8 @@
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
     ui.renderTransactionTable(filteredTx, handleDeleteTransaction);
-    ui.renderSymbolPnlTable(symbolPnl, state.filters.displayCurrency);
+    ui.renderSymbolPnlTable(sortSymbolPnl(symbolPnl, state.sort), state.filters.displayCurrency);
+    ui.updateSortIndicators('symbol-pnl-table', state.sort);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
       onOverrideClear: handlePriceOverrideClear,
@@ -137,9 +156,20 @@
     render();
   }
 
+  let isRefreshing = false;
+
   async function handleRefreshAll() {
-    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
-    await refreshAllPrices();
+    if (isRefreshing) return;
+    isRefreshing = true;
+    const btn = document.getElementById('refresh-all-btn');
+    btn.disabled = true;
+    try {
+      state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
+      await refreshAllPrices();
+    } finally {
+      btn.disabled = false;
+      isRefreshing = false;
+    }
   }
 
   function handleExport(market) {
@@ -198,6 +228,18 @@
     document.getElementById('filter-currency').addEventListener('change', (e) => handleFilterChange({ displayCurrency: e.target.value }));
 
     document.getElementById('refresh-all-btn').addEventListener('click', handleRefreshAll);
+
+    document.querySelectorAll('#symbol-pnl-table thead th[data-sort-key]').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (state.sort.column === key) {
+          state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sort = { column: key, direction: 'asc' };
+        }
+        render();
+      });
+    });
 
     document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
       e.preventDefault();

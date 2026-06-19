@@ -2,3 +2,4 @@ db/*.csv
 !db/tw-stock.example.csv
 !db/us-stock.example.csv
 .vercel
+.claude

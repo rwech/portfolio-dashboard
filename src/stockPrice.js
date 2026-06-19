@@ -18,8 +18,9 @@
 
     let liveData = null;
     try {
+      const apiBaseUrl = window.PFD.config?.apiBaseUrl || '';
       const res = await fetch(
-        `/api/stock-price?symbols=${encodeURIComponent(yahooSymbols.join(','))}`,
+        `${apiBaseUrl}/api/stock-price?symbols=${encodeURIComponent(yahooSymbols.join(','))}`,
         { signal: controller.signal }
       );
       if (res.ok) {

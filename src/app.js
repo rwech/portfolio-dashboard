@@ -147,22 +147,34 @@
     }
   }
 
-  function handleImportText(text, market, mode) {
+  function handleReplaceImportText(text, market) {
     const { rows, errors } = csv.parseCsv(text, market);
-    loadRowsIntoMarket(rows, market, mode);
+    loadRowsIntoMarket(rows, market, 'replace');
     reloadTransactionsFromStorage();
-    ui.renderImportErrors(errors);
+    const marketLabel = market === 'TW' ? '台股' : '美股';
+    ui.renderImportFeedback('import-errors', { notice: `已使用匯入資料取代現有的${marketLabel}交易紀錄（${rows.length} 筆）`, errors });
     render();
   }
 
-  async function handleLoadExample(mode) {
+  async function handleLoadExample() {
     for (const market of ['TW', 'US']) {
       const { rows } = await csv.fetchExampleCsv(market);
-      loadRowsIntoMarket(rows, market, mode);
+      loadRowsIntoMarket(rows, market, 'replace');
     }
     reloadTransactionsFromStorage();
+    ui.renderImportFeedback('import-errors', { notice: '已使用範例資料取代現有的台股與美股交易紀錄' });
     render();
     await handleRefreshAllPrices();
+  }
+
+  function handleAppendImportText(text, market) {
+    const { rows, errors } = csv.parseCsv(text, market);
+    loadRowsIntoMarket(rows, market, 'append');
+    reloadTransactionsFromStorage();
+    storage.incrementUnexportedChanges();
+    const marketLabel = market === 'TW' ? '台股' : '美股';
+    ui.renderImportFeedback('add-tx-import-feedback', { notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`, errors });
+    render();
   }
 
   function wireStaticHandlers() {
@@ -206,17 +218,24 @@
       handleExport('US');
     });
 
-    document.getElementById('load-example-btn').addEventListener('click', () => {
-      handleLoadExample(document.getElementById('import-mode-select').value);
-    });
+    document.getElementById('load-example-btn').addEventListener('click', handleLoadExample);
 
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const market = document.getElementById('import-market-select').value;
-      const mode = document.getElementById('import-mode-select').value;
       const reader = new FileReader();
-      reader.onload = () => handleImportText(String(reader.result), market, mode);
+      reader.onload = () => handleReplaceImportText(String(reader.result), market);
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('add-tx-import-csv-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const market = document.getElementById('add-tx-import-market-select').value;
+      const reader = new FileReader();
+      reader.onload = () => handleAppendImportText(String(reader.result), market);
       reader.readAsText(file);
       e.target.value = '';
     });

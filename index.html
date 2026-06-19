@@ -52,8 +52,7 @@
     <section id="summary-cards" aria-label="績效總覽"></section>
 
     <section id="charts" aria-label="圖表">
-      <canvas id="roi-bar-chart"></canvas>
-      <canvas id="allocation-chart"></canvas>
+      <div class="bar-chart-wrap"><canvas id="allocation-chart"></canvas></div>
     </section>
   </div>
 
@@ -61,7 +60,8 @@
     <section id="symbol-pnl" aria-label="個股損益">
       <h2>個股損益</h2>
       <section id="symbol-charts" aria-label="個股配置圖">
-        <canvas id="symbol-allocation-chart"></canvas>
+        <canvas id="roi-bar-chart"></canvas>
+        <div class="bar-chart-wrap symbol-bar-chart-wrap"><canvas id="symbol-allocation-chart"></canvas></div>
       </section>
       <div class="table-scroll">
         <table id="symbol-pnl-table">
@@ -125,29 +125,38 @@
         </label>
         <button type="submit">新增</button>
       </form>
+
+      <h3>批次匯入 CSV（新增至現有資料）</h3>
+      <div class="toolbar">
+        <label class="file-input-label">匯入 CSV
+          <input id="add-tx-import-csv-input" type="file" accept=".csv" hidden />
+        </label>
+        <select id="add-tx-import-market-select">
+          <option value="TW">匯入為台股</option>
+          <option value="US">匯入為美股</option>
+        </select>
+      </div>
+      <div id="add-tx-import-feedback" class="import-feedback" hidden></div>
     </section>
   </div>
 
   <div class="tab-panel" data-tab-panel="transactions" hidden>
     <section id="transactions" aria-label="交易紀錄">
       <h2>交易紀錄</h2>
+      <p class="hint">匯入 CSV 與載入範例資料會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。</p>
       <div class="toolbar">
         <button id="export-tw-btn" type="button">匯出台股 CSV</button>
         <button id="export-us-btn" type="button">匯出美股 CSV</button>
-        <label class="file-input-label">匯入 CSV
+        <label class="file-input-label">匯入 CSV（取代）
           <input id="import-csv-input" type="file" accept=".csv" hidden />
         </label>
         <select id="import-market-select">
           <option value="TW">匯入為台股</option>
           <option value="US">匯入為美股</option>
         </select>
-        <select id="import-mode-select">
-          <option value="append">新增至現有資料</option>
-          <option value="replace">取代現有資料</option>
-        </select>
-        <button id="load-example-btn" type="button">載入範例資料</button>
+        <button id="load-example-btn" type="button">載入範例資料（取代）</button>
       </div>
-      <div id="import-errors" hidden></div>
+      <div id="import-errors" class="import-feedback" hidden></div>
       <div class="table-scroll">
         <table id="transactions-table">
           <thead>

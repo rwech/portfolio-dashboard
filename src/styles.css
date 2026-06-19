@@ -128,6 +128,33 @@ section {
 .positive { color: var(--success); }
 .negative { color: var(--danger); }
 
+.summary-card .sub-fields {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+}
+
+.summary-card .sub-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+}
+
+.summary-card .sub-field .sub-label {
+  color: var(--text-muted);
+}
+
+.summary-card .sub-field .sub-value {
+  font-weight: 600;
+}
+
+.import-notice {
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
 #charts {
   display: flex;
   flex-wrap: wrap;
@@ -141,6 +168,23 @@ section {
 
 #symbol-charts canvas {
   width: 100%;
+}
+
+.bar-chart-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 110px;
+}
+
+.symbol-bar-chart-wrap {
+  height: 160px;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
 }
 
 .table-scroll {
@@ -274,13 +318,16 @@ button[type="submit"]:hover {
 .badge-tw { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
 .badge-us { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
 
-#import-errors {
-  background: rgba(255, 77, 109, 0.12);
-  color: var(--danger);
+.import-feedback {
   padding: 0.5rem;
   border-radius: 6px;
   font-size: 0.85rem;
   margin-bottom: 0.5rem;
+  background: var(--surface-alt);
+}
+
+.import-feedback .import-error-list {
+  color: var(--danger);
 }
 
 footer {

@@ -72,7 +72,7 @@
       options: {
         indexAxis: 'y',
         responsive: true,
-        aspectRatio: 5,
+        maintainAspectRatio: false,
         scales: {
           x: { stacked: true, min: 0, max: 100, ticks: { callback: (v) => `${v}%` } },
           y: { stacked: true },
@@ -113,7 +113,7 @@
       options: {
         indexAxis: 'y',
         responsive: true,
-        aspectRatio: 4,
+        maintainAspectRatio: false,
         scales: {
           x: { stacked: true, min: 0, max: 100, ticks: { callback: (v) => `${v}%` } },
           y: { stacked: true },

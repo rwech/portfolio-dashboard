@@ -52,15 +52,30 @@
 
   function renderSummaryCards(summary) {
     const container = document.getElementById('summary-cards');
+    const totalGain = summary.realizedGain + summary.unrealizedGain;
     const cards = [
-      ['總投入成本', formatMoney(summary.totalInvested, summary.currency), ''],
-      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency), ''],
-      ['已實現損益', withSign(formatMoney(summary.realizedGain, summary.currency), summary.realizedGain), signedClass(summary.realizedGain)],
-      ['未實現損益', withSign(formatMoney(summary.unrealizedGain, summary.currency), summary.unrealizedGain), signedClass(summary.unrealizedGain)],
-      ['ROI%', withSign(formatPct(summary.roiPct), summary.roiPct), signedClass(summary.roiPct)],
+      ['總投入成本', formatMoney(summary.totalInvested, summary.currency), '', null],
+      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency), '', null],
+      [
+        '總損益',
+        withSign(formatMoney(totalGain, summary.currency), totalGain),
+        signedClass(totalGain),
+        [
+          ['已實現', withSign(formatMoney(summary.realizedGain, summary.currency), summary.realizedGain), signedClass(summary.realizedGain)],
+          ['未實現', withSign(formatMoney(summary.unrealizedGain, summary.currency), summary.unrealizedGain), signedClass(summary.unrealizedGain)],
+        ],
+      ],
+      ['ROI%', withSign(formatPct(summary.roiPct), summary.roiPct), signedClass(summary.roiPct), null],
     ];
     container.innerHTML = cards
-      .map(([label, value, cls]) => `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`)
+      .map(([label, value, cls, subFields]) => {
+        const subHtml = subFields
+          ? `<div class="sub-fields">${subFields
+              .map(([sLabel, sValue, sCls]) => `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`)
+              .join('')}</div>`
+          : '';
+        return `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div>${subHtml}</div>`;
+      })
       .join('');
   }
 
@@ -178,17 +193,24 @@
     });
   }
 
-  function renderImportErrors(errors) {
-    const el = document.getElementById('import-errors');
-    if (!errors || errors.length === 0) {
+  function renderImportFeedback(elId, { notice, errors } = {}) {
+    const el = document.getElementById(elId);
+    const parts = [];
+    if (notice) parts.push(`<div class="import-notice">${notice}</div>`);
+    if (errors && errors.length) {
+      parts.push(
+        `<div class="import-error-list">匯入時略過 ${errors.length} 列：<ul>${errors
+          .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
+          .join('')}</ul></div>`
+      );
+    }
+    if (!parts.length) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
     el.hidden = false;
-    el.innerHTML = `匯入時略過 ${errors.length} 列：<ul>${errors
-      .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
-      .join('')}</ul>`;
+    el.innerHTML = parts.join('');
   }
 
   window.PFD = window.PFD || {};
@@ -200,7 +222,7 @@
     renderSymbolPnlTable,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
-    renderImportErrors,
+    renderImportFeedback,
     initTabs,
     formatMoney,
     formatPct,

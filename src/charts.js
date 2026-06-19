@@ -2,6 +2,8 @@
   Chart.defaults.color = '#e6f1ff';
   Chart.defaults.borderColor = 'rgba(0, 229, 255, 0.15)';
 
+  const SEGMENT_PALETTE = ['#00e5ff', '#b14aff', '#ffd166', '#39ff8f', '#ff4d6d', '#5cf2ff', '#ffa94d', '#74c0fc'];
+
   let roiChart = null;
   let allocationChart = null;
   let symbolAllocationChart = null;
@@ -53,24 +55,31 @@
     const total = amounts[0] + amounts[1];
     if (!total) return;
 
-    const percentages = amounts.map((v) => (v / total) * 100);
+    const labels = ['台股', '美股'];
 
     allocationChart = new Chart(canvasEl, {
       type: 'bar',
       data: {
-        labels: ['台股', '美股'],
-        datasets: [{ data: percentages, backgroundColor: ['#ffd166', '#b14aff'] }],
+        labels: ['持股成本配置'],
+        datasets: labels.map((label, i) => ({
+          label,
+          data: [(amounts[i] / total) * 100],
+          backgroundColor: ['#ffd166', '#b14aff'][i],
+        })),
       },
       options: {
         indexAxis: 'y',
         responsive: true,
-        scales: { x: { min: 0, max: 100, ticks: { callback: (v) => `${v}%` } } },
+        aspectRatio: 5,
+        scales: {
+          x: { stacked: true, min: 0, max: 100, ticks: { callback: (v) => `${v}%` } },
+          y: { stacked: true },
+        },
         plugins: {
           title: { display: true, text: '持股成本配置' },
-          legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.parsed.x.toFixed(1)}% (${amounts[ctx.dataIndex].toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}% (${amounts[ctx.datasetIndex].toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
             },
           },
         },
@@ -88,24 +97,31 @@
     if (!total) return;
 
     const sorted = [...held].sort((a, b) => b.value - a.value);
-    const percentages = sorted.map((s) => (s.value / total) * 100);
 
     symbolAllocationChart = new Chart(canvasEl, {
       type: 'bar',
       data: {
-        labels: sorted.map((s) => s.symbol),
-        datasets: [{ data: percentages, backgroundColor: '#00e5ff' }],
+        labels: ['持股成本占比'],
+        datasets: sorted.map((s, i) => ({
+          label: s.symbol,
+          data: [(s.value / total) * 100],
+          backgroundColor: SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
+        })),
       },
       options: {
         indexAxis: 'y',
         responsive: true,
-        scales: { x: { min: 0, max: 100, ticks: { callback: (v) => `${v}%` } } },
+        aspectRatio: 4,
+        scales: {
+          x: { stacked: true, min: 0, max: 100, ticks: { callback: (v) => `${v}%` } },
+          y: { stacked: true },
+        },
         plugins: {
           title: { display: true, text: '個股持股成本占比' },
-          legend: { display: false },
+          legend: { position: 'bottom' },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.parsed.x.toFixed(1)}% (${sorted[ctx.dataIndex].value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
+              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}% (${sorted[ctx.datasetIndex].value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
             },
           },
         },

@@ -14,7 +14,10 @@
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // only enforce array shape when the caller expects an array
+      if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
+      return parsed;
     } catch {
       return fallback;
     }
@@ -33,9 +36,7 @@
   }
 
   function loadTransactions(market) {
-    const list = readJson(txKey(market), []);
-    if (!Array.isArray(list)) return [];
-    return list.map((tx) =>
+    return readJson(txKey(market), []).map((tx) =>
       typeof tx.action === 'string'
         ? { ...tx, action: tx.action.toLowerCase() }
         : tx,

@@ -5,7 +5,9 @@ const FETCH_TIMEOUT_MS = 6000;
 const DEFAULT_ALLOWED_ORIGINS = ['https://rwech.github.io'];
 
 function isAllowedOrigin(origin) {
-  const allowed = (process.env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(','))
+  const allowed = (
+    process.env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(',')
+  )
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
@@ -16,10 +18,13 @@ async function fetchYahooChart(yahooSymbol) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(`${YAHOO_CHART_URL}${encodeURIComponent(yahooSymbol)}`, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-    });
+    const res = await fetch(
+      `${YAHOO_CHART_URL}${encodeURIComponent(yahooSymbol)}`,
+      {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+      },
+    );
     if (!res.ok) return null;
     const json = await res.json();
     const meta = json?.chart?.result?.[0]?.meta;

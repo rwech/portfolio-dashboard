@@ -7,11 +7,15 @@ const { escapeHtml } = ui;
 
 describe('ui.escapeHtml', () => {
   it('escapes tags so injected markup cannot execute', () => {
-    expect(escapeHtml('<img src=x onerror=alert(1)>')).toBe('&lt;img src=x onerror=alert(1)&gt;');
+    expect(escapeHtml('<img src=x onerror=alert(1)>')).toBe(
+      '&lt;img src=x onerror=alert(1)&gt;',
+    );
   });
 
   it('escapes quotes to prevent breaking out of an HTML attribute', () => {
-    expect(escapeHtml('"><script>1</script>')).toBe('&quot;&gt;&lt;script&gt;1&lt;/script&gt;');
+    expect(escapeHtml('"><script>1</script>')).toBe(
+      '&quot;&gt;&lt;script&gt;1&lt;/script&gt;',
+    );
   });
 
   it('leaves plain text unchanged', () => {
@@ -60,11 +64,17 @@ describe('ui.updateSortIndicators', () => {
     const symbolTh = document.querySelector('th[data-sort-key="symbol"]');
     const roiTh = document.querySelector('th[data-sort-key="roiPct"]');
 
-    ui.updateSortIndicators('symbol-pnl-table', { column: 'symbol', direction: 'asc' });
+    ui.updateSortIndicators('symbol-pnl-table', {
+      column: 'symbol',
+      direction: 'asc',
+    });
     expect(symbolTh.dataset.sortDirection).toBe('asc');
     expect(roiTh.dataset.sortDirection).toBeUndefined();
 
-    ui.updateSortIndicators('symbol-pnl-table', { column: 'roiPct', direction: 'desc' });
+    ui.updateSortIndicators('symbol-pnl-table', {
+      column: 'roiPct',
+      direction: 'desc',
+    });
     expect(symbolTh.dataset.sortDirection).toBeUndefined();
     expect(roiTh.dataset.sortDirection).toBe('desc');
   });
@@ -72,8 +82,14 @@ describe('ui.updateSortIndicators', () => {
   it('clears all indicators when no column is sorted', () => {
     setupTable();
     const symbolTh = document.querySelector('th[data-sort-key="symbol"]');
-    ui.updateSortIndicators('symbol-pnl-table', { column: 'symbol', direction: 'asc' });
-    ui.updateSortIndicators('symbol-pnl-table', { column: null, direction: 'asc' });
+    ui.updateSortIndicators('symbol-pnl-table', {
+      column: 'symbol',
+      direction: 'asc',
+    });
+    ui.updateSortIndicators('symbol-pnl-table', {
+      column: null,
+      direction: 'asc',
+    });
     expect(symbolTh.dataset.sortDirection).toBeUndefined();
   });
 });
@@ -94,7 +110,11 @@ describe('ui.renderFilterControls', () => {
     };
     ui.renderFilterControls(state);
     const yearSelect = document.getElementById('filter-year');
-    expect([...yearSelect.options].map((o) => o.value)).toEqual(['all', '2024', '2023']);
+    expect([...yearSelect.options].map((o) => o.value)).toEqual([
+      'all',
+      '2024',
+      '2023',
+    ]);
     expect(yearSelect.value).toBe('2024');
     expect(document.getElementById('filter-market').value).toBe('TW');
     expect(document.getElementById('filter-currency').value).toBe('USD');
@@ -117,23 +137,45 @@ describe('ui.renderFxStatusPanel', () => {
 
   it('shows an unavailable message when there is no fx result', () => {
     ui.renderFxStatusPanel(null);
-    expect(document.getElementById('fx-status-text').textContent).toBe('匯率不可用');
+    expect(document.getElementById('fx-status-text').textContent).toBe(
+      '匯率不可用',
+    );
   });
 
   it('labels a live rate', () => {
-    ui.renderFxStatusPanel({ rate: 32.1234, source: 'live', fetchedAt: new Date().toISOString() });
-    expect(document.getElementById('fx-status-text').textContent).toContain('即時');
-    expect(document.getElementById('fx-status-text').textContent).toContain('32.1234');
+    ui.renderFxStatusPanel({
+      rate: 32.1234,
+      source: 'live',
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(document.getElementById('fx-status-text').textContent).toContain(
+      '即時',
+    );
+    expect(document.getElementById('fx-status-text').textContent).toContain(
+      '32.1234',
+    );
   });
 
   it('labels a stale cached rate', () => {
-    ui.renderFxStatusPanel({ rate: 32, source: 'stale-cache', fetchedAt: new Date().toISOString() });
-    expect(document.getElementById('fx-status-text').textContent).toContain('過期快取');
+    ui.renderFxStatusPanel({
+      rate: 32,
+      source: 'stale-cache',
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(document.getElementById('fx-status-text').textContent).toContain(
+      '過期快取',
+    );
   });
 
   it('falls back to the raw source string for an unrecognized source', () => {
-    ui.renderFxStatusPanel({ rate: 32, source: 'mystery', fetchedAt: new Date().toISOString() });
-    expect(document.getElementById('fx-status-text').textContent).toContain('mystery');
+    ui.renderFxStatusPanel({
+      rate: 32,
+      source: 'mystery',
+      fetchedAt: new Date().toISOString(),
+    });
+    expect(document.getElementById('fx-status-text').textContent).toContain(
+      'mystery',
+    );
   });
 });
 
@@ -143,7 +185,14 @@ describe('ui.renderSummaryCards', () => {
   });
 
   it('renders total/cost/gain/ROI cards with a positive sign and class on gains', () => {
-    ui.renderSummaryCards({ currency: 'TWD', totalInvested: 1000, costBasisHeld: 800, realizedGain: 100, unrealizedGain: 50, roiPct: 15 });
+    ui.renderSummaryCards({
+      currency: 'TWD',
+      totalInvested: 1000,
+      costBasisHeld: 800,
+      realizedGain: 100,
+      unrealizedGain: 50,
+      roiPct: 15,
+    });
     const html = document.getElementById('summary-cards').innerHTML;
     expect(html).toContain('+150');
     expect(html).toContain('positive');
@@ -151,7 +200,14 @@ describe('ui.renderSummaryCards', () => {
   });
 
   it('renders losses with a negative class and no leading plus sign', () => {
-    ui.renderSummaryCards({ currency: 'TWD', totalInvested: 1000, costBasisHeld: 800, realizedGain: -100, unrealizedGain: -50, roiPct: -15 });
+    ui.renderSummaryCards({
+      currency: 'TWD',
+      totalInvested: 1000,
+      costBasisHeld: 800,
+      realizedGain: -100,
+      unrealizedGain: -50,
+      roiPct: -15,
+    });
     const html = document.getElementById('summary-cards').innerHTML;
     expect(html).toContain('negative');
     expect(html).not.toContain('+-150');
@@ -173,7 +229,8 @@ describe('ui.renderDemoModeBanner', () => {
 
 describe('ui.renderBackupReminderBanner', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="backup-reminder-banner" hidden><span id="backup-reminder-text"></span></div>';
+    document.body.innerHTML =
+      '<div id="backup-reminder-banner" hidden><span id="backup-reminder-text"></span></div>';
   });
 
   it('stays hidden below the threshold', () => {
@@ -183,8 +240,12 @@ describe('ui.renderBackupReminderBanner', () => {
 
   it('shows the count once the threshold is reached', () => {
     ui.renderBackupReminderBanner(5, 5);
-    expect(document.getElementById('backup-reminder-banner').hidden).toBe(false);
-    expect(document.getElementById('backup-reminder-text').textContent).toContain('5');
+    expect(document.getElementById('backup-reminder-banner').hidden).toBe(
+      false,
+    );
+    expect(
+      document.getElementById('backup-reminder-text').textContent,
+    ).toContain('5');
   });
 });
 
@@ -217,19 +278,25 @@ describe('ui.renderImportFeedback', () => {
 
 describe('ui.renderPriceOverridePanel', () => {
   const baseStat = {
-    symbol: 'AAPL', name: 'Apple', market: 'US', remainingQty: 10, currentPrice: 200,
-    priceSource: 'live', priceFetchedAt: new Date().toISOString(),
+    symbol: 'AAPL',
+    name: 'Apple',
+    market: 'US',
+    remainingQty: 10,
+    currentPrice: 200,
+    priceSource: 'live',
+    priceFetchedAt: new Date().toISOString(),
   };
 
   beforeEach(() => {
-    document.body.innerHTML = '<table id="price-override-table"><tbody></tbody></table>';
+    document.body.innerHTML =
+      '<table id="price-override-table"><tbody></tbody></table>';
   });
 
   it('only lists currently-held symbols and disables clear when there is no override', () => {
     ui.renderPriceOverridePanel(
       [baseStat, { ...baseStat, symbol: 'SOLD', remainingQty: 0 }],
       {},
-      { onOverrideChange: vi.fn(), onOverrideClear: vi.fn() }
+      { onOverrideChange: vi.fn(), onOverrideClear: vi.fn() },
     );
     const rows = document.querySelectorAll('#price-override-table tbody tr');
     expect(rows).toHaveLength(1);
@@ -238,7 +305,11 @@ describe('ui.renderPriceOverridePanel', () => {
 
   it('saves a valid manually-entered price and ignores an invalid one', () => {
     const onOverrideChange = vi.fn();
-    ui.renderPriceOverridePanel([baseStat], {}, { onOverrideChange, onOverrideClear: vi.fn() });
+    ui.renderPriceOverridePanel(
+      [baseStat],
+      {},
+      { onOverrideChange, onOverrideClear: vi.fn() },
+    );
     const row = document.querySelector('#price-override-table tbody tr');
 
     row.querySelector('.override-input').value = '-5';
@@ -252,7 +323,11 @@ describe('ui.renderPriceOverridePanel', () => {
 
   it('clears an existing override and enables the clear button when one is set', () => {
     const onOverrideClear = vi.fn();
-    ui.renderPriceOverridePanel([baseStat], { AAPL: 199 }, { onOverrideChange: vi.fn(), onOverrideClear });
+    ui.renderPriceOverridePanel(
+      [baseStat],
+      { AAPL: 199 },
+      { onOverrideChange: vi.fn(), onOverrideClear },
+    );
     const row = document.querySelector('#price-override-table tbody tr');
     expect(row.querySelector('.override-clear-btn').disabled).toBe(false);
     row.querySelector('.override-clear-btn').click();
@@ -277,11 +352,27 @@ describe('ui.initTabs', () => {
     ui.initTabs();
     document.querySelector('[data-tab="symbols"]').click();
 
-    expect(document.querySelector('[data-tab="symbols"]').classList.contains('active')).toBe(true);
-    expect(document.querySelector('[data-tab="overview"]').classList.contains('active')).toBe(false);
-    expect(document.querySelector('[data-tab="overview"]').getAttribute('aria-selected')).toBe('false');
-    expect(document.querySelector('[data-tab-panel="overview"]').hidden).toBe(true);
-    expect(document.querySelector('[data-tab-panel="symbols"]').hidden).toBe(false);
+    expect(
+      document
+        .querySelector('[data-tab="symbols"]')
+        .classList.contains('active'),
+    ).toBe(true);
+    expect(
+      document
+        .querySelector('[data-tab="overview"]')
+        .classList.contains('active'),
+    ).toBe(false);
+    expect(
+      document
+        .querySelector('[data-tab="overview"]')
+        .getAttribute('aria-selected'),
+    ).toBe('false');
+    expect(document.querySelector('[data-tab-panel="overview"]').hidden).toBe(
+      true,
+    );
+    expect(document.querySelector('[data-tab-panel="symbols"]').hidden).toBe(
+      false,
+    );
   });
 
   it('resizes the charts when switching back to the overview tab', () => {
@@ -311,7 +402,9 @@ describe('ui.initDropdownMenus', () => {
     const [first] = document.querySelectorAll('.dropdown');
     first.querySelector('.dropdown-toggle').click();
     expect(first.querySelector('.dropdown-menu').hidden).toBe(false);
-    expect(first.querySelector('.dropdown-toggle').getAttribute('aria-expanded')).toBe('true');
+    expect(
+      first.querySelector('.dropdown-toggle').getAttribute('aria-expanded'),
+    ).toBe('true');
   });
 
   it('closes an open menu when its own toggle is clicked again', () => {

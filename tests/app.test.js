@@ -4,13 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const indexHtml = readFileSync(path.resolve(__dirname, '../index.html'), 'utf-8');
+const indexHtml = readFileSync(
+  path.resolve(__dirname, '../index.html'),
+  'utf-8',
+);
 const bodyHtml = indexHtml.match(/<body>([\s\S]*)<\/body>/)[1];
 
 // Demo dataset deliberately covers a different year range than the "real" data
 // imported in tests below (2026), mirroring the bundled db/*.example.csv files.
-const EXAMPLE_TW_CSV = 'date,symbol,name,action,quantity,price,fee\n2024-03-01,2330,台積電,buy,1000,500,100\n';
-const EXAMPLE_US_CSV = 'date,symbol,name,action,quantity,price,fee\n2024-03-01,AAPL,Apple Inc.,buy,10,180,1\n';
+const EXAMPLE_TW_CSV =
+  'date,symbol,name,action,quantity,price,fee\n2024-03-01,2330,台積電,buy,1000,500,100\n';
+const EXAMPLE_US_CSV =
+  'date,symbol,name,action,quantity,price,fee\n2024-03-01,AAPL,Apple Inc.,buy,10,180,1\n';
 
 class FakeChart {
   resize() {}
@@ -21,11 +26,19 @@ FakeChart.defaults = {};
 function makeFetchMock() {
   return vi.fn(async (url) => {
     const u = String(url);
-    if (u.includes('tw-stock.example.csv')) return { ok: true, text: async () => EXAMPLE_TW_CSV };
-    if (u.includes('us-stock.example.csv')) return { ok: true, text: async () => EXAMPLE_US_CSV };
-    if (u.includes('tw-stock.csv') || u.includes('us-stock.csv')) return { ok: false, text: async () => '' };
-    if (u.includes('open.er-api.com')) return { ok: true, json: async () => ({ result: 'success', rates: { TWD: 32 } }) };
-    if (u.includes('/api/stock-price')) return { ok: true, json: async () => ({}) };
+    if (u.includes('tw-stock.example.csv'))
+      return { ok: true, text: async () => EXAMPLE_TW_CSV };
+    if (u.includes('us-stock.example.csv'))
+      return { ok: true, text: async () => EXAMPLE_US_CSV };
+    if (u.includes('tw-stock.csv') || u.includes('us-stock.csv'))
+      return { ok: false, text: async () => '' };
+    if (u.includes('open.er-api.com'))
+      return {
+        ok: true,
+        json: async () => ({ result: 'success', rates: { TWD: 32 } }),
+      };
+    if (u.includes('/api/stock-price'))
+      return { ok: true, json: async () => ({}) };
     return { ok: false, text: async () => '', json: async () => ({}) };
   });
 }
@@ -67,7 +80,8 @@ describe('app: demo mode / filter / import interaction', () => {
     const app = await setupApp();
     expect(txTableRowCount()).toBe(0); // no seed files exist, so a fresh install starts empty
 
-    const importedCsv = 'date,symbol,name,action,quantity,price,fee\n2026-01-15,0050,元大台灣50,buy,100,150,20\n';
+    const importedCsv =
+      'date,symbol,name,action,quantity,price,fee\n2026-01-15,0050,元大台灣50,buy,100,150,20\n';
     app.handleReplaceImportText(importedCsv, 'TW');
     app.handleFilterChange({ year: '2026' });
     expect(txTableRowCount()).toBe(1); // real imported row visible under the matching year filter
@@ -84,25 +98,45 @@ describe('app: demo mode / filter / import interaction', () => {
 
   it('blocks add/import/export while demo mode is on and leaves real data untouched', async () => {
     const app = await setupApp();
-    const importedCsv = 'date,symbol,name,action,quantity,price,fee\n2026-01-15,0050,元大台灣50,buy,100,150,20\n';
+    const importedCsv =
+      'date,symbol,name,action,quantity,price,fee\n2026-01-15,0050,元大台灣50,buy,100,150,20\n';
     app.handleReplaceImportText(importedCsv, 'TW');
 
     await app.setDemoMode(true);
 
-    const replacementCsv = 'date,symbol,name,action,quantity,price,fee\n2026-02-01,2330,台積電,buy,50,600,30\n';
+    const replacementCsv =
+      'date,symbol,name,action,quantity,price,fee\n2026-02-01,2330,台積電,buy,50,600,30\n';
     app.handleReplaceImportText(replacementCsv, 'TW');
-    app.handleAddTransaction('TW', { date: '2026-03-01', symbol: 'XYZ', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2026-03-01',
+      symbol: 'XYZ',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
     expect(global.alert).toHaveBeenCalled();
 
     await app.setDemoMode(false);
     expect(txTableRowCount()).toBe(1); // the original import, not the blocked replacement/add
-    expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('0050');
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('0050');
   });
 
   it('also blocks delete and price-override edits while demo mode is on', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2026-01-01', symbol: '0050', name: '', action: 'buy', quantity: 10, price: 100, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2026-01-01',
+      symbol: '0050',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
     await app.setDemoMode(true);
 
     const txId = app.state.transactions[0].id;
@@ -115,13 +149,45 @@ describe('app: demo mode / filter / import interaction', () => {
     expect(app.state.transactions).toHaveLength(1); // delete was blocked
   });
 
+  it('also blocks starting an edit while demo mode is on', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2026-01-01',
+      symbol: '0050',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+    await app.setDemoMode(true);
+
+    const txId = app.state.transactions[0].id;
+    app.handleEditStart(txId);
+    expect(global.alert).toHaveBeenCalled();
+    expect(app.state.editingTxId).toBeNull();
+
+    await app.setDemoMode(false);
+  });
+
   it('also blocks export and append-import while demo mode is on', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2026-01-01', symbol: '0050', name: '', action: 'buy', quantity: 10, price: 100, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2026-01-01',
+      symbol: '0050',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
     await app.setDemoMode(true);
 
     app.handleExport('TW');
-    app.handleAppendImportText('date,symbol,name,action,quantity,price,fee\n2026-02-01,XYZ,,buy,1,1,0\n', 'TW');
+    app.handleAppendImportText(
+      'date,symbol,name,action,quantity,price,fee\n2026-02-01,XYZ,,buy,1,1,0\n',
+      'TW',
+    );
     expect(global.alert).toHaveBeenCalledTimes(2);
 
     await app.setDemoMode(false);
@@ -136,41 +202,239 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
 
   it('handleAddTransaction appends a row and re-renders the table', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '台積電', action: 'buy', quantity: 100, price: 500, fee: 20 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'buy',
+      quantity: 100,
+      price: 500,
+      fee: 20,
+    });
     expect(txTableRowCount()).toBe(1);
-    expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('2330');
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('2330');
+  });
+
+  it('handleAddTransaction rejects an empty symbol and a malformed date the same way CSV import does', async () => {
+    const app = await setupApp();
+
+    const missingSymbol = app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    expect(missingSymbol).toBe(false);
+    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+
+    const badDate = app.handleAddTransaction('TW', {
+      date: '2024/01/01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    expect(badDate).toBe(false);
+    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(txTableRowCount()).toBe(0);
+  });
+
+  it('handleEditSave rejects an empty symbol and a malformed date, not just bad quantity/price', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const txId = app.state.transactions[0].id;
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    let editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = '';
+    editingRow.querySelector('.save-edit-btn').click();
+    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+    expect(app.state.editingTxId).toBe(txId);
+
+    editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = 'AAA';
+    editingRow.querySelector('.edit-date').value = '';
+    editingRow.querySelector('.save-edit-btn').click();
+    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(app.state.editingTxId).toBe(txId);
   });
 
   it('handleReplaceImportText reports the US market label in its feedback notice', async () => {
     const app = await setupApp();
-    const csvText = 'date,symbol,name,action,quantity,price,fee\n2024-01-01,AAPL,,buy,1,1,0\n';
+    const csvText =
+      'date,symbol,name,action,quantity,price,fee\n2024-01-01,AAPL,,buy,1,1,0\n';
     app.handleReplaceImportText(csvText, 'US');
-    expect(document.getElementById('import-errors').textContent).toContain('美股');
+    expect(document.getElementById('import-errors').textContent).toContain(
+      '美股',
+    );
   });
 
   it('clicking a row delete button removes that transaction via handleDeleteTransaction', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'AAA', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'BBB', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'BBB',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     expect(txTableRowCount()).toBe(2);
 
-    const row = [...document.querySelectorAll('#transactions-table tbody tr')].find((tr) => tr.textContent.includes('AAA'));
+    const row = [
+      ...document.querySelectorAll('#transactions-table tbody tr'),
+    ].find((tr) => tr.textContent.includes('AAA'));
     row.querySelector('.delete-tx-btn').click();
 
     expect(txTableRowCount()).toBe(1);
-    expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('BBB');
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('BBB');
+  });
+
+  it('clicking the edit icon turns a row editable, and saving persists the changes via handleEditSave', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    expect(editingRow.querySelector('.edit-symbol').value).toBe('AAA');
+
+    editingRow.querySelector('.edit-symbol').value = 'ZZZ';
+    editingRow.querySelector('.edit-quantity').value = '5';
+    editingRow.querySelector('.save-edit-btn').click();
+
+    const savedRow = document.querySelector('#transactions-table tbody tr');
+    expect(savedRow.textContent).toContain('ZZZ');
+    expect(savedRow.querySelector('.edit-symbol')).toBeNull();
+    const stored = window.PFD.storage.loadTransactions('TW')[0];
+    expect(stored.symbol).toBe('ZZZ');
+    expect(stored.quantity).toBe(5);
+    expect(app.state.editingTxId).toBeNull();
+  });
+
+  it('canceling an in-progress edit discards changes and restores the static row', async () => {
+    await setupApp();
+    window.PFD.app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = 'CHANGED';
+    editingRow.querySelector('.cancel-edit-btn').click();
+
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.textContent).toContain('AAA');
+    expect(window.PFD.storage.loadTransactions('TW')[0].symbol).toBe('AAA');
+  });
+
+  it('rejects saving an edit with invalid quantity/price and keeps the row in edit mode', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-quantity').value = '0';
+    editingRow.querySelector('.save-edit-btn').click();
+
+    expect(global.alert).toHaveBeenCalled();
+    expect(app.state.editingTxId).not.toBeNull();
+    expect(
+      document.querySelector('#transactions-table tbody tr .edit-symbol'),
+    ).not.toBeNull();
+  });
+
+  it('deleting the row currently being edited clears editingTxId instead of leaving the edit form orphaned', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+
+    const txId = app.state.transactions[0].id;
+    app.handleEditStart(txId);
+    expect(app.state.editingTxId).toBe(txId);
+
+    app.handleDeleteTransaction(txId, 'TW');
+
+    expect(app.state.editingTxId).toBeNull();
+    expect(window.PFD.storage.loadTransactions('TW')).toHaveLength(0);
   });
 
   it('saving a manual price override updates the override panel and clearing it removes the override', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'AAPL', name: 'Apple', action: 'buy', quantity: 10, price: 100, fee: 0 });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAPL',
+      name: 'Apple',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
 
     const row = document.querySelector('#price-override-table tbody tr');
     row.querySelector('.override-input').value = '210';
     row.querySelector('.override-save-btn').click();
 
     const updatedRow = document.querySelector('#price-override-table tbody tr');
-    expect(updatedRow.querySelector('.override-clear-btn').disabled).toBe(false);
+    expect(updatedRow.querySelector('.override-clear-btn').disabled).toBe(
+      false,
+    );
     expect(window.PFD.storage.loadPriceOverrides()).toEqual({ AAPL: 210 });
 
     updatedRow.querySelector('.override-clear-btn').click();
@@ -188,7 +452,15 @@ describe('app: export and append-import', () => {
 
   it('handleExport triggers a CSV download and resets the unexported-change counter', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     expect(window.PFD.storage.loadUnexportedChangeCount()).toBeGreaterThan(0);
 
     app.handleExport('TW');
@@ -199,9 +471,18 @@ describe('app: export and append-import', () => {
 
   it('handleAppendImportText adds new rows on top of existing data for that market without replacing it', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'EXISTING', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'EXISTING',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
-    const appendCsv = 'date,symbol,name,action,quantity,price,fee\n2024-02-01,NEWROW,,buy,1,1,0\n';
+    const appendCsv =
+      'date,symbol,name,action,quantity,price,fee\n2024-02-01,NEWROW,,buy,1,1,0\n';
     app.handleAppendImportText(appendCsv, 'TW');
 
     expect(txTableRowCount()).toBe(2);
@@ -218,7 +499,15 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
 
   it('changing the filter selects updates state.filters and persists them', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
     const marketSelect = document.getElementById('filter-market');
     marketSelect.value = 'TW';
@@ -233,10 +522,28 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
 
   it('clicking a transactions-table sort header toggles direction on repeated clicks', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    app.handleAddTransaction('TW', { date: '2024-06-01', symbol: 'B', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'A',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    app.handleAddTransaction('TW', {
+      date: '2024-06-01',
+      symbol: 'B',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
-    const dateHeader = document.querySelector('#transactions-table thead th[data-sort-key="date"]');
+    const dateHeader = document.querySelector(
+      '#transactions-table thead th[data-sort-key="date"]',
+    );
     dateHeader.click();
     expect(app.state.txSort).toEqual({ column: 'date', direction: 'asc' });
     dateHeader.click();
@@ -247,17 +554,37 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     const app = await setupApp();
     app.state.txSort = { column: 'symbol', direction: 'desc' };
 
-    const dateHeader = document.querySelector('#transactions-table thead th[data-sort-key="date"]');
+    const dateHeader = document.querySelector(
+      '#transactions-table thead th[data-sort-key="date"]',
+    );
     dateHeader.click();
     expect(app.state.txSort).toEqual({ column: 'date', direction: 'asc' });
   });
 
   it('clicking a symbol-pnl-table sort header sorts by that column and toggles direction on repeated clicks', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'AAA', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'BBB', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'BBB',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
-    const roiHeader = document.querySelector('#symbol-pnl-table thead th[data-sort-key="roiPct"]');
+    const roiHeader = document.querySelector(
+      '#symbol-pnl-table thead th[data-sort-key="roiPct"]',
+    );
     roiHeader.click();
     expect(app.state.sort).toEqual({ column: 'roiPct', direction: 'asc' });
     roiHeader.click();
@@ -265,7 +592,9 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     roiHeader.click();
     expect(app.state.sort).toEqual({ column: 'roiPct', direction: 'asc' });
 
-    const symbolHeader = document.querySelector('#symbol-pnl-table thead th[data-sort-key="symbol"]');
+    const symbolHeader = document.querySelector(
+      '#symbol-pnl-table thead th[data-sort-key="symbol"]',
+    );
     symbolHeader.click();
     expect(app.state.sort).toEqual({ column: 'symbol', direction: 'asc' });
   });
@@ -276,8 +605,24 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     URL.revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'AAPL', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAPL',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
     document.getElementById('backup-reminder-export-btn').click();
 
@@ -314,7 +659,9 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
 
     expect(txTableRowCount()).toBe(1);
-    expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('GOOD');
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('GOOD');
     expect(form.elements.symbol.value).toBe('');
   });
 
@@ -331,7 +678,9 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
 
-    expect(app.state.transactions.find((tx) => tx.symbol === 'FEED').fee).toBe(3.5);
+    expect(app.state.transactions.find((tx) => tx.symbol === 'FEED').fee).toBe(
+      3.5,
+    );
   });
 
   it('submitting the add-transaction form with a blank fee defaults it to 0', async () => {
@@ -347,7 +696,9 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
 
-    expect(app.state.transactions.find((tx) => tx.symbol === 'NOFEE').fee).toBe(0);
+    expect(app.state.transactions.find((tx) => tx.symbol === 'NOFEE').fee).toBe(
+      0,
+    );
   });
 
   it('changing the theme select updates the document attribute and persists the choice', async () => {
@@ -366,7 +717,9 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
 
-    await vi.waitFor(() => expect(document.getElementById('demo-mode-banner').hidden).toBe(false));
+    await vi.waitFor(() =>
+      expect(document.getElementById('demo-mode-banner').hidden).toBe(false),
+    );
     expect(app.state.demoMode).toBe(true);
   });
 
@@ -376,7 +729,15 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     window.dispatchEvent(evt);
     expect(evt.defaultPrevented).toBe(false); // nothing unexported yet
 
-    window.PFD.app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'X', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    window.PFD.app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'X',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     const evt2 = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(evt2);
     expect(evt2.defaultPrevented).toBe(true);
@@ -397,7 +758,8 @@ describe('app: render with no usable fx rate', () => {
     global.alert = vi.fn();
     global.fetch = vi.fn(async (url) => {
       const u = String(url);
-      if (u.includes('open.er-api.com')) return { ok: false, text: async () => '' };
+      if (u.includes('open.er-api.com'))
+        return { ok: false, text: async () => '' };
       return { ok: false, text: async () => '', json: async () => ({}) };
     });
 
@@ -415,7 +777,9 @@ describe('app: render with no usable fx rate', () => {
     await app.init();
 
     expect(app.state.fxResult).toBeNull();
-    expect(document.getElementById('fx-status-text').textContent).toContain('不可用');
+    expect(document.getElementById('fx-status-text').textContent).toContain(
+      '不可用',
+    );
   });
 });
 
@@ -427,7 +791,10 @@ describe('app: restoring saved UI filters on init', () => {
   it('applies a previously saved market/currency filter on a fresh init', async () => {
     document.body.innerHTML = bodyHtml;
     localStorage.clear();
-    localStorage.setItem('pfd.ui.lastFilters', JSON.stringify({ year: 'all', market: 'US', displayCurrency: 'USD' }));
+    localStorage.setItem(
+      'pfd.ui.lastFilters',
+      JSON.stringify({ year: 'all', market: 'US', displayCurrency: 'USD' }),
+    );
     delete window.PFD;
     vi.resetModules();
     global.Chart = FakeChart;
@@ -447,7 +814,10 @@ describe('app: restoring saved UI filters on init', () => {
     const app = window.PFD.app;
     await app.init();
 
-    expect(app.state.filters).toMatchObject({ market: 'US', displayCurrency: 'USD' });
+    expect(app.state.filters).toMatchObject({
+      market: 'US',
+      displayCurrency: 'USD',
+    });
     expect(document.getElementById('filter-market').value).toBe('US');
   });
 });
@@ -459,39 +829,81 @@ describe('app: import via the file-input + dropdown wiring', () => {
 
   it('does nothing when the import file input changes with no file selected', async () => {
     await setupApp();
-    Object.defineProperty(document.getElementById('import-csv-input'), 'files', { value: [], configurable: true });
-    document.getElementById('import-csv-input').dispatchEvent(new Event('change'));
+    Object.defineProperty(
+      document.getElementById('import-csv-input'),
+      'files',
+      { value: [], configurable: true },
+    );
+    document
+      .getElementById('import-csv-input')
+      .dispatchEvent(new Event('change'));
     expect(txTableRowCount()).toBe(0);
   });
 
   it('does nothing when the add-tx import file input changes with no file selected', async () => {
     await setupApp();
-    Object.defineProperty(document.getElementById('add-tx-import-csv-input'), 'files', { value: [], configurable: true });
-    document.getElementById('add-tx-import-csv-input').dispatchEvent(new Event('change'));
+    Object.defineProperty(
+      document.getElementById('add-tx-import-csv-input'),
+      'files',
+      { value: [], configurable: true },
+    );
+    document
+      .getElementById('add-tx-import-csv-input')
+      .dispatchEvent(new Event('change'));
     expect(txTableRowCount()).toBe(0);
   });
 
-  it('picking a market from the import dropdown then choosing a file replaces that market\'s transactions', async () => {
+  it("picking a market from the import dropdown then choosing a file replaces that market's transactions", async () => {
     await setupApp();
-    document.querySelector('#import-menu .dropdown-item[data-market="TW"]').click();
+    document
+      .querySelector('#import-menu .dropdown-item[data-market="TW"]')
+      .click();
 
-    const file = new File(['date,symbol,name,action,quantity,price,fee\n2024-01-01,2330,,buy,1,1,0\n'], 'tw.csv', { type: 'text/csv' });
+    const file = new File(
+      [
+        'date,symbol,name,action,quantity,price,fee\n2024-01-01,2330,,buy,1,1,0\n',
+      ],
+      'tw.csv',
+      { type: 'text/csv' },
+    );
     const input = document.getElementById('import-csv-input');
-    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    Object.defineProperty(input, 'files', {
+      value: [file],
+      configurable: true,
+    });
     input.dispatchEvent(new Event('change'));
 
     await vi.waitFor(() => expect(txTableRowCount()).toBe(1));
-    expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('2330');
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('2330');
   });
 
   it('picking a market for the add-tx CSV importer appends rows without replacing existing ones', async () => {
     const app = await setupApp();
-    app.handleAddTransaction('US', { date: '2024-01-01', symbol: 'EXISTING', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'EXISTING',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
 
     document.getElementById('add-tx-import-market-select').value = 'US';
-    const file = new File(['date,symbol,name,action,quantity,price,fee\n2024-02-01,APPENDED,,buy,1,1,0\n'], 'add.csv', { type: 'text/csv' });
+    const file = new File(
+      [
+        'date,symbol,name,action,quantity,price,fee\n2024-02-01,APPENDED,,buy,1,1,0\n',
+      ],
+      'add.csv',
+      { type: 'text/csv' },
+    );
     const input = document.getElementById('add-tx-import-csv-input');
-    Object.defineProperty(input, 'files', { value: [file], configurable: true });
+    Object.defineProperty(input, 'files', {
+      value: [file],
+      configurable: true,
+    });
     input.dispatchEvent(new Event('change'));
 
     await vi.waitFor(() => expect(txTableRowCount()).toBe(2));
@@ -524,7 +936,9 @@ describe('app: refresh-all-prices button', () => {
     btn.dispatchEvent(new Event('click'));
     await vi.waitFor(() => expect(btn.disabled).toBe(false));
 
-    const fxCalls = fetchSpy.mock.calls.filter(([url]) => String(url).includes('open.er-api.com'));
+    const fxCalls = fetchSpy.mock.calls.filter(([url]) =>
+      String(url).includes('open.er-api.com'),
+    );
     expect(fxCalls).toHaveLength(1);
   });
 });

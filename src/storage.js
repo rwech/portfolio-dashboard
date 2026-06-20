@@ -14,7 +14,10 @@
     try {
       const raw = localStorage.getItem(key);
       if (raw === null) return fallback;
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // only enforce array shape when the caller expects an array
+      if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
+      return parsed;
     } catch {
       return fallback;
     }
@@ -33,7 +36,11 @@
   }
 
   function loadTransactions(market) {
-    return readJson(txKey(market), []);
+    return readJson(txKey(market), []).map((tx) =>
+      typeof tx.action === 'string'
+        ? { ...tx, action: tx.action.toLowerCase() }
+        : tx,
+    );
   }
 
   function saveTransactions(market, txArray) {
@@ -49,7 +56,11 @@
   }
 
   function replaceTransactions(market, rows) {
-    const withIds = rows.map((tx) => ({ ...tx, id: crypto.randomUUID(), market }));
+    const withIds = rows.map((tx) => ({
+      ...tx,
+      id: crypto.randomUUID(),
+      market,
+    }));
     saveTransactions(market, withIds);
     return withIds;
   }
@@ -57,6 +68,16 @@
   function deleteTransaction(market, id) {
     const list = loadTransactions(market).filter((tx) => tx.id !== id);
     saveTransactions(market, list);
+  }
+
+  function updateTransaction(market, id, updates) {
+    const list = loadTransactions(market);
+    const idx = list.findIndex((tx) => tx.id === id);
+    if (idx === -1) return null;
+    const updated = { ...list[idx], ...updates, id, market };
+    list[idx] = updated;
+    saveTransactions(market, list);
+    return updated;
   }
 
   function loadPriceCache() {
@@ -129,6 +150,7 @@
     addTransaction,
     replaceTransactions,
     deleteTransaction,
+    updateTransaction,
     loadPriceCache,
     savePriceCache,
     loadPriceOverrides,

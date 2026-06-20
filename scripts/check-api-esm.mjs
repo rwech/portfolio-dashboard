@@ -5,7 +5,9 @@
 const mod = await import('../api/stock-price.js');
 
 if (typeof mod.default !== 'function') {
-  console.error('api/stock-price.js must export a default handler function (export default ...).');
+  console.error(
+    'api/stock-price.js must export a default handler function (export default ...).',
+  );
   process.exit(1);
 }
 

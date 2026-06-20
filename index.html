@@ -1,252 +1,421 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>投資績效儀表板</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="stylesheet" href="src/styles.css" />
-</head>
-<body>
-  <header>
-    <h1>投資績效儀表板</h1>
-    <div class="header-controls">
-      <label class="demo-mode-toggle">
-        <input type="checkbox" id="demo-mode-toggle" />
-        示範模式
-      </label>
-      <select id="theme-select">
-        <option value="neon">霓虹深色</option>
-        <option value="midnight">午夜藍</option>
-        <option value="forest">森林綠</option>
-      </select>
-    </div>
-  </header>
-
-  <div id="demo-mode-banner" class="banner banner-info" hidden>
-    <span>目前為示範模式，顯示的是範例資料，不會影響或覆蓋你的真實交易紀錄；新增、刪除、匯入與覆寫等操作已暫時停用。</span>
-  </div>
-
-  <div id="backup-reminder-banner" class="banner banner-warning" hidden>
-    <span id="backup-reminder-text"></span>
-    <button id="backup-reminder-export-btn" type="button">立即匯出</button>
-  </div>
-
-  <section id="filters" aria-label="篩選條件">
-    <label>年度
-      <select id="filter-year"></select>
-    </label>
-    <label>市場
-      <select id="filter-market">
-        <option value="all">全部</option>
-        <option value="TW">台股</option>
-        <option value="US">美股</option>
-      </select>
-    </label>
-    <label>顯示幣別
-      <select id="filter-currency">
-        <option value="TWD">TWD</option>
-        <option value="USD">USD</option>
-      </select>
-    </label>
-  </section>
-
-  <section id="fx-status" aria-label="匯率轉換統計">
-    <span id="fx-status-text">匯率載入中...</span>
-    <button id="refresh-all-btn" type="button">重新整理匯率與現價</button>
-  </section>
-
-  <nav id="tab-nav" role="tablist" aria-label="內容分頁">
-    <button type="button" class="tab-btn active" data-tab="overview" aria-selected="true">總覽</button>
-    <button type="button" class="tab-btn" data-tab="symbols" aria-selected="false">個股損益</button>
-    <button type="button" class="tab-btn" data-tab="prices" aria-selected="false">持股現價</button>
-    <button type="button" class="tab-btn" data-tab="add-tx" aria-selected="false">新增交易</button>
-    <button type="button" class="tab-btn" data-tab="transactions" aria-selected="false">交易紀錄</button>
-  </nav>
-
-  <div class="tab-panel" data-tab-panel="overview">
-    <section id="summary-cards" aria-label="績效總覽"></section>
-
-    <section id="charts" aria-label="圖表">
-      <div class="bar-chart-wrap"><canvas id="allocation-chart"></canvas></div>
-      <div class="bar-chart-wrap symbol-allocation-chart-wrap"><canvas id="symbol-allocation-chart"></canvas></div>
-    </section>
-  </div>
-
-  <div class="tab-panel" data-tab-panel="symbols" hidden>
-    <section id="symbol-pnl" aria-label="個股損益">
-      <h2>個股損益</h2>
-      <div class="table-scroll">
-        <table id="symbol-pnl-table">
-          <thead>
-            <tr>
-              <th data-sort-key="symbol">標的</th>
-              <th data-sort-key="market">市場</th>
-              <th data-sort-key="roiPct">ROI%</th>
-              <th data-sort-key="realizedGain">已實現損益</th>
-              <th data-sort-key="unrealizedGain">未實現損益</th>
-              <th data-sort-key="remainingQty">股數</th>
-              <th data-sort-key="currentPrice">最後價</th>
-              <th data-sort-key="marketValue">市場價值</th>
-              <th data-sort-key="avgCost">平均成本</th>
-              <th data-sort-key="costBasisHeld">持有成本</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <div class="tab-panel" data-tab-panel="prices" hidden>
-    <section id="price-overrides" aria-label="持股現價">
-      <h2>持股現價</h2>
-      <div class="table-scroll">
-        <table id="price-override-table">
-          <thead>
-            <tr><th>標的</th><th>市場</th><th>現價</th><th>來源</th><th>手動覆寫</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <div class="tab-panel" data-tab-panel="add-tx" hidden>
-    <section id="add-transaction" aria-label="新增交易">
-      <h2>新增交易</h2>
-      <form id="add-transaction-form">
-        <label>市場
-          <select name="market" required>
-            <option value="TW">台股</option>
-            <option value="US">美股</option>
-          </select>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>投資績效儀表板</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>投資績效儀表板</h1>
+      <div class="header-controls">
+        <label class="demo-mode-toggle">
+          <input type="checkbox" id="demo-mode-toggle" />
+          示範模式
         </label>
-        <label>日期
-          <input type="date" name="date" required />
-        </label>
-        <label>代號
-          <input type="text" name="symbol" required />
-        </label>
-        <label>名稱
-          <input type="text" name="name" />
-        </label>
-        <label>買賣
-          <select name="action" required>
-            <option value="buy">買進</option>
-            <option value="sell">賣出</option>
-          </select>
-        </label>
-        <label>股數
-          <input type="number" name="quantity" min="0" step="any" required />
-        </label>
-        <label>單價
-          <input type="number" name="price" min="0" step="any" required />
-        </label>
-        <label>手續費
-          <input type="number" name="fee" min="0" step="any" value="0" />
-        </label>
-        <button type="submit">新增</button>
-      </form>
-
-      <h3>批次匯入 CSV（新增至現有資料）</h3>
-      <details class="csv-format-help">
-        <summary>CSV 格式說明</summary>
-        <p>第一列為標題列，需依序包含以下欄位：</p>
-        <table>
-          <thead><tr><th>欄位</th><th>說明</th></tr></thead>
-          <tbody>
-            <tr><td>date</td><td>交易日期，格式 <code>YYYY-MM-DD</code></td></tr>
-            <tr><td>symbol</td><td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td></tr>
-            <tr><td>name</td><td>顯示名稱，可空白</td></tr>
-            <tr><td>action</td><td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td></tr>
-            <tr><td>quantity</td><td>股數，必須大於 0</td></tr>
-            <tr><td>price</td><td>單股成交價，需大於等於 0（台股為 TWD，美股為 USD，依匯入時選擇的市場決定）</td></tr>
-            <tr><td>fee</td><td>手續費，可空白（視為 0）</td></tr>
-          </tbody>
-        </table>
-        <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
-        <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
-      </details>
-      <div class="toolbar">
-        <label class="file-input-label">匯入 CSV
-          <input id="add-tx-import-csv-input" type="file" accept=".csv" hidden />
-        </label>
-        <select id="add-tx-import-market-select">
-          <option value="TW">匯入為台股</option>
-          <option value="US">匯入為美股</option>
+        <select id="theme-select">
+          <option value="neon">霓虹深色</option>
+          <option value="midnight">午夜藍</option>
+          <option value="forest">森林綠</option>
         </select>
       </div>
-      <div id="add-tx-import-feedback" class="import-feedback" hidden></div>
-    </section>
-  </div>
+    </header>
 
-  <div class="tab-panel" data-tab-panel="transactions" hidden>
-    <section id="transactions" aria-label="交易紀錄">
-      <h2>交易紀錄</h2>
-      <p class="hint">匯入 CSV 會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。若只是想瀏覽範例資料，請開啟頁首的「示範模式」，不會修改你的真實資料。</p>
-      <details class="csv-format-help">
-        <summary>CSV 格式說明</summary>
-        <p>第一列為標題列，需依序包含以下欄位：</p>
-        <table>
-          <thead><tr><th>欄位</th><th>說明</th></tr></thead>
-          <tbody>
-            <tr><td>date</td><td>交易日期，格式 <code>YYYY-MM-DD</code></td></tr>
-            <tr><td>symbol</td><td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td></tr>
-            <tr><td>name</td><td>顯示名稱，可空白</td></tr>
-            <tr><td>action</td><td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td></tr>
-            <tr><td>quantity</td><td>股數，必須大於 0</td></tr>
-            <tr><td>price</td><td>單股成交價，需大於等於 0（台股為 TWD，美股為 USD，依匯入時選擇的市場決定）</td></tr>
-            <tr><td>fee</td><td>手續費，可空白（視為 0）</td></tr>
-          </tbody>
-        </table>
-        <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
-        <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
-      </details>
-      <div class="toolbar">
-        <div class="dropdown">
-          <button id="export-btn" type="button" class="export-btn dropdown-toggle" aria-haspopup="true" aria-expanded="false">匯出 CSV</button>
-          <div class="dropdown-menu" id="export-menu" hidden>
-            <button type="button" class="dropdown-item" data-market="TW">台股</button>
-            <button type="button" class="dropdown-item" data-market="US">美股</button>
+    <div id="demo-mode-banner" class="banner banner-info" hidden>
+      <span
+        >目前為示範模式，顯示的是範例資料，不會影響或覆蓋你的真實交易紀錄；新增、刪除、匯入與覆寫等操作已暫時停用。</span
+      >
+    </div>
+
+    <div id="backup-reminder-banner" class="banner banner-warning" hidden>
+      <span id="backup-reminder-text"></span>
+      <button id="backup-reminder-export-btn" type="button">立即匯出</button>
+    </div>
+
+    <section id="filters" aria-label="篩選條件">
+      <label
+        >年度
+        <select id="filter-year"></select>
+      </label>
+      <label
+        >市場
+        <select id="filter-market">
+          <option value="all">全部</option>
+          <option value="TW">台股</option>
+          <option value="US">美股</option>
+        </select>
+      </label>
+      <label
+        >顯示幣別
+        <select id="filter-currency">
+          <option value="TWD">TWD</option>
+          <option value="USD">USD</option>
+        </select>
+      </label>
+    </section>
+
+    <section id="fx-status" aria-label="匯率轉換統計">
+      <span id="fx-status-text">匯率載入中...</span>
+      <button id="refresh-all-btn" type="button">重新整理匯率與現價</button>
+    </section>
+
+    <nav id="tab-nav" role="tablist" aria-label="內容分頁">
+      <button
+        type="button"
+        class="tab-btn active"
+        data-tab="overview"
+        aria-selected="true"
+      >
+        總覽
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        data-tab="symbols"
+        aria-selected="false"
+      >
+        個股損益
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        data-tab="prices"
+        aria-selected="false"
+      >
+        持股現價
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        data-tab="add-tx"
+        aria-selected="false"
+      >
+        新增交易
+      </button>
+      <button
+        type="button"
+        class="tab-btn"
+        data-tab="transactions"
+        aria-selected="false"
+      >
+        交易紀錄
+      </button>
+    </nav>
+
+    <div class="tab-panel" data-tab-panel="overview">
+      <section id="summary-cards" aria-label="績效總覽"></section>
+
+      <section id="charts" aria-label="圖表">
+        <div class="bar-chart-wrap">
+          <canvas id="allocation-chart"></canvas>
+        </div>
+        <div class="bar-chart-wrap symbol-allocation-chart-wrap">
+          <canvas id="symbol-allocation-chart"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="symbols" hidden>
+      <section id="symbol-pnl" aria-label="個股損益">
+        <h2>個股損益</h2>
+        <div class="table-scroll">
+          <table id="symbol-pnl-table">
+            <thead>
+              <tr>
+                <th data-sort-key="symbol">標的</th>
+                <th data-sort-key="market">市場</th>
+                <th data-sort-key="roiPct">ROI%</th>
+                <th data-sort-key="realizedGain">已實現損益</th>
+                <th data-sort-key="unrealizedGain">未實現損益</th>
+                <th data-sort-key="remainingQty">股數</th>
+                <th data-sort-key="currentPrice">最後價</th>
+                <th data-sort-key="marketValue">市場價值</th>
+                <th data-sort-key="avgCost">平均成本</th>
+                <th data-sort-key="costBasisHeld">持有成本</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="prices" hidden>
+      <section id="price-overrides" aria-label="持股現價">
+        <h2>持股現價</h2>
+        <div class="table-scroll">
+          <table id="price-override-table">
+            <thead>
+              <tr>
+                <th>標的</th>
+                <th>市場</th>
+                <th>現價</th>
+                <th>來源</th>
+                <th>手動覆寫</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="add-tx" hidden>
+      <section id="add-transaction" aria-label="新增交易">
+        <h2>新增交易</h2>
+        <form id="add-transaction-form">
+          <label
+            >市場
+            <select name="market" required>
+              <option value="TW">台股</option>
+              <option value="US">美股</option>
+            </select>
+          </label>
+          <label
+            >日期
+            <input type="date" name="date" required />
+          </label>
+          <label
+            >代號
+            <input type="text" name="symbol" required />
+          </label>
+          <label
+            >名稱
+            <input type="text" name="name" />
+          </label>
+          <label
+            >買賣
+            <select name="action" required>
+              <option value="buy">買進</option>
+              <option value="sell">賣出</option>
+            </select>
+          </label>
+          <label
+            >股數
+            <input type="number" name="quantity" min="0" step="any" required />
+          </label>
+          <label
+            >單價
+            <input type="number" name="price" min="0" step="any" required />
+          </label>
+          <label
+            >手續費
+            <input type="number" name="fee" min="0" step="any" value="0" />
+          </label>
+          <button type="submit">新增</button>
+        </form>
+
+        <h3>批次匯入 CSV（新增至現有資料）</h3>
+        <details class="csv-format-help">
+          <summary>CSV 格式說明</summary>
+          <p>第一列為標題列，需依序包含以下欄位：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>欄位</th>
+                <th>說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>date</td>
+                <td>交易日期，格式 <code>YYYY-MM-DD</code></td>
+              </tr>
+              <tr>
+                <td>symbol</td>
+                <td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td>
+              </tr>
+              <tr>
+                <td>name</td>
+                <td>顯示名稱，可空白</td>
+              </tr>
+              <tr>
+                <td>action</td>
+                <td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td>
+              </tr>
+              <tr>
+                <td>quantity</td>
+                <td>股數，必須大於 0</td>
+              </tr>
+              <tr>
+                <td>price</td>
+                <td>
+                  單股成交價，需大於等於 0（台股為 TWD，美股為
+                  USD，依匯入時選擇的市場決定）
+                </td>
+              </tr>
+              <tr>
+                <td>fee</td>
+                <td>手續費，可空白（視為 0）</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
+          <p>
+            格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。
+          </p>
+        </details>
+        <div class="toolbar">
+          <label class="file-input-label"
+            >匯入 CSV
+            <input
+              id="add-tx-import-csv-input"
+              type="file"
+              accept=".csv"
+              hidden
+            />
+          </label>
+          <select id="add-tx-import-market-select">
+            <option value="TW">匯入為台股</option>
+            <option value="US">匯入為美股</option>
+          </select>
+        </div>
+        <div id="add-tx-import-feedback" class="import-feedback" hidden></div>
+      </section>
+    </div>
+
+    <div class="tab-panel" data-tab-panel="transactions" hidden>
+      <section id="transactions" aria-label="交易紀錄">
+        <h2>交易紀錄</h2>
+        <p class="hint">
+          匯入 CSV
+          會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。若只是想瀏覽範例資料，請開啟頁首的「示範模式」，不會修改你的真實資料。
+        </p>
+        <details class="csv-format-help">
+          <summary>CSV 格式說明</summary>
+          <p>第一列為標題列，需依序包含以下欄位：</p>
+          <table>
+            <thead>
+              <tr>
+                <th>欄位</th>
+                <th>說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>date</td>
+                <td>交易日期，格式 <code>YYYY-MM-DD</code></td>
+              </tr>
+              <tr>
+                <td>symbol</td>
+                <td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td>
+              </tr>
+              <tr>
+                <td>name</td>
+                <td>顯示名稱，可空白</td>
+              </tr>
+              <tr>
+                <td>action</td>
+                <td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td>
+              </tr>
+              <tr>
+                <td>quantity</td>
+                <td>股數，必須大於 0</td>
+              </tr>
+              <tr>
+                <td>price</td>
+                <td>
+                  單股成交價，需大於等於 0（台股為 TWD，美股為
+                  USD，依匯入時選擇的市場決定）
+                </td>
+              </tr>
+              <tr>
+                <td>fee</td>
+                <td>手續費，可空白（視為 0）</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
+          <p>
+            格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。
+          </p>
+        </details>
+        <div class="toolbar">
+          <div class="dropdown">
+            <button
+              id="export-btn"
+              type="button"
+              class="export-btn dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              匯出 CSV
+            </button>
+            <div class="dropdown-menu" id="export-menu" hidden>
+              <button type="button" class="dropdown-item" data-market="TW">
+                台股
+              </button>
+              <button type="button" class="dropdown-item" data-market="US">
+                美股
+              </button>
+            </div>
+          </div>
+          <div class="dropdown">
+            <button
+              id="import-btn"
+              type="button"
+              class="import-btn dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              匯入 CSV（取代）
+            </button>
+            <div class="dropdown-menu" id="import-menu" hidden>
+              <button type="button" class="dropdown-item" data-market="TW">
+                台股
+              </button>
+              <button type="button" class="dropdown-item" data-market="US">
+                美股
+              </button>
+            </div>
+            <input id="import-csv-input" type="file" accept=".csv" hidden />
           </div>
         </div>
-        <div class="dropdown">
-          <button id="import-btn" type="button" class="import-btn dropdown-toggle" aria-haspopup="true" aria-expanded="false">匯入 CSV（取代）</button>
-          <div class="dropdown-menu" id="import-menu" hidden>
-            <button type="button" class="dropdown-item" data-market="TW">台股</button>
-            <button type="button" class="dropdown-item" data-market="US">美股</button>
-          </div>
-          <input id="import-csv-input" type="file" accept=".csv" hidden />
+        <div id="import-errors" class="import-feedback" hidden></div>
+        <div class="table-scroll">
+          <table id="transactions-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th data-sort-key="date">日期</th>
+                <th>買賣</th>
+                <th>代號</th>
+                <th>市場</th>
+                <th>名稱</th>
+                <th>股數</th>
+                <th>單價</th>
+                <th>手續費</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-      </div>
-      <div id="import-errors" class="import-feedback" hidden></div>
-      <div class="table-scroll">
-        <table id="transactions-table">
-          <thead>
-            <tr><th data-sort-key="date">日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+      </section>
+    </div>
 
-  <footer>
-    <p>資料僅儲存於瀏覽器 localStorage，請定期使用「匯出 CSV」備份。股價來自非官方來源，重要決策請自行核對。</p>
-    <p>v1.0.0</p>
-  </footer>
+    <footer>
+      <p>
+        資料僅儲存於瀏覽器 localStorage，請定期使用「匯出
+        CSV」備份。股價來自非官方來源，重要決策請自行核對。
+      </p>
+      <p>v1.0.0</p>
+    </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="src/config.js"></script>
-  <script src="src/storage.js"></script>
-  <script src="src/csv.js"></script>
-  <script src="src/exchangeRate.js"></script>
-  <script src="src/stockPrice.js"></script>
-  <script src="src/roi.js"></script>
-  <script src="src/charts.js"></script>
-  <script src="src/ui.js"></script>
-  <script src="src/app.js"></script>
-  <script>window.PFD.app.init();</script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="src/config.js"></script>
+    <script src="src/storage.js"></script>
+    <script src="src/csv.js"></script>
+    <script src="src/exchangeRate.js"></script>
+    <script src="src/stockPrice.js"></script>
+    <script src="src/roi.js"></script>
+    <script src="src/charts.js"></script>
+    <script src="src/ui.js"></script>
+    <script src="src/app.js"></script>
+    <script>
+      window.PFD.app.init();
+    </script>
+  </body>
 </html>

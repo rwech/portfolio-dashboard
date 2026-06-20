@@ -15,7 +15,8 @@ FakeChart.instances = [];
 global.Chart = FakeChart;
 await import('../src/charts.js');
 
-const { renderAllocationChart, renderSymbolAllocationChart, resizeCharts } = window.PFD.charts;
+const { renderAllocationChart, renderSymbolAllocationChart, resizeCharts } =
+  window.PFD.charts;
 
 describe('charts.renderAllocationChart', () => {
   beforeEach(() => {
@@ -73,8 +74,13 @@ describe('charts.renderAllocationChart', () => {
   it('formats the tooltip label with the percentage and converted amount', () => {
     const canvas = document.createElement('canvas');
     renderAllocationChart(canvas, { TW: 300, US: 100 }, 'TWD');
-    const labelFn = FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
-    const text = labelFn({ dataset: { label: '台股' }, parsed: { x: 75 }, datasetIndex: 0 });
+    const labelFn =
+      FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
+    const text = labelFn({
+      dataset: { label: '台股' },
+      parsed: { x: 75 },
+      datasetIndex: 0,
+    });
     expect(text).toBe('台股: 75.0% (300 TWD)');
   });
 });
@@ -86,7 +92,14 @@ describe('charts.renderSymbolAllocationChart', () => {
 
   it('creates a pie chart sorted by descending value', () => {
     const canvas = document.createElement('canvas');
-    renderSymbolAllocationChart(canvas, [{ symbol: 'A', value: 50 }, { symbol: 'B', value: 150 }], 'USD');
+    renderSymbolAllocationChart(
+      canvas,
+      [
+        { symbol: 'A', value: 50 },
+        { symbol: 'B', value: 150 },
+      ],
+      'USD',
+    );
     const config = FakeChart.instances[0].config;
     expect(config.type).toBe('pie');
     expect(config.data.labels).toEqual(['B', 'A']);
@@ -115,8 +128,16 @@ describe('charts.renderSymbolAllocationChart', () => {
 
   it('formats the tooltip label with the percentage share of the total', () => {
     const canvas = document.createElement('canvas');
-    renderSymbolAllocationChart(canvas, [{ symbol: 'A', value: 50 }, { symbol: 'B', value: 150 }], 'USD');
-    const labelFn = FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
+    renderSymbolAllocationChart(
+      canvas,
+      [
+        { symbol: 'A', value: 50 },
+        { symbol: 'B', value: 150 },
+      ],
+      'USD',
+    );
+    const labelFn =
+      FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
     const text = labelFn({ label: 'B', parsed: 150 });
     expect(text).toBe('B: 75.0% (150 USD)');
   });

@@ -7,18 +7,28 @@
   };
 
   function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[c]));
+    return String(value ?? '').replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[c],
+    );
   }
 
   function formatMoney(value, currency) {
-    if (value === null || value === undefined || Number.isNaN(value)) return '—';
+    if (value === null || value === undefined || Number.isNaN(value))
+      return '—';
     return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`;
   }
 
   function formatPct(value) {
-    if (value === null || value === undefined || Number.isNaN(value)) return '—';
+    if (value === null || value === undefined || Number.isNaN(value))
+      return '—';
     return `${value.toFixed(2)}%`;
   }
 
@@ -32,17 +42,29 @@
   }
 
   function populateYearOptions(selectEl, allTx, selectedYear) {
-    const years = Array.from(new Set(allTx.map((tx) => tx.date.slice(0, 4)))).sort((a, b) => b.localeCompare(a));
-    const options = ['<option value="all">全部年度</option>']
-      .concat(years.map((y) => `<option value="${y}">${y}</option>`));
+    const years = Array.from(
+      new Set(allTx.map((tx) => tx.date.slice(0, 4))),
+    ).sort((a, b) => b.localeCompare(a));
+    const options = ['<option value="all">全部年度</option>'].concat(
+      years.map((y) => `<option value="${y}">${y}</option>`),
+    );
     selectEl.innerHTML = options.join('');
-    selectEl.value = selectedYear && (selectedYear === 'all' || years.includes(String(selectedYear))) ? selectedYear : 'all';
+    selectEl.value =
+      selectedYear &&
+      (selectedYear === 'all' || years.includes(String(selectedYear)))
+        ? selectedYear
+        : 'all';
   }
 
   function renderFilterControls(state) {
-    populateYearOptions(document.getElementById('filter-year'), state.transactions, state.filters.year);
+    populateYearOptions(
+      document.getElementById('filter-year'),
+      state.transactions,
+      state.filters.year,
+    );
     document.getElementById('filter-market').value = state.filters.market;
-    document.getElementById('filter-currency').value = state.filters.displayCurrency;
+    document.getElementById('filter-currency').value =
+      state.filters.displayCurrency;
   }
 
   function renderFxStatusPanel(fxResult) {
@@ -52,7 +74,10 @@
       return;
     }
     const time = new Date(fxResult.fetchedAt).toLocaleString();
-    const sourceLabel = { live: '即時', cache: '快取', 'stale-cache': '過期快取（離線中）' }[fxResult.source] || fxResult.source;
+    const sourceLabel =
+      { live: '即時', cache: '快取', 'stale-cache': '過期快取（離線中）' }[
+        fxResult.source
+      ] || fxResult.source;
     el.textContent = `1 USD = ${fxResult.rate.toFixed(4)} TWD（${sourceLabel}，更新於 ${time}）`;
   }
 
@@ -60,24 +85,56 @@
     const container = document.getElementById('summary-cards');
     const totalGain = summary.realizedGain + summary.unrealizedGain;
     const cards = [
-      ['總投入成本', formatMoney(summary.totalInvested, summary.currency), '', null],
-      ['目前持股成本', formatMoney(summary.costBasisHeld, summary.currency), '', null],
+      [
+        '總投入成本',
+        formatMoney(summary.totalInvested, summary.currency),
+        '',
+        null,
+      ],
+      [
+        '目前持股成本',
+        formatMoney(summary.costBasisHeld, summary.currency),
+        '',
+        null,
+      ],
       [
         '總損益',
         withSign(formatMoney(totalGain, summary.currency), totalGain),
         signedClass(totalGain),
         [
-          ['已實現', withSign(formatMoney(summary.realizedGain, summary.currency), summary.realizedGain), signedClass(summary.realizedGain)],
-          ['未實現', withSign(formatMoney(summary.unrealizedGain, summary.currency), summary.unrealizedGain), signedClass(summary.unrealizedGain)],
+          [
+            '已實現',
+            withSign(
+              formatMoney(summary.realizedGain, summary.currency),
+              summary.realizedGain,
+            ),
+            signedClass(summary.realizedGain),
+          ],
+          [
+            '未實現',
+            withSign(
+              formatMoney(summary.unrealizedGain, summary.currency),
+              summary.unrealizedGain,
+            ),
+            signedClass(summary.unrealizedGain),
+          ],
         ],
       ],
-      ['ROI%', withSign(formatPct(summary.roiPct), summary.roiPct), signedClass(summary.roiPct), null],
+      [
+        'ROI%',
+        withSign(formatPct(summary.roiPct), summary.roiPct),
+        signedClass(summary.roiPct),
+        null,
+      ],
     ];
     container.innerHTML = cards
       .map(([label, value, cls, subFields]) => {
         const subHtml = subFields
           ? `<div class="sub-fields">${subFields
-              .map(([sLabel, sValue, sCls]) => `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`)
+              .map(
+                ([sLabel, sValue, sCls]) =>
+                  `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`,
+              )
               .join('')}</div>`
           : '';
         return `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div>${subHtml}</div>`;
@@ -91,32 +148,99 @@
   }
 
   function staleBadge(stat) {
-    const isStale = window.PFD.stockPrice.isPriceStale(stat.priceSource, stat.priceFetchedAt);
-    return isStale ? ` <span class="badge badge-stale" title="${escapeHtml(priceUpdatedTitle(stat))}">報價已過期</span>` : '';
+    const isStale = window.PFD.stockPrice.isPriceStale(
+      stat.priceSource,
+      stat.priceFetchedAt,
+    );
+    return isStale
+      ? ` <span class="badge badge-stale" title="${escapeHtml(priceUpdatedTitle(stat))}">報價已過期</span>`
+      : '';
   }
 
-  function renderTransactionTable(transactions, onDelete) {
+  function svgIcon(paths) {
+    return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  }
+
+  const ICON_EDIT = svgIcon(
+    '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path>',
+  );
+  const ICON_DELETE = svgIcon(
+    '<polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>',
+  );
+  const ICON_SAVE = svgIcon('<polyline points="20 6 9 17 4 12"></polyline>');
+  const ICON_CANCEL = svgIcon(
+    '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+  );
+
+  function renderTxRow(tx) {
+    return `<tr data-id="${tx.id}" data-market="${tx.market}">
+      <td class="tx-actions"><button type="button" class="icon-btn edit-tx-btn" title="編輯" aria-label="編輯">${ICON_EDIT}</button><button type="button" class="icon-btn delete-tx-btn" title="刪除" aria-label="刪除">${ICON_DELETE}</button></td>
+      <td>${tx.date}</td>
+      <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
+      <td>${escapeHtml(tx.symbol)}</td>
+      <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
+      <td>${escapeHtml(tx.name || '')}</td>
+      <td>${tx.quantity}</td>
+      <td>${tx.price}</td>
+      <td>${tx.fee}</td>
+    </tr>`;
+  }
+
+  function renderEditableTxRow(tx) {
+    return `<tr data-id="${tx.id}" data-market="${tx.market}" class="editing-row">
+      <td class="tx-actions"><button type="button" class="icon-btn save-edit-btn" title="儲存" aria-label="儲存">${ICON_SAVE}</button><button type="button" class="icon-btn cancel-edit-btn" title="取消" aria-label="取消">${ICON_CANCEL}</button></td>
+      <td><input type="date" class="edit-date" value="${escapeHtml(tx.date)}" required></td>
+      <td><select class="edit-action">
+        <option value="buy" ${tx.action === 'buy' ? 'selected' : ''}>買進</option>
+        <option value="sell" ${tx.action === 'sell' ? 'selected' : ''}>賣出</option>
+      </select></td>
+      <td><input type="text" class="edit-symbol" value="${escapeHtml(tx.symbol)}" required></td>
+      <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
+      <td><input type="text" class="edit-name" value="${escapeHtml(tx.name || '')}"></td>
+      <td><input type="number" class="edit-quantity" min="0" step="any" value="${escapeHtml(String(tx.quantity))}" required></td>
+      <td><input type="number" class="edit-price" min="0" step="any" value="${escapeHtml(String(tx.price))}" required></td>
+      <td><input type="number" class="edit-fee" min="0" step="any" value="${escapeHtml(String(tx.fee))}"></td>
+    </tr>`;
+  }
+
+  function renderTransactionTable(
+    transactions,
+    { onDelete, onEditStart, onEditCancel, onEditSave, editingId } = {},
+  ) {
     const tbody = document.querySelector('#transactions-table tbody');
     tbody.innerHTML = transactions
-      .map(
-        (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
-          <td>${tx.date}</td>
-          <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
-          <td>${escapeHtml(tx.symbol)}</td>
-          <td>${escapeHtml(tx.name || '')}</td>
-          <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
-          <td>${tx.quantity}</td>
-          <td>${tx.price}</td>
-          <td>${tx.fee}</td>
-          <td><button type="button" class="delete-tx-btn">刪除</button></td>
-        </tr>`
+      .map((tx) =>
+        tx.id === editingId ? renderEditableTxRow(tx) : renderTxRow(tx),
       )
       .join('');
 
+    tbody.querySelectorAll('.edit-tx-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        onEditStart(tr.dataset.id);
+      });
+    });
     tbody.querySelectorAll('.delete-tx-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const tr = btn.closest('tr');
         onDelete(tr.dataset.id, tr.dataset.market);
+      });
+    });
+    tbody.querySelectorAll('.cancel-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => onEditCancel());
+    });
+    tbody.querySelectorAll('.save-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const tr = btn.closest('tr');
+        onEditSave(tr.dataset.id, tr.dataset.market, {
+          date: tr.querySelector('.edit-date').value,
+          action: tr.querySelector('.edit-action').value,
+          symbol: tr.querySelector('.edit-symbol').value,
+          name: tr.querySelector('.edit-name').value,
+          quantity: Number(tr.querySelector('.edit-quantity').value),
+          price: Number(tr.querySelector('.edit-price').value),
+          fee: Number(tr.querySelector('.edit-fee').value || 0),
+        });
       });
     });
   }
@@ -144,13 +268,15 @@
   }
 
   function updateSortIndicators(tableId, sort) {
-    document.querySelectorAll(`#${tableId} thead th[data-sort-key]`).forEach((th) => {
-      if (th.dataset.sortKey === sort.column) {
-        th.dataset.sortDirection = sort.direction;
-      } else {
-        delete th.dataset.sortDirection;
-      }
-    });
+    document
+      .querySelectorAll(`#${tableId} thead th[data-sort-key]`)
+      .forEach((th) => {
+        if (th.dataset.sortKey === sort.column) {
+          th.dataset.sortDirection = sort.direction;
+        } else {
+          delete th.dataset.sortDirection;
+        }
+      });
   }
 
   function renderPriceOverridePanel(perSymbolStats, priceOverrides, handlers) {
@@ -230,7 +356,10 @@
     function closeAll() {
       dropdowns.forEach((d) => {
         d.querySelector('.dropdown-menu').hidden = true;
-        d.querySelector('.dropdown-toggle').setAttribute('aria-expanded', 'false');
+        d.querySelector('.dropdown-toggle').setAttribute(
+          'aria-expanded',
+          'false',
+        );
       });
     }
     dropdowns.forEach((dropdown) => {
@@ -257,7 +386,7 @@
       parts.push(
         `<div class="import-error-list">匯入時略過 ${errors.length} 列：<ul>${errors
           .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
-          .join('')}</ul></div>`
+          .join('')}</ul></div>`,
       );
     }
     if (!parts.length) {

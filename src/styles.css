@@ -23,7 +23,7 @@
   --success: #39ff8f;
 }
 
-:root[data-theme="midnight"] {
+:root[data-theme='midnight'] {
   --bg: #070b18;
   --surface: #0e1428;
   --surface-alt: #141b35;
@@ -37,7 +37,7 @@
   --accent-2-rgb: 138, 109, 255;
 }
 
-:root[data-theme="forest"] {
+:root[data-theme='forest'] {
   --bg: #07140d;
   --surface: #0d1f15;
   --surface-alt: #142a1c;
@@ -52,7 +52,7 @@
 }
 
 body {
-  font-family: -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+  font-family: -apple-system, 'Segoe UI', 'Noto Sans TC', sans-serif;
   margin: 0;
   padding: 0 1rem 2rem;
   color: var(--text);
@@ -93,7 +93,9 @@ section {
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 12px rgba(var(--accent-rgb), 0.08);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(var(--accent-rgb), 0.08);
 }
 
 .banner {
@@ -121,6 +123,7 @@ section {
 body.demo-mode-active #add-transaction-form,
 body.demo-mode-active #export-btn,
 body.demo-mode-active .file-input-label,
+body.demo-mode-active .edit-tx-btn,
 body.demo-mode-active .delete-tx-btn,
 body.demo-mode-active .override-save-btn,
 body.demo-mode-active .override-clear-btn {
@@ -199,8 +202,12 @@ body.demo-mode-active .override-clear-btn {
   text-shadow: 0 0 6px currentColor;
 }
 
-.positive { color: var(--success); }
-.negative { color: var(--danger); }
+.positive {
+  color: var(--success);
+}
+.negative {
+  color: var(--danger);
+}
 
 .summary-card .sub-fields {
   display: flex;
@@ -302,7 +309,8 @@ table {
   margin-top: 0.5rem;
 }
 
-th, td {
+th,
+td {
   text-align: left;
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid var(--border);
@@ -327,11 +335,11 @@ th[data-sort-key]::after {
   content: '';
 }
 
-th[data-sort-direction="asc"]::after {
+th[data-sort-direction='asc']::after {
   content: '▲';
 }
 
-th[data-sort-direction="desc"]::after {
+th[data-sort-direction='desc']::after {
   content: '▼';
 }
 
@@ -341,6 +349,58 @@ th[data-sort-direction="desc"]::after {
   left: 0;
   background: var(--surface);
   z-index: 1;
+}
+
+#transactions-table th:nth-child(1),
+#transactions-table td:nth-child(1) {
+  width: 5rem;
+  min-width: 5rem;
+  left: 0;
+}
+
+#transactions-table th:nth-child(2),
+#transactions-table td:nth-child(2) {
+  width: 6rem;
+  min-width: 6rem;
+  left: 5rem;
+}
+
+#transactions-table th:nth-child(3),
+#transactions-table td:nth-child(3) {
+  width: 4rem;
+  min-width: 4rem;
+  left: 11rem;
+}
+
+#transactions-table th:nth-child(4),
+#transactions-table td:nth-child(4) {
+  left: 15rem;
+}
+
+#transactions-table th:nth-child(1),
+#transactions-table th:nth-child(2),
+#transactions-table th:nth-child(3),
+#transactions-table th:nth-child(4),
+#transactions-table td:nth-child(1),
+#transactions-table td:nth-child(2),
+#transactions-table td:nth-child(3),
+#transactions-table td:nth-child(4) {
+  position: sticky;
+  background: var(--surface);
+  z-index: 2;
+}
+
+.tx-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.editing-row td {
+  background: var(--surface-alt);
+}
+
+#transactions-table .editing-row td:nth-child(-n + 4) {
+  background: var(--surface-alt);
 }
 
 #add-transaction-form {
@@ -365,7 +425,8 @@ th[data-sort-direction="desc"]::after {
   margin-bottom: 0.5rem;
 }
 
-select, input {
+select,
+input {
   background: var(--surface-alt);
   color: var(--text);
   border: 1px solid var(--border);
@@ -375,7 +436,8 @@ select, input {
   font-size: 0.9rem;
 }
 
-select:focus, input:focus {
+select:focus,
+input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
@@ -393,7 +455,9 @@ button,
   background: var(--surface-alt);
   color: var(--text);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 button:hover,
@@ -408,7 +472,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button[type="submit"] {
+button[type='submit'] {
   background: var(--accent);
   border-color: var(--accent);
   color: #0b1021;
@@ -416,7 +480,7 @@ button[type="submit"] {
   box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
 }
 
-button[type="submit"]:hover {
+button[type='submit']:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
   box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.7);
@@ -489,6 +553,11 @@ button[type="submit"]:hover {
   border-color: var(--danger);
 }
 
+.icon-btn {
+  padding: 0.3rem;
+  line-height: 0;
+}
+
 .badge {
   font-size: 0.7rem;
   padding: 0.1rem 0.4rem;
@@ -497,16 +566,44 @@ button[type="submit"]:hover {
   white-space: nowrap;
 }
 
-.badge-live { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }
-.badge-cache { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
-.badge-estimate { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
-.badge-override { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
-.badge-stale { background: rgba(255, 77, 109, 0.18); color: var(--danger); border: 1px solid var(--danger); }
+.badge-live {
+  background: rgba(57, 255, 143, 0.18);
+  color: #39ff8f;
+}
+.badge-cache {
+  background: rgba(255, 209, 102, 0.18);
+  color: #ffd166;
+}
+.badge-estimate {
+  background: rgba(255, 77, 109, 0.18);
+  color: #ff4d6d;
+}
+.badge-override {
+  background: rgba(177, 74, 255, 0.18);
+  color: #b14aff;
+}
+.badge-stale {
+  background: rgba(255, 77, 109, 0.18);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
 
-.badge-buy { background: rgba(57, 255, 143, 0.18); color: #39ff8f; }
-.badge-sell { background: rgba(255, 77, 109, 0.18); color: #ff4d6d; }
-.badge-tw { background: rgba(255, 209, 102, 0.18); color: #ffd166; }
-.badge-us { background: rgba(177, 74, 255, 0.18); color: #b14aff; }
+.badge-buy {
+  background: rgba(57, 255, 143, 0.18);
+  color: #39ff8f;
+}
+.badge-sell {
+  background: rgba(255, 77, 109, 0.18);
+  color: #ff4d6d;
+}
+.badge-tw {
+  background: rgba(255, 209, 102, 0.18);
+  color: #ffd166;
+}
+.badge-us {
+  background: rgba(177, 74, 255, 0.18);
+  color: #b14aff;
+}
 
 .import-feedback {
   padding: 0.5rem;
@@ -564,7 +661,8 @@ footer {
     font-size: 1.05rem;
   }
 
-  th, td {
+  th,
+  td {
     font-size: 0.8rem;
     padding: 0.35rem 0.45rem;
   }

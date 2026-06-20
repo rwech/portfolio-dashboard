@@ -16,8 +16,20 @@ describe('renderTransactionTable XSS handling', () => {
   it('renders a malicious symbol as inert text instead of executable markup', () => {
     const evilSymbol = '<img src=x onerror="window.__pwned = true">';
     window.PFD.ui.renderTransactionTable(
-      [{ id: '1', market: 'TW', date: '2024-01-01', symbol: evilSymbol, name: '', action: 'buy', quantity: 1, price: 1, fee: 0 }],
-      () => {}
+      [
+        {
+          id: '1',
+          market: 'TW',
+          date: '2024-01-01',
+          symbol: evilSymbol,
+          name: '',
+          action: 'buy',
+          quantity: 1,
+          price: 1,
+          fee: 0,
+        },
+      ],
+      { onDelete: () => {} },
     );
     const tbody = document.querySelector('#transactions-table tbody');
     expect(tbody.querySelector('img')).toBeNull();
@@ -27,12 +39,80 @@ describe('renderTransactionTable XSS handling', () => {
 
   it('labels a sell action distinctly from a buy action', () => {
     window.PFD.ui.renderTransactionTable(
-      [{ id: '1', market: 'US', date: '2024-01-01', symbol: 'AAPL', name: '', action: 'sell', quantity: 1, price: 1, fee: 0 }],
-      () => {}
+      [
+        {
+          id: '1',
+          market: 'US',
+          date: '2024-01-01',
+          symbol: 'AAPL',
+          name: '',
+          action: 'sell',
+          quantity: 1,
+          price: 1,
+          fee: 0,
+        },
+      ],
+      { onDelete: () => {} },
     );
     const tbody = document.querySelector('#transactions-table tbody');
     expect(tbody.querySelector('.badge-sell')).not.toBeNull();
     expect(tbody.textContent).toContain('賣出');
+  });
+
+  it('renders the row matching editingId as an editable form row instead of a static row', () => {
+    const evilSymbol = '<img src=x onerror="window.__pwned2 = true">';
+    window.PFD.ui.renderTransactionTable(
+      [
+        {
+          id: '1',
+          market: 'TW',
+          date: '2024-01-01',
+          symbol: evilSymbol,
+          name: 'n',
+          action: 'buy',
+          quantity: 3,
+          price: 4,
+          fee: 5,
+        },
+      ],
+      { editingId: '1' },
+    );
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.querySelector('.edit-tx-btn')).toBeNull();
+    expect(row.querySelector('.save-edit-btn')).not.toBeNull();
+    expect(row.querySelector('.cancel-edit-btn')).not.toBeNull();
+    expect(row.querySelector('.edit-symbol').value).toBe(evilSymbol);
+    expect(row.querySelector('.edit-quantity').value).toBe('3');
+    expect(window.__pwned2).toBeUndefined();
+  });
+
+  it('escapes a quote-breakout attempt in the date field of an editable row instead of injecting an attribute', () => {
+    const evilDate =
+      '2024-01-01" onfocus="window.__pwned3 = true" autofocus x="';
+    window.PFD.ui.renderTransactionTable(
+      [
+        {
+          id: '1',
+          market: 'TW',
+          date: evilDate,
+          symbol: 'AAA',
+          name: 'n',
+          action: 'buy',
+          quantity: 3,
+          price: 4,
+          fee: 5,
+        },
+      ],
+      { editingId: '1' },
+    );
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.querySelector('.edit-date').getAttribute('value')).toBe(
+      evilDate,
+    );
+    expect(row.querySelector('.edit-date').hasAttribute('autofocus')).toBe(
+      false,
+    );
+    expect(window.__pwned3).toBeUndefined();
   });
 });
 
@@ -40,49 +120,98 @@ describe('renderSymbolPnlTable stale price tag', () => {
   beforeEach(setupDom);
 
   const baseStat = {
-    symbol: 'AAA', name: 'A Corp', market: 'US', remainingQty: 10, avgCost: 100,
-    roiPct: null, realizedGain: 0, unrealizedGain: 0, marketValue: 1000, costBasisHeld: 1000,
+    symbol: 'AAA',
+    name: 'A Corp',
+    market: 'US',
+    remainingQty: 10,
+    avgCost: 100,
+    roiPct: null,
+    realizedGain: 0,
+    unrealizedGain: 0,
+    marketValue: 1000,
+    costBasisHeld: 1000,
   };
 
   it('flags a position with no live price data (estimate) as stale', () => {
     window.PFD.ui.renderSymbolPnlTable(
-      [{ ...baseStat, currentPrice: 100, priceSource: 'estimate', priceFetchedAt: null }],
-      'USD'
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'estimate',
+          priceFetchedAt: null,
+        },
+      ],
+      'USD',
     );
-    expect(document.querySelector('#symbol-pnl-table .badge-stale')).not.toBeNull();
+    expect(
+      document.querySelector('#symbol-pnl-table .badge-stale'),
+    ).not.toBeNull();
   });
 
   it('flags a cached price older than the stale threshold', () => {
     const old = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     window.PFD.ui.renderSymbolPnlTable(
-      [{ ...baseStat, currentPrice: 100, priceSource: 'cache', priceFetchedAt: old }],
-      'USD'
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'cache',
+          priceFetchedAt: old,
+        },
+      ],
+      'USD',
     );
-    expect(document.querySelector('#symbol-pnl-table .badge-stale')).not.toBeNull();
+    expect(
+      document.querySelector('#symbol-pnl-table .badge-stale'),
+    ).not.toBeNull();
   });
 
   it('does not flag a just-fetched live price as stale', () => {
     window.PFD.ui.renderSymbolPnlTable(
-      [{ ...baseStat, currentPrice: 105, priceSource: 'live', priceFetchedAt: new Date().toISOString() }],
-      'USD'
+      [
+        {
+          ...baseStat,
+          currentPrice: 105,
+          priceSource: 'live',
+          priceFetchedAt: new Date().toISOString(),
+        },
+      ],
+      'USD',
     );
     expect(document.querySelector('#symbol-pnl-table .badge-stale')).toBeNull();
   });
 
   it('never flags a manual override as stale', () => {
     window.PFD.ui.renderSymbolPnlTable(
-      [{ ...baseStat, currentPrice: 110, priceSource: 'override', priceFetchedAt: null }],
-      'USD'
+      [
+        {
+          ...baseStat,
+          currentPrice: 110,
+          priceSource: 'override',
+          priceFetchedAt: null,
+        },
+      ],
+      'USD',
     );
     expect(document.querySelector('#symbol-pnl-table .badge-stale')).toBeNull();
   });
 
   it('falls back to the raw source string for an unrecognized priceSource', () => {
     window.PFD.ui.renderSymbolPnlTable(
-      [{ ...baseStat, currentPrice: 100, priceSource: 'mystery', priceFetchedAt: new Date().toISOString() }],
-      'USD'
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'mystery',
+          priceFetchedAt: new Date().toISOString(),
+        },
+      ],
+      'USD',
     );
-    expect(document.querySelector('#symbol-pnl-table tbody').textContent).toContain('mystery');
+    expect(
+      document.querySelector('#symbol-pnl-table tbody').textContent,
+    ).toContain('mystery');
   });
 });
 
@@ -91,10 +220,22 @@ describe('renderPriceOverridePanel unrecognized priceSource', () => {
 
   it('falls back to the raw source string when it has no Chinese label', () => {
     window.PFD.ui.renderPriceOverridePanel(
-      [{ symbol: 'AAA', name: '', market: 'US', remainingQty: 10, currentPrice: 100, priceSource: 'mystery', priceFetchedAt: new Date().toISOString() }],
+      [
+        {
+          symbol: 'AAA',
+          name: '',
+          market: 'US',
+          remainingQty: 10,
+          currentPrice: 100,
+          priceSource: 'mystery',
+          priceFetchedAt: new Date().toISOString(),
+        },
+      ],
       {},
-      { onOverrideChange: () => {}, onOverrideClear: () => {} }
+      { onOverrideChange: () => {}, onOverrideClear: () => {} },
     );
-    expect(document.querySelector('#price-override-table tbody').textContent).toContain('mystery');
+    expect(
+      document.querySelector('#price-override-table tbody').textContent,
+    ).toContain('mystery');
   });
 });

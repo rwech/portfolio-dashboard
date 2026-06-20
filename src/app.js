@@ -361,5 +361,19 @@
     await refreshAllPrices();
   }
 
-  init();
+  window.PFD = window.PFD || {};
+  window.PFD.app = {
+    state,
+    init,
+    render,
+    setDemoMode,
+    handleFilterChange,
+    handleAddTransaction,
+    handleDeleteTransaction,
+    handleReplaceImportText,
+    handleAppendImportText,
+    handlePriceOverrideChange,
+    handlePriceOverrideClear,
+    handleExport,
+  };
 })();

@@ -16,10 +16,16 @@
     return map;
   }
 
-  function computeOneSymbolStat(symbolTransactions) {
+  function filterByMarket(allTx, market) {
+    if (!market || market === 'all') return allTx;
+    return allTx.filter((tx) => tx.market === market);
+  }
+
+  function computeOneSymbolStat(symbolTransactions, year = 'all') {
     const sorted = [...symbolTransactions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
     const first = sorted[0];
     const state = { qty: 0, avgCost: 0, totalInvested: 0, realizedGain: 0 };
+    const isInYear = (tx) => year === 'all' || tx.date.slice(0, 4) === String(year);
 
     sorted.forEach((tx) => {
       if (tx.action === 'buy') {
@@ -30,8 +36,11 @@
         state.qty = newQty;
         state.totalInvested += costOfThisBuy;
       } else if (tx.action === 'sell') {
+        // Sold quantity/gain is always computed against the full-history running
+        // avgCost, even if this sell's own year is outside the report's year filter.
         const sellQty = Math.min(tx.quantity, state.qty);
-        state.realizedGain += (tx.price - state.avgCost) * sellQty - tx.fee;
+        const gain = (tx.price - state.avgCost) * sellQty - tx.fee;
+        if (isInYear(tx)) state.realizedGain += gain;
         state.qty -= sellQty;
       }
     });
@@ -48,11 +57,12 @@
     };
   }
 
-  function computeSymbolStats(transactions) {
+  function computeSymbolStats(transactions, year = 'all') {
     const grouped = groupBySymbol(transactions);
     const result = new Map();
     grouped.forEach((txs, symbol) => {
-      result.set(symbol, computeOneSymbolStat(txs));
+      const hasActivityInYear = year === 'all' || txs.some((tx) => tx.date.slice(0, 4) === String(year));
+      if (hasActivityInYear) result.set(symbol, computeOneSymbolStat(txs, year));
     });
     return result;
   }
@@ -83,12 +93,12 @@
   }
 
   function computePortfolioSummary(allTx, { priceOverrides, priceCache }, filters) {
-    const filtered = filterTransactions(allTx, filters);
-    const twTx = filtered.filter((tx) => tx.market === 'TW');
-    const usTx = filtered.filter((tx) => tx.market === 'US');
+    const marketFiltered = filterByMarket(allTx, filters.market);
+    const twTx = marketFiltered.filter((tx) => tx.market === 'TW');
+    const usTx = marketFiltered.filter((tx) => tx.market === 'US');
 
-    const twStats = computeSymbolStats(twTx);
-    const usStats = computeSymbolStats(usTx);
+    const twStats = computeSymbolStats(twTx, filters.year);
+    const usStats = computeSymbolStats(usTx, filters.year);
 
     const resolvePrice = window.PFD.stockPrice.resolveCurrentPrice;
 

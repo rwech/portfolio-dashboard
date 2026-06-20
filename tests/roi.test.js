@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import '../src/roi.js';
 
-const { computeSymbolStats, roiPct } = window.PFD.roi;
+const { computeSymbolStats, roiPct, resolveYearFilter } = window.PFD.roi;
 
 describe('roi.computeSymbolStats', () => {
   it('averages cost basis across multiple buys', () => {
@@ -47,6 +47,24 @@ describe('roi.computeSymbolStats with year filter (cross-year realized gain)', (
   it('year="all" (and the default) still reflects full lifetime realized gain', () => {
     expect(computeSymbolStats(txs, 'all').get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
     expect(computeSymbolStats(txs).get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
+  });
+});
+
+describe('roi.resolveYearFilter', () => {
+  it('passes "all" through unchanged', () => {
+    expect(resolveYearFilter([], 'all')).toBe('all');
+  });
+
+  it('keeps a year that has at least one matching transaction', () => {
+    const txs = [{ date: '2024-05-01' }];
+    expect(resolveYearFilter(txs, '2024')).toBe('2024');
+  });
+
+  it('resets to "all" when no transaction matches the selected year (demo mode after import)', () => {
+    // e.g. user imports real transactions dated 2026 and filters to that year,
+    // then switches to demo mode, whose bundled dataset only spans 2023-2025.
+    const demoTxs = [{ date: '2023-04-08' }, { date: '2024-07-17' }];
+    expect(resolveYearFilter(demoTxs, '2026')).toBe('all');
   });
 });
 

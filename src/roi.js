@@ -7,6 +7,12 @@
     });
   }
 
+  function resolveYearFilter(allTx, year) {
+    if (year === 'all') return 'all';
+    const years = new Set(allTx.map((tx) => tx.date.slice(0, 4)));
+    return years.has(String(year)) ? year : 'all';
+  }
+
   function groupBySymbol(transactions) {
     const map = new Map();
     transactions.forEach((tx) => {
@@ -163,6 +169,7 @@
   window.PFD = window.PFD || {};
   window.PFD.roi = {
     filterTransactions,
+    resolveYearFilter,
     computeSymbolStats,
     computePortfolioSummary,
     convertSummaryToDisplayCurrency,

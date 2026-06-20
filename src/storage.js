@@ -33,7 +33,9 @@
   }
 
   function loadTransactions(market) {
-    return readJson(txKey(market), []).map((tx) =>
+    const list = readJson(txKey(market), []);
+    if (!Array.isArray(list)) return [];
+    return list.map((tx) =>
       typeof tx.action === 'string'
         ? { ...tx, action: tx.action.toLowerCase() }
         : tx,

@@ -280,6 +280,11 @@ describe('storage resilience to a corrupted localStorage value', () => {
     expect(storage.loadTransactions('TW')).toEqual([]);
   });
 
+  it('falls back instead of throwing when the stored JSON parses but is not an array', () => {
+    localStorage.setItem(storage.KEYS.TX_TW, '{}');
+    expect(storage.loadTransactions('TW')).toEqual([]);
+  });
+
   it('keeps the app working in-memory when localStorage.setItem throws (e.g. quota exceeded)', () => {
     const spy = vi
       .spyOn(Storage.prototype, 'setItem')

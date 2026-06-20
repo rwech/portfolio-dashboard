@@ -163,5 +163,6 @@
     fetchExampleCsv,
     downloadCsv,
     fileNameFor,
+    validateRow,
   };
 })();

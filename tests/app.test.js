@@ -217,6 +217,63 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
     ).toContain('2330');
   });
 
+  it('handleAddTransaction rejects an empty symbol and a malformed date the same way CSV import does', async () => {
+    const app = await setupApp();
+
+    const missingSymbol = app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    expect(missingSymbol).toBe(false);
+    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+
+    const badDate = app.handleAddTransaction('TW', {
+      date: '2024/01/01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    expect(badDate).toBe(false);
+    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(txTableRowCount()).toBe(0);
+  });
+
+  it('handleEditSave rejects an empty symbol and a malformed date, not just bad quantity/price', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const txId = app.state.transactions[0].id;
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    let editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = '';
+    editingRow.querySelector('.save-edit-btn').click();
+    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+    expect(app.state.editingTxId).toBe(txId);
+
+    editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = 'AAA';
+    editingRow.querySelector('.edit-date').value = '';
+    editingRow.querySelector('.save-edit-btn').click();
+    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(app.state.editingTxId).toBe(txId);
+  });
+
   it('handleReplaceImportText reports the US market label in its feedback notice', async () => {
     const app = await setupApp();
     const csvText =

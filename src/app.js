@@ -197,11 +197,22 @@
   }
 
   function handleAddTransaction(market, tx) {
-    if (blockIfDemoMode()) return;
-    storage.addTransaction(market, tx);
+    if (blockIfDemoMode()) return false;
+    const reason = csv.validateRow(tx);
+    if (reason) {
+      alert(reason);
+      return false;
+    }
+    storage.addTransaction(market, {
+      ...tx,
+      quantity: Number(tx.quantity),
+      price: Number(tx.price),
+      fee: Number(tx.fee || 0),
+    });
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
+    return true;
   }
 
   function handleDeleteTransaction(id, market) {
@@ -226,16 +237,17 @@
 
   function handleEditSave(id, market, updates) {
     if (blockIfDemoMode()) return;
-    if (
-      !Number.isFinite(updates.quantity) ||
-      updates.quantity <= 0 ||
-      !Number.isFinite(updates.price) ||
-      updates.price < 0
-    ) {
-      alert('股數必須大於 0，單價不可為負數');
+    const reason = csv.validateRow(updates);
+    if (reason) {
+      alert(reason);
       return;
     }
-    storage.updateTransaction(market, id, updates);
+    storage.updateTransaction(market, id, {
+      ...updates,
+      quantity: Number(updates.quantity),
+      price: Number(updates.price),
+      fee: Number(updates.fee || 0),
+    });
     state.editingTxId = null;
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
@@ -413,28 +425,16 @@
         const form = e.target;
         const data = new FormData(form);
         const market = data.get('market');
-        const quantity = Number(data.get('quantity'));
-        const price = Number(data.get('price'));
-        const fee = Number(data.get('fee') || 0);
-        if (
-          !Number.isFinite(quantity) ||
-          quantity <= 0 ||
-          !Number.isFinite(price) ||
-          price < 0
-        ) {
-          alert('股數必須大於 0，單價不可為負數');
-          return;
-        }
-        handleAddTransaction(market, {
+        const added = handleAddTransaction(market, {
           date: data.get('date'),
           symbol: data.get('symbol'),
           name: data.get('name') || '',
           action: data.get('action'),
-          quantity,
-          price,
-          fee,
+          quantity: data.get('quantity'),
+          price: data.get('price'),
+          fee: data.get('fee') || 0,
         });
-        form.reset();
+        if (added) form.reset();
       });
 
     document.querySelectorAll('#export-menu .dropdown-item').forEach((item) => {

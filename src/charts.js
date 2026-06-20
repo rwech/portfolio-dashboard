@@ -2,7 +2,16 @@
   Chart.defaults.color = '#e6f1ff';
   Chart.defaults.borderColor = 'rgba(0, 229, 255, 0.15)';
 
-  const SEGMENT_PALETTE = ['#00e5ff', '#b14aff', '#ffd166', '#39ff8f', '#ff4d6d', '#5cf2ff', '#ffa94d', '#74c0fc'];
+  const SEGMENT_PALETTE = [
+    '#00e5ff',
+    '#b14aff',
+    '#ffd166',
+    '#39ff8f',
+    '#ff4d6d',
+    '#5cf2ff',
+    '#ffa94d',
+    '#74c0fc',
+  ];
 
   let allocationChart = null;
   let symbolAllocationChart = null;
@@ -40,14 +49,20 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { stacked: true, min: 0, max: 100, ticks: { callback: (v) => `${v}%` } },
+          x: {
+            stacked: true,
+            min: 0,
+            max: 100,
+            ticks: { callback: (v) => `${v}%` },
+          },
           y: { stacked: true },
         },
         plugins: {
           title: { display: true, text: '持股成本配置' },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}% (${amounts[ctx.datasetIndex].toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
+              label: (ctx) =>
+                `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1)}% (${amounts[ctx.datasetIndex].toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
             },
           },
         },
@@ -55,7 +70,11 @@
     });
   }
 
-  function renderSymbolAllocationChart(canvasEl, perSymbolAmounts, displayCurrency) {
+  function renderSymbolAllocationChart(
+    canvasEl,
+    perSymbolAmounts,
+    displayCurrency,
+  ) {
     if (symbolAllocationChart) {
       symbolAllocationChart.destroy();
       symbolAllocationChart = null;
@@ -73,7 +92,9 @@
         datasets: [
           {
             data: sorted.map((s) => s.value),
-            backgroundColor: sorted.map((_, i) => SEGMENT_PALETTE[i % SEGMENT_PALETTE.length]),
+            backgroundColor: sorted.map(
+              (_, i) => SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
+            ),
           },
         ],
       },
@@ -91,7 +112,8 @@
           legend: { position: 'bottom' },
           tooltip: {
             callbacks: {
-              label: (ctx) => `${ctx.label}: ${((ctx.parsed / total) * 100).toFixed(1)}% (${ctx.parsed.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
+              label: (ctx) =>
+                `${ctx.label}: ${((ctx.parsed / total) * 100).toFixed(1)}% (${ctx.parsed.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency})`,
             },
           },
         },

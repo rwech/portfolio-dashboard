@@ -28,27 +28,75 @@ describe('storage transactions', () => {
   });
 
   it('addTransaction assigns an id/market and appends to the existing list', () => {
-    const first = storage.addTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '', action: 'buy', quantity: 10, price: 100, fee: 0 });
+    const first = storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
     expect(first.id).toBeTruthy();
     expect(first.market).toBe('TW');
 
-    const second = storage.addTransaction('TW', { date: '2024-02-01', symbol: '2317', name: '', action: 'buy', quantity: 5, price: 50, fee: 0 });
+    const second = storage.addTransaction('TW', {
+      date: '2024-02-01',
+      symbol: '2317',
+      name: '',
+      action: 'buy',
+      quantity: 5,
+      price: 50,
+      fee: 0,
+    });
     const list = storage.loadTransactions('TW');
     expect(list).toHaveLength(2);
     expect(list.map((t) => t.id)).toEqual([first.id, second.id]);
   });
 
   it('keeps TW and US transactions in separate keys', () => {
-    storage.addTransaction('TW', { date: '2024-01-01', symbol: '2330', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    storage.addTransaction('US', { date: '2024-01-01', symbol: 'AAPL', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    storage.addTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAPL',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     expect(storage.loadTransactions('TW')).toHaveLength(1);
     expect(storage.loadTransactions('US')).toHaveLength(1);
   });
 
   it('replaceTransactions overwrites the full list for that market and assigns fresh ids', () => {
-    storage.addTransaction('TW', { date: '2024-01-01', symbol: 'OLD', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'OLD',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     const replaced = storage.replaceTransactions('TW', [
-      { date: '2024-03-01', symbol: 'NEW', name: '', action: 'buy', quantity: 2, price: 2, fee: 0 },
+      {
+        date: '2024-03-01',
+        symbol: 'NEW',
+        name: '',
+        action: 'buy',
+        quantity: 2,
+        price: 2,
+        fee: 0,
+      },
     ]);
     const list = storage.loadTransactions('TW');
     expect(list).toHaveLength(1);
@@ -57,8 +105,24 @@ describe('storage transactions', () => {
   });
 
   it('deleteTransaction removes only the matching id', () => {
-    const a = storage.addTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    const b = storage.addTransaction('TW', { date: '2024-02-01', symbol: 'B', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    const a = storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'A',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const b = storage.addTransaction('TW', {
+      date: '2024-02-01',
+      symbol: 'B',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
     storage.deleteTransaction('TW', a.id);
     const list = storage.loadTransactions('TW');
     expect(list).toHaveLength(1);
@@ -66,8 +130,19 @@ describe('storage transactions', () => {
   });
 
   it('updateTransaction merges the given fields into the matching row and keeps its id/market', () => {
-    const a = storage.addTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    const updated = storage.updateTransaction('TW', a.id, { symbol: 'B', quantity: 5 });
+    const a = storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'A',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const updated = storage.updateTransaction('TW', a.id, {
+      symbol: 'B',
+      quantity: 5,
+    });
     expect(updated).toEqual({ ...a, symbol: 'B', quantity: 5 });
     const list = storage.loadTransactions('TW');
     expect(list).toHaveLength(1);
@@ -75,8 +150,18 @@ describe('storage transactions', () => {
   });
 
   it('updateTransaction returns null and leaves the list unchanged when the id is not found', () => {
-    storage.addTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
-    const result = storage.updateTransaction('TW', 'missing-id', { symbol: 'B' });
+    storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'A',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const result = storage.updateTransaction('TW', 'missing-id', {
+      symbol: 'B',
+    });
     expect(result).toBeNull();
     expect(storage.loadTransactions('TW')).toHaveLength(1);
   });
@@ -93,7 +178,9 @@ describe('storage price cache and overrides', () => {
 
   it('round-trips the price cache', () => {
     storage.savePriceCache({ AAPL: { price: 100, source: 'live' } });
-    expect(storage.loadPriceCache()).toEqual({ AAPL: { price: 100, source: 'live' } });
+    expect(storage.loadPriceCache()).toEqual({
+      AAPL: { price: 100, source: 'live' },
+    });
   });
 
   it('loadPriceOverrides defaults to an empty object', () => {
@@ -103,14 +190,14 @@ describe('storage price cache and overrides', () => {
   it('savePriceOverride merges into existing overrides instead of replacing them', () => {
     storage.savePriceOverride('AAPL', 150);
     storage.savePriceOverride('2330', 600);
-    expect(storage.loadPriceOverrides()).toEqual({ AAPL: 150, '2330': 600 });
+    expect(storage.loadPriceOverrides()).toEqual({ AAPL: 150, 2330: 600 });
   });
 
   it('clearPriceOverride removes only the given symbol', () => {
     storage.savePriceOverride('AAPL', 150);
     storage.savePriceOverride('2330', 600);
     storage.clearPriceOverride('AAPL');
-    expect(storage.loadPriceOverrides()).toEqual({ '2330': 600 });
+    expect(storage.loadPriceOverrides()).toEqual({ 2330: 600 });
   });
 });
 
@@ -124,7 +211,12 @@ describe('storage fx cache, ui filters, and unexported change tracking', () => {
   });
 
   it('round-trips the fx cache', () => {
-    const fx = { rate: 32, base: 'USD', quote: 'TWD', fetchedAt: '2024-01-01T00:00:00.000Z' };
+    const fx = {
+      rate: 32,
+      base: 'USD',
+      quote: 'TWD',
+      fetchedAt: '2024-01-01T00:00:00.000Z',
+    };
     storage.saveFxCache(fx);
     expect(storage.loadFxCache()).toEqual(fx);
   });
@@ -168,9 +260,11 @@ describe('storage resilience to a corrupted localStorage value', () => {
   });
 
   it('keeps the app working in-memory when localStorage.setItem throws (e.g. quota exceeded)', () => {
-    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('QuotaExceededError');
-    });
+    const spy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
     expect(() => storage.saveTheme('forest')).not.toThrow();
     spy.mockRestore();
   });

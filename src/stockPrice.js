@@ -13,7 +13,9 @@
 
     if (symbolEntries.length === 0) return result;
 
-    const yahooSymbols = symbolEntries.map((e) => toYahooSymbol(e.symbol, e.market));
+    const yahooSymbols = symbolEntries.map((e) =>
+      toYahooSymbol(e.symbol, e.market),
+    );
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -22,7 +24,7 @@
       const apiBaseUrl = window.PFD.config?.apiBaseUrl || '';
       const res = await fetch(
         `${apiBaseUrl}/api/stock-price?symbols=${encodeURIComponent(yahooSymbols.join(','))}`,
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
       if (res.ok) {
         liveData = await res.json();
@@ -37,7 +39,12 @@
       const yahooSymbol = yahooSymbols[i];
       const live = liveData ? liveData[yahooSymbol] : null;
       if (live && typeof live.price === 'number') {
-        const fresh = { price: live.price, currency: live.currency, fetchedAt: live.fetchedAt, source: 'live' };
+        const fresh = {
+          price: live.price,
+          currency: live.currency,
+          fetchedAt: live.fetchedAt,
+          source: 'live',
+        };
         cache[entry.symbol] = fresh;
         result.set(entry.symbol, fresh);
       } else if (cache[entry.symbol]) {
@@ -51,14 +58,26 @@
     return result;
   }
 
-  function resolveCurrentPrice(symbol, { priceOverrides, priceCache, avgCost }) {
+  function resolveCurrentPrice(
+    symbol,
+    { priceOverrides, priceCache, avgCost },
+  ) {
     if (typeof priceOverrides[symbol] === 'number') {
-      return { value: priceOverrides[symbol], source: 'override', fetchedAt: null };
+      return {
+        value: priceOverrides[symbol],
+        source: 'override',
+        fetchedAt: null,
+      };
     }
     const cached = priceCache[symbol];
     if (cached && typeof cached.price === 'number') {
-      const stillLive = cached.source === 'live' && !isPriceStale('live', cached.fetchedAt);
-      return { value: cached.price, source: stillLive ? 'live' : 'cache', fetchedAt: cached.fetchedAt || null };
+      const stillLive =
+        cached.source === 'live' && !isPriceStale('live', cached.fetchedAt);
+      return {
+        value: cached.price,
+        source: stillLive ? 'live' : 'cache',
+        fetchedAt: cached.fetchedAt || null,
+      };
     }
     return { value: avgCost, source: 'estimate', fetchedAt: null };
   }
@@ -66,7 +85,9 @@
   function isPriceStale(source, fetchedAt) {
     if (source === 'override') return false;
     if (!fetchedAt) return true;
-    return Date.now() - new Date(fetchedAt).getTime() > PRICE_STALE_THRESHOLD_MS;
+    return (
+      Date.now() - new Date(fetchedAt).getTime() > PRICE_STALE_THRESHOLD_MS
+    );
   }
 
   window.PFD = window.PFD || {};

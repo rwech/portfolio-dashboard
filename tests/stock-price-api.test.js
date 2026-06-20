@@ -38,8 +38,15 @@ describe('api/stock-price handler', () => {
   });
 
   it('falls back to null per-symbol when the upstream fetch fails, without crashing the whole request', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
-    const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL,2330.TW' } };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('network down')),
+    );
+    const req = {
+      headers: {},
+      method: 'GET',
+      query: { symbols: 'AAPL,2330.TW' },
+    };
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(200);
@@ -54,7 +61,11 @@ describe('api/stock-price handler', () => {
   });
 
   it('rejects requests from a disallowed origin', async () => {
-    const req = { headers: { origin: 'https://evil.example.com' }, method: 'GET', query: { symbols: 'AAPL' } };
+    const req = {
+      headers: { origin: 'https://evil.example.com' },
+      method: 'GET',
+      query: { symbols: 'AAPL' },
+    };
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(403);
@@ -62,18 +73,31 @@ describe('api/stock-price handler', () => {
 
   it('allows the configured GitHub Pages origin and echoes it back in the CORS header', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-    const req = { headers: { origin: 'https://rwech.github.io' }, method: 'GET', query: { symbols: 'AAPL' } };
+    const req = {
+      headers: { origin: 'https://rwech.github.io' },
+      method: 'GET',
+      query: { symbols: 'AAPL' },
+    };
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(200);
-    expect(res.headers['Access-Control-Allow-Origin']).toBe('https://rwech.github.io');
+    expect(res.headers['Access-Control-Allow-Origin']).toBe(
+      'https://rwech.github.io',
+    );
   });
 
   it('returns the live price for a symbol whose upstream fetch succeeds', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 123.45, currency: 'USD' } }] } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          chart: {
+            result: [{ meta: { regularMarketPrice: 123.45, currency: 'USD' } }],
+          },
+        }),
+      }),
+    );
     const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
     const res = createRes();
     await handler(req, res);
@@ -83,10 +107,15 @@ describe('api/stock-price handler', () => {
   });
 
   it('falls back to a null currency when the chart response omits it', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 50 } }] } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          chart: { result: [{ meta: { regularMarketPrice: 50 } }] },
+        }),
+      }),
+    );
     const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
     const res = createRes();
     await handler(req, res);
@@ -94,10 +123,13 @@ describe('api/stock-price handler', () => {
   });
 
   it('returns null for a symbol whose chart response is missing a usable price', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ chart: { result: [{ meta: {} }] } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ chart: { result: [{ meta: {} }] } }),
+      }),
+    );
     const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
     const res = createRes();
     await handler(req, res);
@@ -105,7 +137,11 @@ describe('api/stock-price handler', () => {
   });
 
   it('responds to an OPTIONS preflight with 204', async () => {
-    const req = { headers: { origin: 'https://rwech.github.io' }, method: 'OPTIONS', query: {} };
+    const req = {
+      headers: { origin: 'https://rwech.github.io' },
+      method: 'OPTIONS',
+      query: {},
+    };
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(204);
@@ -114,7 +150,11 @@ describe('api/stock-price handler', () => {
 
   it('respects an ALLOWED_ORIGINS env override instead of the hardcoded default', async () => {
     process.env.ALLOWED_ORIGINS = 'https://example.com';
-    const req = { headers: { origin: 'https://rwech.github.io' }, method: 'GET', query: { symbols: 'AAPL' } };
+    const req = {
+      headers: { origin: 'https://rwech.github.io' },
+      method: 'GET',
+      query: { symbols: 'AAPL' },
+    };
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(403);

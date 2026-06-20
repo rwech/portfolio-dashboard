@@ -2,13 +2,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '../src/storage.js';
 import '../src/stockPrice.js';
 
-const { resolveCurrentPrice, isPriceStale, refreshPrices, toYahooSymbol } = window.PFD.stockPrice;
+const { resolveCurrentPrice, isPriceStale, refreshPrices, toYahooSymbol } =
+  window.PFD.stockPrice;
 const storage = window.PFD.storage;
 
 describe('stockPrice.resolveCurrentPrice', () => {
   it('prefers a manual override over cache/estimate', () => {
-    const resolved = resolveCurrentPrice('AAA', { priceOverrides: { AAA: 42 }, priceCache: {}, avgCost: 10 });
-    expect(resolved).toMatchObject({ value: 42, source: 'override', fetchedAt: null });
+    const resolved = resolveCurrentPrice('AAA', {
+      priceOverrides: { AAA: 42 },
+      priceCache: {},
+      avgCost: 10,
+    });
+    expect(resolved).toMatchObject({
+      value: 42,
+      source: 'override',
+      fetchedAt: null,
+    });
   });
 
   it('uses the cached price and carries its fetchedAt timestamp', () => {
@@ -32,8 +41,16 @@ describe('stockPrice.resolveCurrentPrice', () => {
   });
 
   it('falls back to avgCost as an estimate when nothing is cached', () => {
-    const resolved = resolveCurrentPrice('AAA', { priceOverrides: {}, priceCache: {}, avgCost: 88 });
-    expect(resolved).toMatchObject({ value: 88, source: 'estimate', fetchedAt: null });
+    const resolved = resolveCurrentPrice('AAA', {
+      priceOverrides: {},
+      priceCache: {},
+      avgCost: 88,
+    });
+    expect(resolved).toMatchObject({
+      value: 88,
+      source: 'estimate',
+      fetchedAt: null,
+    });
   });
 
   it('falls back to null fetchedAt for a cache entry that has none', () => {
@@ -42,7 +59,11 @@ describe('stockPrice.resolveCurrentPrice', () => {
       priceCache: { AAA: { price: 99, source: 'cache' } },
       avgCost: 10,
     });
-    expect(resolved).toMatchObject({ value: 99, source: 'cache', fetchedAt: null });
+    expect(resolved).toMatchObject({
+      value: 99,
+      source: 'cache',
+      fetchedAt: null,
+    });
   });
 });
 
@@ -88,11 +109,15 @@ describe('stockPrice.refreshPrices', () => {
 
   it('prefixes the request URL with window.PFD.config.apiBaseUrl when it is set', async () => {
     window.PFD.config = { apiBaseUrl: 'https://api.example.com' };
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchSpy);
 
     await refreshPrices([{ symbol: 'AAPL', market: 'US' }]);
-    expect(fetchSpy.mock.calls[0][0]).toMatch(/^https:\/\/api\.example\.com\/api\/stock-price/);
+    expect(fetchSpy.mock.calls[0][0]).toMatch(
+      /^https:\/\/api\.example\.com\/api\/stock-price/,
+    );
   });
 
   it('returns an empty map without calling fetch when there are no symbols to refresh', async () => {
@@ -104,18 +129,36 @@ describe('stockPrice.refreshPrices', () => {
   });
 
   it('stores live prices in the cache and returns them keyed by the original symbol', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ 'AAPL': { price: 200, currency: 'USD', fetchedAt: '2024-01-01T00:00:00.000Z' } }),
-    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          AAPL: {
+            price: 200,
+            currency: 'USD',
+            fetchedAt: '2024-01-01T00:00:00.000Z',
+          },
+        }),
+      }),
+    );
 
     const result = await refreshPrices([{ symbol: 'AAPL', market: 'US' }]);
-    expect(result.get('AAPL')).toMatchObject({ price: 200, currency: 'USD', source: 'live' });
-    expect(storage.loadPriceCache().AAPL).toMatchObject({ price: 200, source: 'live' });
+    expect(result.get('AAPL')).toMatchObject({
+      price: 200,
+      currency: 'USD',
+      source: 'live',
+    });
+    expect(storage.loadPriceCache().AAPL).toMatchObject({
+      price: 200,
+      source: 'live',
+    });
   });
 
   it('uses the Yahoo .TW suffix when requesting a Taiwan symbol', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchSpy);
 
     await refreshPrices([{ symbol: '2330', market: 'TW' }]);
@@ -123,7 +166,13 @@ describe('stockPrice.refreshPrices', () => {
   });
 
   it('falls back to the existing cache entry when the API responds not-ok', async () => {
-    storage.savePriceCache({ AAPL: { price: 150, source: 'live', fetchedAt: '2024-01-01T00:00:00.000Z' } });
+    storage.savePriceCache({
+      AAPL: {
+        price: 150,
+        source: 'live',
+        fetchedAt: '2024-01-01T00:00:00.000Z',
+      },
+    });
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
 
     const result = await refreshPrices([{ symbol: 'AAPL', market: 'US' }]);
@@ -131,8 +180,17 @@ describe('stockPrice.refreshPrices', () => {
   });
 
   it('falls back to the existing cache entry when the fetch throws (e.g. offline)', async () => {
-    storage.savePriceCache({ AAPL: { price: 150, source: 'live', fetchedAt: '2024-01-01T00:00:00.000Z' } });
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
+    storage.savePriceCache({
+      AAPL: {
+        price: 150,
+        source: 'live',
+        fetchedAt: '2024-01-01T00:00:00.000Z',
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('network down')),
+    );
 
     const result = await refreshPrices([{ symbol: 'AAPL', market: 'US' }]);
     expect(result.get('AAPL')).toMatchObject({ price: 150, source: 'cache' });

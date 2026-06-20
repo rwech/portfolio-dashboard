@@ -1,5 +1,13 @@
 (function () {
-  const CSV_HEADER = ['date', 'symbol', 'name', 'action', 'quantity', 'price', 'fee'];
+  const CSV_HEADER = [
+    'date',
+    'symbol',
+    'name',
+    'action',
+    'quantity',
+    'price',
+    'fee',
+  ];
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   function fileNameFor(market, suffix) {
@@ -48,20 +56,26 @@
   function validateRow(obj) {
     if (!DATE_RE.test(obj.date)) return 'date 格式必須為 YYYY-MM-DD';
     if (!obj.symbol) return 'symbol 不可為空';
-    if (obj.action !== 'buy' && obj.action !== 'sell') return 'action 必須是 buy 或 sell';
+    if (obj.action !== 'buy' && obj.action !== 'sell')
+      return 'action 必須是 buy 或 sell';
     const quantity = Number(obj.quantity);
-    if (!Number.isFinite(quantity) || quantity <= 0) return 'quantity 必須是大於 0 的數字';
+    if (!Number.isFinite(quantity) || quantity <= 0)
+      return 'quantity 必須是大於 0 的數字';
     const price = Number(obj.price);
-    if (!Number.isFinite(price) || price < 0) return 'price 必須是大於等於 0 的數字';
+    if (!Number.isFinite(price) || price < 0)
+      return 'price 必須是大於等於 0 的數字';
     if (obj.fee) {
       const fee = Number(obj.fee);
-      if (!Number.isFinite(fee) || fee < 0) return 'fee 必須是大於等於 0 的數字';
+      if (!Number.isFinite(fee) || fee < 0)
+        return 'fee 必須是大於等於 0 的數字';
     }
     return null;
   }
 
   function parseCsv(text, market) {
-    const lines = text.split(/\r\n|\n|\r/).filter((line) => line.trim().length > 0);
+    const lines = text
+      .split(/\r\n|\n|\r/)
+      .filter((line) => line.trim().length > 0);
     const rows = [];
     const errors = [];
     if (lines.length === 0) return { rows, errors };
@@ -100,7 +114,7 @@
     const lines = [CSV_HEADER.join(',')];
     transactions.forEach((tx) => {
       lines.push(
-        CSV_HEADER.map((field) => escapeCsvField(tx[field])).join(',')
+        CSV_HEADER.map((field) => escapeCsvField(tx[field])).join(','),
       );
     });
     return lines.join('\n') + '\n';

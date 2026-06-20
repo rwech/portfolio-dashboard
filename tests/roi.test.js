@@ -4,13 +4,39 @@ import '../src/stockPrice.js';
 import '../src/exchangeRate.js';
 import '../src/roi.js';
 
-const { computeSymbolStats, computePortfolioSummary, filterTransactions, convertAmount, convertSummaryToDisplayCurrency, roiPct, resolveYearFilter } = window.PFD.roi;
+const {
+  computeSymbolStats,
+  computePortfolioSummary,
+  filterTransactions,
+  convertAmount,
+  convertSummaryToDisplayCurrency,
+  roiPct,
+  resolveYearFilter,
+} = window.PFD.roi;
 
 describe('roi.computeSymbolStats', () => {
   it('averages cost basis across multiple buys', () => {
     const txs = [
-      { symbol: 'AAA', name: 'A Corp', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
-      { symbol: 'AAA', name: 'A Corp', market: 'US', date: '2024-02-01', action: 'buy', quantity: 10, price: 200, fee: 0 },
+      {
+        symbol: 'AAA',
+        name: 'A Corp',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A Corp',
+        market: 'US',
+        date: '2024-02-01',
+        action: 'buy',
+        quantity: 10,
+        price: 200,
+        fee: 0,
+      },
     ];
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.avgCost).toBe(150);
@@ -20,8 +46,26 @@ describe('roi.computeSymbolStats', () => {
 
   it('caps a sell at remaining holdings and computes realized gain', () => {
     const txs = [
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-02-01', action: 'sell', quantity: 50, price: 150, fee: 5 },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-02-01',
+        action: 'sell',
+        quantity: 50,
+        price: 150,
+        fee: 5,
+      },
     ];
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.remainingQty).toBe(0);
@@ -32,8 +76,26 @@ describe('roi.computeSymbolStats', () => {
 describe('roi.computeSymbolStats with edge-case inputs', () => {
   it('keeps two same-date transactions in their original relative order', () => {
     const txs = [
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 5, price: 200, fee: 0 },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 5,
+        price: 200,
+        fee: 0,
+      },
     ];
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.remainingQty).toBe(15);
@@ -42,8 +104,26 @@ describe('roi.computeSymbolStats with edge-case inputs', () => {
 
   it('sorts transactions into date order even when the input array is reverse-chronological', () => {
     const txs = [
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-03-01', action: 'buy', quantity: 5, price: 300, fee: 0 },
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-03-01',
+        action: 'buy',
+        quantity: 5,
+        price: 300,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
     ];
     const stat = computeSymbolStats(txs).get('AAA');
     // If the rows were processed out of date order, the first buy would seed
@@ -53,7 +133,16 @@ describe('roi.computeSymbolStats with edge-case inputs', () => {
 
   it('keeps avgCost at 0 when a zero-quantity buy leaves the running quantity at 0', () => {
     const txs = [
-      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 0, price: 100, fee: 0 },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 0,
+        price: 100,
+        fee: 0,
+      },
     ];
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.avgCost).toBe(0);
@@ -63,9 +152,36 @@ describe('roi.computeSymbolStats with edge-case inputs', () => {
 
 describe('roi.computeSymbolStats with year filter (cross-year realized gain)', () => {
   const txs = [
-    { symbol: 'AAA', name: 'A', market: 'US', date: '2022-03-01', action: 'buy', quantity: 1, price: 6, fee: 0 },
-    { symbol: 'AAA', name: 'A', market: 'US', date: '2023-05-01', action: 'buy', quantity: 2, price: 8, fee: 0 },
-    { symbol: 'AAA', name: 'A', market: 'US', date: '2024-07-01', action: 'sell', quantity: 1, price: 10, fee: 0 },
+    {
+      symbol: 'AAA',
+      name: 'A',
+      market: 'US',
+      date: '2022-03-01',
+      action: 'buy',
+      quantity: 1,
+      price: 6,
+      fee: 0,
+    },
+    {
+      symbol: 'AAA',
+      name: 'A',
+      market: 'US',
+      date: '2023-05-01',
+      action: 'buy',
+      quantity: 2,
+      price: 8,
+      fee: 0,
+    },
+    {
+      symbol: 'AAA',
+      name: 'A',
+      market: 'US',
+      date: '2024-07-01',
+      action: 'sell',
+      quantity: 1,
+      price: 10,
+      fee: 0,
+    },
   ];
 
   it('computes realized gain against full-history avg cost when filtered to the sell year', () => {
@@ -80,8 +196,14 @@ describe('roi.computeSymbolStats with year filter (cross-year realized gain)', (
   });
 
   it('year="all" (and the default) still reflects full lifetime realized gain', () => {
-    expect(computeSymbolStats(txs, 'all').get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
-    expect(computeSymbolStats(txs).get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
+    expect(computeSymbolStats(txs, 'all').get('AAA').realizedGain).toBeCloseTo(
+      (10 - 22 / 3) * 1,
+      5,
+    );
+    expect(computeSymbolStats(txs).get('AAA').realizedGain).toBeCloseTo(
+      (10 - 22 / 3) * 1,
+      5,
+    );
   });
 });
 
@@ -120,25 +242,53 @@ describe('roi.filterTransactions', () => {
   ];
 
   it('returns everything when both filters are "all"', () => {
-    expect(filterTransactions(txs, { year: 'all', market: 'all' })).toEqual(txs);
+    expect(filterTransactions(txs, { year: 'all', market: 'all' })).toEqual(
+      txs,
+    );
   });
 
   it('filters by market', () => {
-    expect(filterTransactions(txs, { year: 'all', market: 'TW' })).toEqual([txs[0]]);
+    expect(filterTransactions(txs, { year: 'all', market: 'TW' })).toEqual([
+      txs[0],
+    ]);
   });
 
   it('filters by year', () => {
-    expect(filterTransactions(txs, { year: '2023', market: 'all' })).toEqual([txs[1]]);
+    expect(filterTransactions(txs, { year: '2023', market: 'all' })).toEqual([
+      txs[1],
+    ]);
   });
 });
 
 describe('roi.computePortfolioSummary with a market filter', () => {
   it('restricts perSymbol and byMarket totals to the selected market only', () => {
     const txs = [
-      { symbol: '2330', name: '台積電', market: 'TW', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
-      { symbol: 'AAPL', name: 'Apple', market: 'US', date: '2024-01-01', action: 'buy', quantity: 5, price: 200, fee: 0 },
+      {
+        symbol: '2330',
+        name: '台積電',
+        market: 'TW',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 5,
+        price: 200,
+        fee: 0,
+      },
     ];
-    const summary = computePortfolioSummary(txs, { priceOverrides: {}, priceCache: {} }, { year: 'all', market: 'TW' });
+    const summary = computePortfolioSummary(
+      txs,
+      { priceOverrides: {}, priceCache: {} },
+      { year: 'all', market: 'TW' },
+    );
     expect(summary.perSymbol).toHaveLength(1);
     expect(summary.perSymbol[0].symbol).toBe('2330');
     expect(summary.byMarket.US.totalInvested).toBe(0);
@@ -167,8 +317,20 @@ describe('roi.convertAmount', () => {
 describe('roi.convertSummaryToDisplayCurrency', () => {
   it('sums TW (TWD) and US (USD) market summaries into a single display currency', () => {
     const byMarket = {
-      TW: { totalInvested: 3200, costBasisHeld: 3200, realizedGain: 0, unrealizedGain: 0, currency: 'TWD' },
-      US: { totalInvested: 100, costBasisHeld: 100, realizedGain: 0, unrealizedGain: 0, currency: 'USD' },
+      TW: {
+        totalInvested: 3200,
+        costBasisHeld: 3200,
+        realizedGain: 0,
+        unrealizedGain: 0,
+        currency: 'TWD',
+      },
+      US: {
+        totalInvested: 100,
+        costBasisHeld: 100,
+        realizedGain: 0,
+        unrealizedGain: 0,
+        currency: 'USD',
+      },
     };
     const result = convertSummaryToDisplayCurrency(byMarket, 'USD', 32);
     expect(result.totalInvested).toBeCloseTo(100 + 100);

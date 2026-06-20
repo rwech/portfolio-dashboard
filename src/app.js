@@ -39,7 +39,10 @@
   }
 
   function reloadTransactionsFromStorage() {
-    state.transactions = [...storage.loadTransactions('TW'), ...storage.loadTransactions('US')];
+    state.transactions = [
+      ...storage.loadTransactions('TW'),
+      ...storage.loadTransactions('US'),
+    ];
   }
 
   function blockIfDemoMode() {
@@ -53,20 +56,51 @@
   }
 
   function render() {
-    const priceCtx = { priceOverrides: state.priceOverrides, priceCache: state.priceCache };
+    const priceCtx = {
+      priceOverrides: state.priceOverrides,
+      priceCache: state.priceCache,
+    };
     const fxRate = state.fxResult ? state.fxResult.rate : null;
 
-    state.filters.year = roi.resolveYearFilter(state.transactions, state.filters.year);
+    state.filters.year = roi.resolveYearFilter(
+      state.transactions,
+      state.filters.year,
+    );
 
-    const fullSummary = roi.computePortfolioSummary(state.transactions, priceCtx, { year: 'all', market: 'all' });
-    const filteredSummary = roi.computePortfolioSummary(state.transactions, priceCtx, state.filters);
-    const filteredTx = roi.filterTransactions(state.transactions, state.filters);
+    const fullSummary = roi.computePortfolioSummary(
+      state.transactions,
+      priceCtx,
+      { year: 'all', market: 'all' },
+    );
+    const filteredSummary = roi.computePortfolioSummary(
+      state.transactions,
+      priceCtx,
+      state.filters,
+    );
+    const filteredTx = roi.filterTransactions(
+      state.transactions,
+      state.filters,
+    );
 
-    const converted = roi.convertSummaryToDisplayCurrency(filteredSummary.byMarket, state.filters.displayCurrency, fxRate);
+    const converted = roi.convertSummaryToDisplayCurrency(
+      filteredSummary.byMarket,
+      state.filters.displayCurrency,
+      fxRate,
+    );
 
     const allocationData = {
-      TW: roi.convertAmount(filteredSummary.byMarket.TW.costBasisHeld, 'TWD', state.filters.displayCurrency, fxRate),
-      US: roi.convertAmount(filteredSummary.byMarket.US.costBasisHeld, 'USD', state.filters.displayCurrency, fxRate),
+      TW: roi.convertAmount(
+        filteredSummary.byMarket.TW.costBasisHeld,
+        'TWD',
+        state.filters.displayCurrency,
+        fxRate,
+      ),
+      US: roi.convertAmount(
+        filteredSummary.byMarket.US.costBasisHeld,
+        'USD',
+        state.filters.displayCurrency,
+        fxRate,
+      ),
     };
 
     const symbolPnl = filteredSummary.perSymbol.map((s) => ({
@@ -78,10 +112,30 @@
       currentPrice: s.currentPrice,
       priceSource: s.priceSource,
       priceFetchedAt: s.priceFetchedAt,
-      costBasisHeld: roi.convertAmount(s.costBasisHeld, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-      marketValue: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-      realizedGain: roi.convertAmount(s.realizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
-      unrealizedGain: roi.convertAmount(s.unrealizedGain, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+      costBasisHeld: roi.convertAmount(
+        s.costBasisHeld,
+        currencyFor(s.market),
+        state.filters.displayCurrency,
+        fxRate,
+      ),
+      marketValue: roi.convertAmount(
+        s.marketValue,
+        currencyFor(s.market),
+        state.filters.displayCurrency,
+        fxRate,
+      ),
+      realizedGain: roi.convertAmount(
+        s.realizedGain,
+        currencyFor(s.market),
+        state.filters.displayCurrency,
+        fxRate,
+      ),
+      unrealizedGain: roi.convertAmount(
+        s.unrealizedGain,
+        currencyFor(s.market),
+        state.filters.displayCurrency,
+        fxRate,
+      ),
       roiPct: s.roiPct,
     }));
 
@@ -89,7 +143,12 @@
       .filter((s) => s.remainingQty > 0)
       .map((s) => ({
         symbol: s.symbol,
-        value: roi.convertAmount(s.marketValue, currencyFor(s.market), state.filters.displayCurrency, fxRate),
+        value: roi.convertAmount(
+          s.marketValue,
+          currencyFor(s.market),
+          state.filters.displayCurrency,
+          fxRate,
+        ),
       }));
 
     ui.renderFilterControls(state);
@@ -103,17 +162,31 @@
       editingId: state.editingTxId,
     });
     ui.updateSortIndicators('transactions-table', state.txSort);
-    ui.renderSymbolPnlTable(sortRows(symbolPnl, state.sort), state.filters.displayCurrency);
+    ui.renderSymbolPnlTable(
+      sortRows(symbolPnl, state.sort),
+      state.filters.displayCurrency,
+    );
     ui.updateSortIndicators('symbol-pnl-table', state.sort);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
       onOverrideClear: handlePriceOverrideClear,
     });
-    ui.renderBackupReminderBanner(storage.loadUnexportedChangeCount(), BACKUP_REMINDER_THRESHOLD);
+    ui.renderBackupReminderBanner(
+      storage.loadUnexportedChangeCount(),
+      BACKUP_REMINDER_THRESHOLD,
+    );
     ui.renderDemoModeBanner(state.demoMode);
     document.body.classList.toggle('demo-mode-active', state.demoMode);
-    charts.renderAllocationChart(document.getElementById('allocation-chart'), allocationData, state.filters.displayCurrency);
-    charts.renderSymbolAllocationChart(document.getElementById('symbol-allocation-chart'), symbolAllocationData, state.filters.displayCurrency);
+    charts.renderAllocationChart(
+      document.getElementById('allocation-chart'),
+      allocationData,
+      state.filters.displayCurrency,
+    );
+    charts.renderSymbolAllocationChart(
+      document.getElementById('symbol-allocation-chart'),
+      symbolAllocationData,
+      state.filters.displayCurrency,
+    );
 
     storage.saveUiFilters(state.filters);
   }
@@ -152,7 +225,12 @@
 
   function handleEditSave(id, market, updates) {
     if (blockIfDemoMode()) return;
-    if (!Number.isFinite(updates.quantity) || updates.quantity <= 0 || !Number.isFinite(updates.price) || updates.price < 0) {
+    if (
+      !Number.isFinite(updates.quantity) ||
+      updates.quantity <= 0 ||
+      !Number.isFinite(updates.price) ||
+      updates.price < 0
+    ) {
       alert('股數必須大於 0，單價不可為負數');
       return;
     }
@@ -178,8 +256,15 @@
   }
 
   function currentlyHeldSymbols() {
-    const priceCtx = { priceOverrides: state.priceOverrides, priceCache: state.priceCache };
-    const fullSummary = roi.computePortfolioSummary(state.transactions, priceCtx, { year: 'all', market: 'all' });
+    const priceCtx = {
+      priceOverrides: state.priceOverrides,
+      priceCache: state.priceCache,
+    };
+    const fullSummary = roi.computePortfolioSummary(
+      state.transactions,
+      priceCtx,
+      { year: 'all', market: 'all' },
+    );
     return fullSummary.perSymbol
       .filter((s) => s.remainingQty > 0)
       .map((s) => ({ symbol: s.symbol, market: s.market }));
@@ -199,7 +284,9 @@
     const btn = document.getElementById('refresh-all-btn');
     btn.disabled = true;
     try {
-      state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
+      state.fxResult = await exchangeRate.getExchangeRate({
+        forceRefresh: true,
+      });
       await refreshAllPrices();
     } finally {
       btn.disabled = false;
@@ -229,7 +316,10 @@
     loadRowsIntoMarket(rows, market, 'replace');
     reloadTransactionsFromStorage();
     const marketLabel = market === 'TW' ? '台股' : '美股';
-    ui.renderImportFeedback('import-errors', { notice: `已使用匯入資料取代現有的${marketLabel}交易紀錄（${rows.length} 筆）`, errors });
+    ui.renderImportFeedback('import-errors', {
+      notice: `已使用匯入資料取代現有的${marketLabel}交易紀錄（${rows.length} 筆）`,
+      errors,
+    });
     render();
   }
 
@@ -240,14 +330,20 @@
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     const marketLabel = market === 'TW' ? '台股' : '美股';
-    ui.renderImportFeedback('add-tx-import-feedback', { notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`, errors });
+    ui.renderImportFeedback('add-tx-import-feedback', {
+      notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`,
+      errors,
+    });
     render();
   }
 
   async function setDemoMode(enabled) {
     state.demoMode = enabled;
     if (enabled) {
-      const [tw, us] = await Promise.all([csv.fetchExampleCsv('TW'), csv.fetchExampleCsv('US')]);
+      const [tw, us] = await Promise.all([
+        csv.fetchExampleCsv('TW'),
+        csv.fetchExampleCsv('US'),
+      ]);
       state.transactions = [...tw.rows, ...us.rows];
     } else {
       reloadTransactionsFromStorage();
@@ -259,69 +355,100 @@
     ui.initTabs();
     ui.initDropdownMenus();
 
-    document.getElementById('filter-year').addEventListener('change', (e) => handleFilterChange({ year: e.target.value }));
-    document.getElementById('filter-market').addEventListener('change', (e) => handleFilterChange({ market: e.target.value }));
-    document.getElementById('filter-currency').addEventListener('change', (e) => handleFilterChange({ displayCurrency: e.target.value }));
+    document
+      .getElementById('filter-year')
+      .addEventListener('change', (e) =>
+        handleFilterChange({ year: e.target.value }),
+      );
+    document
+      .getElementById('filter-market')
+      .addEventListener('change', (e) =>
+        handleFilterChange({ market: e.target.value }),
+      );
+    document
+      .getElementById('filter-currency')
+      .addEventListener('change', (e) =>
+        handleFilterChange({ displayCurrency: e.target.value }),
+      );
 
-    document.getElementById('refresh-all-btn').addEventListener('click', handleRefreshAll);
+    document
+      .getElementById('refresh-all-btn')
+      .addEventListener('click', handleRefreshAll);
 
-    document.querySelectorAll('#symbol-pnl-table thead th[data-sort-key]').forEach((th) => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.sortKey;
-        if (state.sort.column === key) {
-          state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          state.sort = { column: key, direction: 'asc' };
+    document
+      .querySelectorAll('#symbol-pnl-table thead th[data-sort-key]')
+      .forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sortKey;
+          if (state.sort.column === key) {
+            state.sort.direction =
+              state.sort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.sort = { column: key, direction: 'asc' };
+          }
+          render();
+        });
+      });
+
+    document
+      .querySelectorAll('#transactions-table thead th[data-sort-key]')
+      .forEach((th) => {
+        th.addEventListener('click', () => {
+          const key = th.dataset.sortKey;
+          if (state.txSort.column === key) {
+            state.txSort.direction =
+              state.txSort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.txSort = { column: key, direction: 'asc' };
+          }
+          render();
+        });
+      });
+
+    document
+      .getElementById('add-transaction-form')
+      .addEventListener('submit', (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const data = new FormData(form);
+        const market = data.get('market');
+        const quantity = Number(data.get('quantity'));
+        const price = Number(data.get('price'));
+        const fee = Number(data.get('fee') || 0);
+        if (
+          !Number.isFinite(quantity) ||
+          quantity <= 0 ||
+          !Number.isFinite(price) ||
+          price < 0
+        ) {
+          alert('股數必須大於 0，單價不可為負數');
+          return;
         }
-        render();
+        handleAddTransaction(market, {
+          date: data.get('date'),
+          symbol: data.get('symbol'),
+          name: data.get('name') || '',
+          action: data.get('action'),
+          quantity,
+          price,
+          fee,
+        });
+        form.reset();
       });
-    });
-
-    document.querySelectorAll('#transactions-table thead th[data-sort-key]').forEach((th) => {
-      th.addEventListener('click', () => {
-        const key = th.dataset.sortKey;
-        if (state.txSort.column === key) {
-          state.txSort.direction = state.txSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          state.txSort = { column: key, direction: 'asc' };
-        }
-        render();
-      });
-    });
-
-    document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const data = new FormData(form);
-      const market = data.get('market');
-      const quantity = Number(data.get('quantity'));
-      const price = Number(data.get('price'));
-      const fee = Number(data.get('fee') || 0);
-      if (!Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(price) || price < 0) {
-        alert('股數必須大於 0，單價不可為負數');
-        return;
-      }
-      handleAddTransaction(market, {
-        date: data.get('date'),
-        symbol: data.get('symbol'),
-        name: data.get('name') || '',
-        action: data.get('action'),
-        quantity,
-        price,
-        fee,
-      });
-      form.reset();
-    });
 
     document.querySelectorAll('#export-menu .dropdown-item').forEach((item) => {
       item.addEventListener('click', () => handleExport(item.dataset.market));
     });
-    document.getElementById('backup-reminder-export-btn').addEventListener('click', () => {
-      handleExport('TW');
-      handleExport('US');
-    });
+    document
+      .getElementById('backup-reminder-export-btn')
+      .addEventListener('click', () => {
+        handleExport('TW');
+        handleExport('US');
+      });
 
-    document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
+    document
+      .getElementById('demo-mode-toggle')
+      .addEventListener('change', (e) => setDemoMode(e.target.checked));
 
     document.getElementById('theme-select').addEventListener('change', (e) => {
       const theme = e.target.value;
@@ -337,25 +464,33 @@
       });
     });
 
-    document.getElementById('import-csv-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const market = pendingImportMarket;
-      const reader = new FileReader();
-      reader.onload = () => handleReplaceImportText(String(reader.result), market);
-      reader.readAsText(file);
-      e.target.value = '';
-    });
+    document
+      .getElementById('import-csv-input')
+      .addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const market = pendingImportMarket;
+        const reader = new FileReader();
+        reader.onload = () =>
+          handleReplaceImportText(String(reader.result), market);
+        reader.readAsText(file);
+        e.target.value = '';
+      });
 
-    document.getElementById('add-tx-import-csv-input').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const market = document.getElementById('add-tx-import-market-select').value;
-      const reader = new FileReader();
-      reader.onload = () => handleAppendImportText(String(reader.result), market);
-      reader.readAsText(file);
-      e.target.value = '';
-    });
+    document
+      .getElementById('add-tx-import-csv-input')
+      .addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const market = document.getElementById(
+          'add-tx-import-market-select',
+        ).value;
+        const reader = new FileReader();
+        reader.onload = () =>
+          handleAppendImportText(String(reader.result), market);
+        reader.readAsText(file);
+        e.target.value = '';
+      });
 
     window.addEventListener('beforeunload', (e) => {
       if (storage.loadUnexportedChangeCount() > 0) {
@@ -372,7 +507,10 @@
 
     reloadTransactionsFromStorage();
     if (state.transactions.length === 0) {
-      const [tw, us] = await Promise.all([csv.fetchInitialCsv('TW'), csv.fetchInitialCsv('US')]);
+      const [tw, us] = await Promise.all([
+        csv.fetchInitialCsv('TW'),
+        csv.fetchInitialCsv('US'),
+      ]);
       tw.rows.forEach((row) => storage.addTransaction('TW', row));
       us.rows.forEach((row) => storage.addTransaction('US', row));
       reloadTransactionsFromStorage();

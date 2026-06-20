@@ -2,7 +2,8 @@
   function filterTransactions(allTx, { year, market }) {
     return allTx.filter((tx) => {
       if (market && market !== 'all' && tx.market !== market) return false;
-      if (year && year !== 'all' && tx.date.slice(0, 4) !== String(year)) return false;
+      if (year && year !== 'all' && tx.date.slice(0, 4) !== String(year))
+        return false;
       return true;
     });
   }
@@ -28,17 +29,21 @@
   }
 
   function computeOneSymbolStat(symbolTransactions, year = 'all') {
-    const sorted = [...symbolTransactions].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    const sorted = [...symbolTransactions].sort((a, b) =>
+      a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+    );
     const first = sorted[0];
     const state = { qty: 0, avgCost: 0, totalInvested: 0, realizedGain: 0 };
-    const isInYear = (tx) => year === 'all' || tx.date.slice(0, 4) === String(year);
+    const isInYear = (tx) =>
+      year === 'all' || tx.date.slice(0, 4) === String(year);
 
     sorted.forEach((tx) => {
       if (tx.action === 'buy') {
         const newQty = state.qty + tx.quantity;
         const costOfThisBuy = tx.price * tx.quantity + tx.fee;
         const totalCostBefore = state.avgCost * state.qty;
-        state.avgCost = newQty > 0 ? (totalCostBefore + costOfThisBuy) / newQty : 0;
+        state.avgCost =
+          newQty > 0 ? (totalCostBefore + costOfThisBuy) / newQty : 0;
         state.qty = newQty;
         state.totalInvested += costOfThisBuy;
       } else if (tx.action === 'sell') {
@@ -67,8 +72,11 @@
     const grouped = groupBySymbol(transactions);
     const result = new Map();
     grouped.forEach((txs, symbol) => {
-      const hasActivityInYear = year === 'all' || txs.some((tx) => tx.date.slice(0, 4) === String(year));
-      if (hasActivityInYear) result.set(symbol, computeOneSymbolStat(txs, year));
+      const hasActivityInYear =
+        year === 'all' ||
+        txs.some((tx) => tx.date.slice(0, 4) === String(year));
+      if (hasActivityInYear)
+        result.set(symbol, computeOneSymbolStat(txs, year));
     });
     return result;
   }
@@ -98,7 +106,11 @@
     };
   }
 
-  function computePortfolioSummary(allTx, { priceOverrides, priceCache }, filters) {
+  function computePortfolioSummary(
+    allTx,
+    { priceOverrides, priceCache },
+    filters,
+  ) {
     const marketFiltered = filterByMarket(allTx, filters.market);
     const twTx = marketFiltered.filter((tx) => tx.market === 'TW');
     const usTx = marketFiltered.filter((tx) => tx.market === 'US');
@@ -111,13 +123,22 @@
     const perSymbol = [];
     [twStats, usStats].forEach((statsMap) => {
       statsMap.forEach((stat) => {
-        const resolved = resolvePrice(stat.symbol, { priceOverrides, priceCache, avgCost: stat.avgCost });
+        const resolved = resolvePrice(stat.symbol, {
+          priceOverrides,
+          priceCache,
+          avgCost: stat.avgCost,
+        });
         stat.currentPrice = resolved.value;
         stat.priceSource = resolved.source;
         stat.priceFetchedAt = resolved.fetchedAt;
-        stat.unrealizedGain = (resolved.value - stat.avgCost) * stat.remainingQty;
+        stat.unrealizedGain =
+          (resolved.value - stat.avgCost) * stat.remainingQty;
         stat.marketValue = resolved.value * stat.remainingQty;
-        stat.roiPct = roiPct(stat.realizedGain, stat.unrealizedGain, stat.totalInvested);
+        stat.roiPct = roiPct(
+          stat.realizedGain,
+          stat.unrealizedGain,
+          stat.totalInvested,
+        );
         perSymbol.push(stat);
       });
     });
@@ -135,8 +156,10 @@
     if (fromCurrency === toCurrency) return amount;
     if (typeof fxRate !== 'number') return NaN;
     const exchangeRate = window.PFD.exchangeRate;
-    if (fromCurrency === 'USD' && toCurrency === 'TWD') return exchangeRate.usdToTwd(amount, fxRate);
-    if (fromCurrency === 'TWD' && toCurrency === 'USD') return exchangeRate.twdToUsd(amount, fxRate);
+    if (fromCurrency === 'USD' && toCurrency === 'TWD')
+      return exchangeRate.usdToTwd(amount, fxRate);
+    if (fromCurrency === 'TWD' && toCurrency === 'USD')
+      return exchangeRate.twdToUsd(amount, fxRate);
     return amount;
   }
 
@@ -149,7 +172,13 @@
 
     markets.forEach((m) => {
       const summary = byMarket[m];
-      const factor = (field) => convertAmount(summary[field], summary.currency, displayCurrency, fxRate);
+      const factor = (field) =>
+        convertAmount(
+          summary[field],
+          summary.currency,
+          displayCurrency,
+          fxRate,
+        );
       totalInvested += factor('totalInvested');
       costBasisHeld += factor('costBasisHeld');
       realizedGain += factor('realizedGain');

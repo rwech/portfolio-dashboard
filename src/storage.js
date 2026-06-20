@@ -49,7 +49,11 @@
   }
 
   function replaceTransactions(market, rows) {
-    const withIds = rows.map((tx) => ({ ...tx, id: crypto.randomUUID(), market }));
+    const withIds = rows.map((tx) => ({
+      ...tx,
+      id: crypto.randomUUID(),
+      market,
+    }));
     saveTransactions(market, withIds);
     return withIds;
   }

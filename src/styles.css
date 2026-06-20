@@ -51,6 +51,48 @@
   --accent-2-rgb: 107, 217, 138;
 }
 
+:root[data-theme='sunset'] {
+  --bg: #1a0e0a;
+  --surface: #241510;
+  --surface-alt: #2e1c14;
+  --text: #ffeee6;
+  --text-muted: #b89080;
+  --border: rgba(255, 107, 91, 0.25);
+  --accent: #ff6b5b;
+  --accent-rgb: 255, 107, 91;
+  --accent-hover: #ff8d80;
+  --accent-2: #ffa500;
+  --accent-2-rgb: 255, 165, 0;
+}
+
+:root[data-theme='ocean'] {
+  --bg: #070d14;
+  --surface: #0d1722;
+  --surface-alt: #13202f;
+  --text: #e6f7ff;
+  --text-muted: #7c97a8;
+  --border: rgba(123, 104, 238, 0.25);
+  --accent: #7b68ee;
+  --accent-rgb: 123, 104, 238;
+  --accent-hover: #9a8af2;
+  --accent-2: #00ced1;
+  --accent-2-rgb: 0, 206, 209;
+}
+
+:root[data-theme='sakura'] {
+  --bg: #160d12;
+  --surface: #21121b;
+  --surface-alt: #2b1722;
+  --text: #ffeef7;
+  --text-muted: #ad8298;
+  --border: rgba(255, 105, 180, 0.25);
+  --accent: #ff69b4;
+  --accent-rgb: 255, 105, 180;
+  --accent-hover: #ff8cc6;
+  --accent-2: #dda0dd;
+  --accent-2-rgb: 221, 160, 221;
+}
+
 body {
   font-family: -apple-system, 'Segoe UI', 'Noto Sans TC', sans-serif;
   margin: 0;

@@ -174,7 +174,7 @@
 
   function renderTxRow(tx) {
     return `<tr data-id="${tx.id}" data-market="${tx.market}">
-      <td class="tx-actions"><button type="button" class="icon-btn edit-tx-btn" title="編輯" aria-label="編輯">${ICON_EDIT}</button><button type="button" class="icon-btn delete-tx-btn" title="刪除" aria-label="刪除">${ICON_DELETE}</button></td>
+      <td><div class="tx-actions"><button type="button" class="icon-btn edit-tx-btn" title="編輯" aria-label="編輯">${ICON_EDIT}</button><button type="button" class="icon-btn delete-tx-btn" title="刪除" aria-label="刪除">${ICON_DELETE}</button></div></td>
       <td>${tx.date}</td>
       <td><span class="badge badge-${tx.action === 'buy' ? 'buy' : 'sell'}">${tx.action === 'buy' ? '買進' : '賣出'}</span></td>
       <td>${escapeHtml(tx.symbol)}</td>
@@ -188,7 +188,7 @@
 
   function renderEditableTxRow(tx) {
     return `<tr data-id="${tx.id}" data-market="${tx.market}" class="editing-row">
-      <td class="tx-actions"><button type="button" class="icon-btn save-edit-btn" title="儲存" aria-label="儲存">${ICON_SAVE}</button><button type="button" class="icon-btn cancel-edit-btn" title="取消" aria-label="取消">${ICON_CANCEL}</button></td>
+      <td><div class="tx-actions"><button type="button" class="icon-btn save-edit-btn" title="儲存" aria-label="儲存">${ICON_SAVE}</button><button type="button" class="icon-btn cancel-edit-btn" title="取消" aria-label="取消">${ICON_CANCEL}</button></div></td>
       <td><input type="date" class="edit-date" value="${escapeHtml(tx.date)}" required></td>
       <td><select class="edit-action">
         <option value="buy" ${tx.action === 'buy' ? 'selected' : ''}>買進</option>

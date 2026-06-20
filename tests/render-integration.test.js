@@ -24,6 +24,16 @@ describe('renderTransactionTable XSS handling', () => {
     expect(window.__pwned).toBeUndefined();
     expect(tbody.textContent).toContain(evilSymbol);
   });
+
+  it('labels a sell action distinctly from a buy action', () => {
+    window.PFD.ui.renderTransactionTable(
+      [{ id: '1', market: 'US', date: '2024-01-01', symbol: 'AAPL', name: '', action: 'sell', quantity: 1, price: 1, fee: 0 }],
+      () => {}
+    );
+    const tbody = document.querySelector('#transactions-table tbody');
+    expect(tbody.querySelector('.badge-sell')).not.toBeNull();
+    expect(tbody.textContent).toContain('賣出');
+  });
 });
 
 describe('renderSymbolPnlTable stale price tag', () => {
@@ -65,5 +75,26 @@ describe('renderSymbolPnlTable stale price tag', () => {
       'USD'
     );
     expect(document.querySelector('#symbol-pnl-table .badge-stale')).toBeNull();
+  });
+
+  it('falls back to the raw source string for an unrecognized priceSource', () => {
+    window.PFD.ui.renderSymbolPnlTable(
+      [{ ...baseStat, currentPrice: 100, priceSource: 'mystery', priceFetchedAt: new Date().toISOString() }],
+      'USD'
+    );
+    expect(document.querySelector('#symbol-pnl-table tbody').textContent).toContain('mystery');
+  });
+});
+
+describe('renderPriceOverridePanel unrecognized priceSource', () => {
+  beforeEach(setupDom);
+
+  it('falls back to the raw source string when it has no Chinese label', () => {
+    window.PFD.ui.renderPriceOverridePanel(
+      [{ symbol: 'AAA', name: '', market: 'US', remainingQty: 10, currentPrice: 100, priceSource: 'mystery', priceFetchedAt: new Date().toISOString() }],
+      {},
+      { onOverrideChange: () => {}, onOverrideClear: () => {} }
+    );
+    expect(document.querySelector('#price-override-table tbody').textContent).toContain('mystery');
   });
 });

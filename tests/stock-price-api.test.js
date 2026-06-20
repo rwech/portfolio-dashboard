@@ -69,6 +69,41 @@ describe('api/stock-price handler', () => {
     expect(res.headers['Access-Control-Allow-Origin']).toBe('https://rwech.github.io');
   });
 
+  it('returns the live price for a symbol whose upstream fetch succeeds', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 123.45, currency: 'USD' } }] } }),
+    }));
+    const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
+    const res = createRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.AAPL).toMatchObject({ price: 123.45, currency: 'USD' });
+    expect(res.body.AAPL.fetchedAt).toBeTruthy();
+  });
+
+  it('falls back to a null currency when the chart response omits it', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ chart: { result: [{ meta: { regularMarketPrice: 50 } }] } }),
+    }));
+    const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
+    const res = createRes();
+    await handler(req, res);
+    expect(res.body.AAPL).toMatchObject({ price: 50, currency: null });
+  });
+
+  it('returns null for a symbol whose chart response is missing a usable price', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ chart: { result: [{ meta: {} }] } }),
+    }));
+    const req = { headers: {}, method: 'GET', query: { symbols: 'AAPL' } };
+    const res = createRes();
+    await handler(req, res);
+    expect(res.body.AAPL).toBeNull();
+  });
+
   it('responds to an OPTIONS preflight with 204', async () => {
     const req = { headers: { origin: 'https://rwech.github.io' }, method: 'OPTIONS', query: {} };
     const res = createRes();

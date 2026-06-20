@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import '../src/storage.js';
+import '../src/stockPrice.js';
+import '../src/exchangeRate.js';
 import '../src/roi.js';
 
-const { computeSymbolStats, roiPct, resolveYearFilter } = window.PFD.roi;
+const { computeSymbolStats, computePortfolioSummary, filterTransactions, convertAmount, convertSummaryToDisplayCurrency, roiPct, resolveYearFilter } = window.PFD.roi;
 
 describe('roi.computeSymbolStats', () => {
   it('averages cost basis across multiple buys', () => {
@@ -23,6 +26,38 @@ describe('roi.computeSymbolStats', () => {
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.remainingQty).toBe(0);
     expect(stat.realizedGain).toBe((150 - 100) * 10 - 5);
+  });
+});
+
+describe('roi.computeSymbolStats with edge-case inputs', () => {
+  it('keeps two same-date transactions in their original relative order', () => {
+    const txs = [
+      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
+      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 5, price: 200, fee: 0 },
+    ];
+    const stat = computeSymbolStats(txs).get('AAA');
+    expect(stat.remainingQty).toBe(15);
+    expect(stat.totalInvested).toBe(10 * 100 + 5 * 200);
+  });
+
+  it('sorts transactions into date order even when the input array is reverse-chronological', () => {
+    const txs = [
+      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-03-01', action: 'buy', quantity: 5, price: 300, fee: 0 },
+      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
+    ];
+    const stat = computeSymbolStats(txs).get('AAA');
+    // If the rows were processed out of date order, the first buy would seed
+    // avgCost from the 300 price instead of 100, giving a different blended cost.
+    expect(stat.avgCost).toBe((10 * 100 + 5 * 300) / 15);
+  });
+
+  it('keeps avgCost at 0 when a zero-quantity buy leaves the running quantity at 0', () => {
+    const txs = [
+      { symbol: 'AAA', name: 'A', market: 'US', date: '2024-01-01', action: 'buy', quantity: 0, price: 100, fee: 0 },
+    ];
+    const stat = computeSymbolStats(txs).get('AAA');
+    expect(stat.avgCost).toBe(0);
+    expect(stat.remainingQty).toBe(0);
   });
 });
 
@@ -75,5 +110,68 @@ describe('roi.roiPct', () => {
 
   it('computes gain as a percentage of invested capital', () => {
     expect(roiPct(50, -10, 1000)).toBeCloseTo(4);
+  });
+});
+
+describe('roi.filterTransactions', () => {
+  const txs = [
+    { symbol: 'AAA', market: 'TW', date: '2024-01-01' },
+    { symbol: 'BBB', market: 'US', date: '2023-06-01' },
+  ];
+
+  it('returns everything when both filters are "all"', () => {
+    expect(filterTransactions(txs, { year: 'all', market: 'all' })).toEqual(txs);
+  });
+
+  it('filters by market', () => {
+    expect(filterTransactions(txs, { year: 'all', market: 'TW' })).toEqual([txs[0]]);
+  });
+
+  it('filters by year', () => {
+    expect(filterTransactions(txs, { year: '2023', market: 'all' })).toEqual([txs[1]]);
+  });
+});
+
+describe('roi.computePortfolioSummary with a market filter', () => {
+  it('restricts perSymbol and byMarket totals to the selected market only', () => {
+    const txs = [
+      { symbol: '2330', name: '台積電', market: 'TW', date: '2024-01-01', action: 'buy', quantity: 10, price: 100, fee: 0 },
+      { symbol: 'AAPL', name: 'Apple', market: 'US', date: '2024-01-01', action: 'buy', quantity: 5, price: 200, fee: 0 },
+    ];
+    const summary = computePortfolioSummary(txs, { priceOverrides: {}, priceCache: {} }, { year: 'all', market: 'TW' });
+    expect(summary.perSymbol).toHaveLength(1);
+    expect(summary.perSymbol[0].symbol).toBe('2330');
+    expect(summary.byMarket.US.totalInvested).toBe(0);
+  });
+});
+
+describe('roi.convertAmount', () => {
+  it('returns the amount unchanged when currencies already match', () => {
+    expect(convertAmount(100, 'TWD', 'TWD', null)).toBe(100);
+  });
+
+  it('returns NaN when a conversion is needed but no fx rate is available', () => {
+    expect(convertAmount(100, 'USD', 'TWD', null)).toBeNaN();
+  });
+
+  it('converts USD to TWD and back using the given rate', () => {
+    expect(convertAmount(100, 'USD', 'TWD', 32)).toBe(3200);
+    expect(convertAmount(3200, 'TWD', 'USD', 32)).toBe(100);
+  });
+
+  it('falls back to the raw amount for a currency pair it does not know how to convert', () => {
+    expect(convertAmount(100, 'EUR', 'JPY', 32)).toBe(100);
+  });
+});
+
+describe('roi.convertSummaryToDisplayCurrency', () => {
+  it('sums TW (TWD) and US (USD) market summaries into a single display currency', () => {
+    const byMarket = {
+      TW: { totalInvested: 3200, costBasisHeld: 3200, realizedGain: 0, unrealizedGain: 0, currency: 'TWD' },
+      US: { totalInvested: 100, costBasisHeld: 100, realizedGain: 0, unrealizedGain: 0, currency: 'USD' },
+    };
+    const result = convertSummaryToDisplayCurrency(byMarket, 'USD', 32);
+    expect(result.totalInvested).toBeCloseTo(100 + 100);
+    expect(result.currency).toBe('USD');
   });
 });

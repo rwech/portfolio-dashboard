@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "eslint . && vitest run --coverage && node scripts/check-api-esm.mjs",
+    "test": "eslint . && prettier --check . && vitest run --coverage && node scripts/check-api-esm.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

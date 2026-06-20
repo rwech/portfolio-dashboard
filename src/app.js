@@ -205,6 +205,7 @@
     }
     storage.addTransaction(market, {
       ...tx,
+      action: tx.action.toLowerCase(),
       quantity: Number(tx.quantity),
       price: Number(tx.price),
       fee: Number(tx.fee || 0),
@@ -244,6 +245,7 @@
     }
     storage.updateTransaction(market, id, {
       ...updates,
+      action: updates.action.toLowerCase(),
       quantity: Number(updates.quantity),
       price: Number(updates.price),
       fee: Number(updates.fee || 0),

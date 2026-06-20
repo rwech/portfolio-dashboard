@@ -8,6 +8,7 @@ const {
   fetchExampleCsv,
   downloadCsv,
   fileNameFor,
+  validateRow,
 } = window.PFD.csv;
 
 describe('csv.parseCsv', () => {
@@ -48,6 +49,14 @@ describe('csv.parseCsv', () => {
       'date,symbol,name,action,quantity,price,fee\n2024-01-10,2330,,hold,10,560,0\n';
     const { errors } = parseCsv(text, 'TW');
     expect(errors[0].reason).toMatch(/action/);
+  });
+
+  it('accepts an action regardless of letter case and normalizes it to lowercase', () => {
+    const text =
+      'date,symbol,name,action,quantity,price,fee\n2024-01-10,2330,,Buy,10,560,0\n2024-01-11,2330,,SELL,5,560,0\n';
+    const { rows, errors } = parseCsv(text, 'TW');
+    expect(errors).toHaveLength(0);
+    expect(rows.map((r) => r.action)).toEqual(['buy', 'sell']);
   });
 
   it('rejects an empty symbol', () => {
@@ -100,6 +109,27 @@ describe('csv.parseCsv', () => {
     const { rows, errors } = parseCsv(text, 'US');
     expect(rows).toHaveLength(2);
     expect(errors).toEqual([{ line: 3, reason: 'date 格式必須為 YYYY-MM-DD' }]);
+  });
+});
+
+describe('csv.validateRow', () => {
+  const baseRow = {
+    date: '2024-01-10',
+    symbol: '2330',
+    action: 'buy',
+    quantity: '10',
+    price: '560',
+    fee: '0',
+  };
+
+  it('accepts buy/sell regardless of letter case', () => {
+    expect(validateRow({ ...baseRow, action: 'Buy' })).toBeNull();
+    expect(validateRow({ ...baseRow, action: 'SELL' })).toBeNull();
+    expect(validateRow({ ...baseRow, action: 'sElL' })).toBeNull();
+  });
+
+  it('still rejects an action that is not buy/sell in any case', () => {
+    expect(validateRow({ ...baseRow, action: 'Hold' })).toMatch(/action/);
   });
 });
 

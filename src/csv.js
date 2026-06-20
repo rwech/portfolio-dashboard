@@ -56,7 +56,8 @@
   function validateRow(obj) {
     if (!DATE_RE.test(obj.date)) return 'date 格式必須為 YYYY-MM-DD';
     if (!obj.symbol) return 'symbol 不可為空';
-    if (obj.action !== 'buy' && obj.action !== 'sell')
+    const action = String(obj.action || '').toLowerCase();
+    if (action !== 'buy' && action !== 'sell')
       return 'action 必須是 buy 或 sell';
     const quantity = Number(obj.quantity);
     if (!Number.isFinite(quantity) || quantity <= 0)
@@ -100,7 +101,7 @@
         date: obj.date,
         symbol: obj.symbol,
         name: obj.name || '',
-        action: obj.action,
+        action: obj.action.toLowerCase(),
         quantity: Number(obj.quantity),
         price: Number(obj.price),
         fee: obj.fee ? Number(obj.fee) : 0,

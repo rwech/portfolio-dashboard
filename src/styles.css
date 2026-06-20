@@ -121,6 +121,7 @@ section {
 body.demo-mode-active #add-transaction-form,
 body.demo-mode-active #export-btn,
 body.demo-mode-active .file-input-label,
+body.demo-mode-active .edit-tx-btn,
 body.demo-mode-active .delete-tx-btn,
 body.demo-mode-active .override-save-btn,
 body.demo-mode-active .override-clear-btn {
@@ -343,6 +344,58 @@ th[data-sort-direction="desc"]::after {
   z-index: 1;
 }
 
+#transactions-table th:nth-child(1),
+#transactions-table td:nth-child(1) {
+  width: 4.5rem;
+  min-width: 4.5rem;
+  left: 0;
+}
+
+#transactions-table th:nth-child(2),
+#transactions-table td:nth-child(2) {
+  width: 6rem;
+  min-width: 6rem;
+  left: 4.5rem;
+}
+
+#transactions-table th:nth-child(3),
+#transactions-table td:nth-child(3) {
+  width: 4rem;
+  min-width: 4rem;
+  left: 10.5rem;
+}
+
+#transactions-table th:nth-child(4),
+#transactions-table td:nth-child(4) {
+  left: 14.5rem;
+}
+
+#transactions-table th:nth-child(1),
+#transactions-table th:nth-child(2),
+#transactions-table th:nth-child(3),
+#transactions-table th:nth-child(4),
+#transactions-table td:nth-child(1),
+#transactions-table td:nth-child(2),
+#transactions-table td:nth-child(3),
+#transactions-table td:nth-child(4) {
+  position: sticky;
+  background: var(--surface);
+  z-index: 2;
+}
+
+.tx-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.editing-row td {
+  background: var(--surface-alt);
+}
+
+#transactions-table .editing-row td:nth-child(-n+4) {
+  background: var(--surface-alt);
+}
+
 #add-transaction-form {
   display: flex;
   flex-wrap: wrap;
@@ -487,6 +540,11 @@ button[type="submit"]:hover {
 .override-clear-btn:not(:disabled):hover {
   background: rgba(255, 77, 109, 0.12);
   border-color: var(--danger);
+}
+
+.icon-btn {
+  padding: 0.3rem;
+  line-height: 0;
 }
 
 .badge {

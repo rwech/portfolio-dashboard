@@ -18,6 +18,7 @@
     demoMode: false,
     sort: { column: null, direction: 'asc' },
     txSort: { column: 'date', direction: 'desc' },
+    editingTxId: null,
   };
 
   function compareForSort(a, b, column) {
@@ -94,7 +95,13 @@
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
-    ui.renderTransactionTable(sortRows(filteredTx, state.txSort), handleDeleteTransaction);
+    ui.renderTransactionTable(sortRows(filteredTx, state.txSort), {
+      onDelete: handleDeleteTransaction,
+      onEditStart: handleEditStart,
+      onEditCancel: handleEditCancel,
+      onEditSave: handleEditSave,
+      editingId: state.editingTxId,
+    });
     ui.updateSortIndicators('transactions-table', state.txSort);
     ui.renderSymbolPnlTable(sortRows(symbolPnl, state.sort), state.filters.displayCurrency);
     ui.updateSortIndicators('symbol-pnl-table', state.sort);
@@ -127,6 +134,30 @@
   function handleDeleteTransaction(id, market) {
     if (blockIfDemoMode()) return;
     storage.deleteTransaction(market, id);
+    reloadTransactionsFromStorage();
+    storage.incrementUnexportedChanges();
+    render();
+  }
+
+  function handleEditStart(id) {
+    if (blockIfDemoMode()) return;
+    state.editingTxId = id;
+    render();
+  }
+
+  function handleEditCancel() {
+    state.editingTxId = null;
+    render();
+  }
+
+  function handleEditSave(id, market, updates) {
+    if (blockIfDemoMode()) return;
+    if (!Number.isFinite(updates.quantity) || updates.quantity <= 0 || !Number.isFinite(updates.price) || updates.price < 0) {
+      alert('股數必須大於 0，單價不可為負數');
+      return;
+    }
+    storage.updateTransaction(market, id, updates);
+    state.editingTxId = null;
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
@@ -370,6 +401,9 @@
     handleFilterChange,
     handleAddTransaction,
     handleDeleteTransaction,
+    handleEditStart,
+    handleEditCancel,
+    handleEditSave,
     handleReplaceImportText,
     handleAppendImportText,
     handlePriceOverrideChange,

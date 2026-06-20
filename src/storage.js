@@ -59,6 +59,16 @@
     saveTransactions(market, list);
   }
 
+  function updateTransaction(market, id, updates) {
+    const list = loadTransactions(market);
+    const idx = list.findIndex((tx) => tx.id === id);
+    if (idx === -1) return null;
+    const updated = { ...list[idx], ...updates, id, market };
+    list[idx] = updated;
+    saveTransactions(market, list);
+    return updated;
+  }
+
   function loadPriceCache() {
     return readJson(KEYS.PRICE_CACHE, {});
   }
@@ -129,6 +139,7 @@
     addTransaction,
     replaceTransactions,
     deleteTransaction,
+    updateTransaction,
     loadPriceCache,
     savePriceCache,
     loadPriceOverrides,

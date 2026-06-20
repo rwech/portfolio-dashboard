@@ -64,6 +64,22 @@ describe('storage transactions', () => {
     expect(list).toHaveLength(1);
     expect(list[0].id).toBe(b.id);
   });
+
+  it('updateTransaction merges the given fields into the matching row and keeps its id/market', () => {
+    const a = storage.addTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    const updated = storage.updateTransaction('TW', a.id, { symbol: 'B', quantity: 5 });
+    expect(updated).toEqual({ ...a, symbol: 'B', quantity: 5 });
+    const list = storage.loadTransactions('TW');
+    expect(list).toHaveLength(1);
+    expect(list[0]).toEqual(updated);
+  });
+
+  it('updateTransaction returns null and leaves the list unchanged when the id is not found', () => {
+    storage.addTransaction('TW', { date: '2024-01-01', symbol: 'A', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+    const result = storage.updateTransaction('TW', 'missing-id', { symbol: 'B' });
+    expect(result).toBeNull();
+    expect(storage.loadTransactions('TW')).toHaveLength(1);
+  });
 });
 
 describe('storage price cache and overrides', () => {

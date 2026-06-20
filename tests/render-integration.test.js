@@ -17,7 +17,7 @@ describe('renderTransactionTable XSS handling', () => {
     const evilSymbol = '<img src=x onerror="window.__pwned = true">';
     window.PFD.ui.renderTransactionTable(
       [{ id: '1', market: 'TW', date: '2024-01-01', symbol: evilSymbol, name: '', action: 'buy', quantity: 1, price: 1, fee: 0 }],
-      () => {}
+      { onDelete: () => {} }
     );
     const tbody = document.querySelector('#transactions-table tbody');
     expect(tbody.querySelector('img')).toBeNull();
@@ -28,11 +28,26 @@ describe('renderTransactionTable XSS handling', () => {
   it('labels a sell action distinctly from a buy action', () => {
     window.PFD.ui.renderTransactionTable(
       [{ id: '1', market: 'US', date: '2024-01-01', symbol: 'AAPL', name: '', action: 'sell', quantity: 1, price: 1, fee: 0 }],
-      () => {}
+      { onDelete: () => {} }
     );
     const tbody = document.querySelector('#transactions-table tbody');
     expect(tbody.querySelector('.badge-sell')).not.toBeNull();
     expect(tbody.textContent).toContain('賣出');
+  });
+
+  it('renders the row matching editingId as an editable form row instead of a static row', () => {
+    const evilSymbol = '<img src=x onerror="window.__pwned2 = true">';
+    window.PFD.ui.renderTransactionTable(
+      [{ id: '1', market: 'TW', date: '2024-01-01', symbol: evilSymbol, name: 'n', action: 'buy', quantity: 3, price: 4, fee: 5 }],
+      { editingId: '1' }
+    );
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.querySelector('.edit-tx-btn')).toBeNull();
+    expect(row.querySelector('.save-edit-btn')).not.toBeNull();
+    expect(row.querySelector('.cancel-edit-btn')).not.toBeNull();
+    expect(row.querySelector('.edit-symbol').value).toBe(evilSymbol);
+    expect(row.querySelector('.edit-quantity').value).toBe('3');
+    expect(window.__pwned2).toBeUndefined();
   });
 });
 

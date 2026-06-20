@@ -115,6 +115,19 @@ describe('app: demo mode / filter / import interaction', () => {
     expect(app.state.transactions).toHaveLength(1); // delete was blocked
   });
 
+  it('also blocks starting an edit while demo mode is on', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', { date: '2026-01-01', symbol: '0050', name: '', action: 'buy', quantity: 10, price: 100, fee: 0 });
+    await app.setDemoMode(true);
+
+    const txId = app.state.transactions[0].id;
+    app.handleEditStart(txId);
+    expect(global.alert).toHaveBeenCalled();
+    expect(app.state.editingTxId).toBeNull();
+
+    await app.setDemoMode(false);
+  });
+
   it('also blocks export and append-import while demo mode is on', async () => {
     const app = await setupApp();
     app.handleAddTransaction('TW', { date: '2026-01-01', symbol: '0050', name: '', action: 'buy', quantity: 10, price: 100, fee: 0 });
@@ -159,6 +172,56 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
 
     expect(txTableRowCount()).toBe(1);
     expect(document.querySelector('#transactions-table tbody tr').textContent).toContain('BBB');
+  });
+
+  it('clicking the edit icon turns a row editable, and saving persists the changes via handleEditSave', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'AAA', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    expect(editingRow.querySelector('.edit-symbol').value).toBe('AAA');
+
+    editingRow.querySelector('.edit-symbol').value = 'ZZZ';
+    editingRow.querySelector('.edit-quantity').value = '5';
+    editingRow.querySelector('.save-edit-btn').click();
+
+    const savedRow = document.querySelector('#transactions-table tbody tr');
+    expect(savedRow.textContent).toContain('ZZZ');
+    expect(savedRow.querySelector('.edit-symbol')).toBeNull();
+    const stored = window.PFD.storage.loadTransactions('TW')[0];
+    expect(stored.symbol).toBe('ZZZ');
+    expect(stored.quantity).toBe(5);
+    expect(app.state.editingTxId).toBeNull();
+  });
+
+  it('canceling an in-progress edit discards changes and restores the static row', async () => {
+    await setupApp();
+    window.PFD.app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'AAA', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-symbol').value = 'CHANGED';
+    editingRow.querySelector('.cancel-edit-btn').click();
+
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.textContent).toContain('AAA');
+    expect(window.PFD.storage.loadTransactions('TW')[0].symbol).toBe('AAA');
+  });
+
+  it('rejects saving an edit with invalid quantity/price and keeps the row in edit mode', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', { date: '2024-01-01', symbol: 'AAA', name: '', action: 'buy', quantity: 1, price: 1, fee: 0 });
+
+    document.querySelector('#transactions-table tbody tr .edit-tx-btn').click();
+    const editingRow = document.querySelector('#transactions-table tbody tr');
+    editingRow.querySelector('.edit-quantity').value = '0';
+    editingRow.querySelector('.save-edit-btn').click();
+
+    expect(global.alert).toHaveBeenCalled();
+    expect(app.state.editingTxId).not.toBeNull();
+    expect(document.querySelector('#transactions-table tbody tr .edit-symbol')).not.toBeNull();
   });
 
   it('saving a manual price override updates the override panel and clearing it removes the override', async () => {

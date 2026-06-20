@@ -202,14 +202,21 @@
         <p>格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。</p>
       </details>
       <div class="toolbar">
-        <select id="tx-market-select">
-          <option value="TW">台股</option>
-          <option value="US">美股</option>
-        </select>
-        <button id="export-btn" type="button" class="export-btn">匯出 CSV</button>
-        <label class="file-input-label import-btn">匯入 CSV（取代）
+        <div class="dropdown">
+          <button id="export-btn" type="button" class="export-btn dropdown-toggle" aria-haspopup="true" aria-expanded="false">匯出 CSV</button>
+          <div class="dropdown-menu" id="export-menu" hidden>
+            <button type="button" class="dropdown-item" data-market="TW">台股</button>
+            <button type="button" class="dropdown-item" data-market="US">美股</button>
+          </div>
+        </div>
+        <div class="dropdown">
+          <button id="import-btn" type="button" class="import-btn dropdown-toggle" aria-haspopup="true" aria-expanded="false">匯入 CSV（取代）</button>
+          <div class="dropdown-menu" id="import-menu" hidden>
+            <button type="button" class="dropdown-item" data-market="TW">台股</button>
+            <button type="button" class="dropdown-item" data-market="US">美股</button>
+          </div>
           <input id="import-csv-input" type="file" accept=".csv" hidden />
-        </label>
+        </div>
       </div>
       <div id="import-errors" class="import-feedback" hidden></div>
       <div class="table-scroll">

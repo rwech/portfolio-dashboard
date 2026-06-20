@@ -71,6 +71,13 @@ header h1 {
   font-size: 1.5rem;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .demo-mode-toggle {
   display: inline-flex;
   align-items: center;
@@ -270,6 +277,11 @@ body.demo-mode-active .override-clear-btn {
 
 .csv-format-help table {
   margin-top: 0.5rem;
+}
+
+.csv-format-help td,
+.csv-format-help th {
+  white-space: normal;
 }
 
 .csv-format-help code {

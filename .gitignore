@@ -4,3 +4,4 @@ db/*.csv
 .vercel
 .claude
 node_modules
+coverage

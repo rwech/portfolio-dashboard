@@ -26,6 +26,30 @@ describe('roi.computeSymbolStats', () => {
   });
 });
 
+describe('roi.computeSymbolStats with year filter (cross-year realized gain)', () => {
+  const txs = [
+    { symbol: 'AAA', name: 'A', market: 'US', date: '2022-03-01', action: 'buy', quantity: 1, price: 6, fee: 0 },
+    { symbol: 'AAA', name: 'A', market: 'US', date: '2023-05-01', action: 'buy', quantity: 2, price: 8, fee: 0 },
+    { symbol: 'AAA', name: 'A', market: 'US', date: '2024-07-01', action: 'sell', quantity: 1, price: 10, fee: 0 },
+  ];
+
+  it('computes realized gain against full-history avg cost when filtered to the sell year', () => {
+    const stat = computeSymbolStats(txs, '2024').get('AAA');
+    expect(stat.realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5); // ≈ 2.667
+    expect(stat.remainingQty).toBe(2);
+    expect(stat.totalInvested).toBe(22); // lifetime: 6 + 16
+  });
+
+  it('omits a symbol from a year-filtered report when it has no transactions that year', () => {
+    expect(computeSymbolStats(txs, '2025').has('AAA')).toBe(false);
+  });
+
+  it('year="all" (and the default) still reflects full lifetime realized gain', () => {
+    expect(computeSymbolStats(txs, 'all').get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
+    expect(computeSymbolStats(txs).get('AAA').realizedGain).toBeCloseTo((10 - 22 / 3) * 1, 5);
+  });
+});
+
 describe('roi.roiPct', () => {
   it('returns null when nothing has been invested', () => {
     expect(roiPct(0, 0, 0)).toBeNull();

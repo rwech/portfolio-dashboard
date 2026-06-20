@@ -33,7 +33,11 @@
   }
 
   function loadTransactions(market) {
-    return readJson(txKey(market), []);
+    return readJson(txKey(market), []).map((tx) =>
+      typeof tx.action === 'string'
+        ? { ...tx, action: tx.action.toLowerCase() }
+        : tx,
+    );
   }
 
   function saveTransactions(market, txArray) {

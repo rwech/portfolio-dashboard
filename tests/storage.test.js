@@ -27,6 +27,27 @@ describe('storage transactions', () => {
     expect(storage.loadTransactions('TW')).toEqual([]);
   });
 
+  it('normalizes a legacy mixed-case action already sitting in localStorage', () => {
+    localStorage.setItem(
+      'pfd.transactions.tw',
+      JSON.stringify([
+        {
+          id: '1',
+          date: '2024-01-01',
+          symbol: '2330',
+          name: '',
+          action: 'Buy',
+          quantity: 10,
+          price: 100,
+          fee: 0,
+          market: 'TW',
+        },
+      ]),
+    );
+    const list = storage.loadTransactions('TW');
+    expect(list[0].action).toBe('buy');
+  });
+
   it('addTransaction assigns an id/market and appends to the existing list', () => {
     const first = storage.addTransaction('TW', {
       date: '2024-01-01',

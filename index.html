@@ -259,19 +259,31 @@
           </p>
         </details>
         <div class="toolbar">
-          <label class="file-input-label"
-            >匯入 CSV
+          <div class="dropdown">
+            <button
+              id="add-tx-import-btn"
+              type="button"
+              class="import-btn dropdown-toggle"
+              aria-haspopup="true"
+              aria-expanded="false"
+            >
+              匯入 CSV（新增）
+            </button>
+            <div class="dropdown-menu" id="add-tx-import-menu" hidden>
+              <button type="button" class="dropdown-item" data-market="TW">
+                台股
+              </button>
+              <button type="button" class="dropdown-item" data-market="US">
+                美股
+              </button>
+            </div>
             <input
               id="add-tx-import-csv-input"
               type="file"
               accept=".csv"
               hidden
             />
-          </label>
-          <select id="add-tx-import-market-select">
-            <option value="TW">匯入為台股</option>
-            <option value="US">匯入為美股</option>
-          </select>
+          </div>
         </div>
         <div id="add-tx-import-feedback" class="import-feedback" hidden></div>
       </section>

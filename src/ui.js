@@ -189,7 +189,7 @@
   function renderEditableTxRow(tx) {
     return `<tr data-id="${tx.id}" data-market="${tx.market}" class="editing-row">
       <td class="tx-actions"><button type="button" class="icon-btn save-edit-btn" title="儲存" aria-label="儲存">${ICON_SAVE}</button><button type="button" class="icon-btn cancel-edit-btn" title="取消" aria-label="取消">${ICON_CANCEL}</button></td>
-      <td><input type="date" class="edit-date" value="${tx.date}" required></td>
+      <td><input type="date" class="edit-date" value="${escapeHtml(tx.date)}" required></td>
       <td><select class="edit-action">
         <option value="buy" ${tx.action === 'buy' ? 'selected' : ''}>買進</option>
         <option value="sell" ${tx.action === 'sell' ? 'selected' : ''}>賣出</option>
@@ -197,9 +197,9 @@
       <td><input type="text" class="edit-symbol" value="${escapeHtml(tx.symbol)}" required></td>
       <td><span class="badge badge-${tx.market === 'TW' ? 'tw' : 'us'}">${tx.market === 'TW' ? '台股' : '美股'}</span></td>
       <td><input type="text" class="edit-name" value="${escapeHtml(tx.name || '')}"></td>
-      <td><input type="number" class="edit-quantity" min="0" step="any" value="${tx.quantity}" required></td>
-      <td><input type="number" class="edit-price" min="0" step="any" value="${tx.price}" required></td>
-      <td><input type="number" class="edit-fee" min="0" step="any" value="${tx.fee}"></td>
+      <td><input type="number" class="edit-quantity" min="0" step="any" value="${escapeHtml(String(tx.quantity))}" required></td>
+      <td><input type="number" class="edit-price" min="0" step="any" value="${escapeHtml(String(tx.price))}" required></td>
+      <td><input type="number" class="edit-fee" min="0" step="any" value="${escapeHtml(String(tx.fee))}"></td>
     </tr>`;
   }
 

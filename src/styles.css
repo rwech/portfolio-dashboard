@@ -353,8 +353,8 @@ th[data-sort-direction='desc']::after {
 
 #transactions-table th:nth-child(1),
 #transactions-table td:nth-child(1) {
-  width: 4.5rem;
-  min-width: 4.5rem;
+  width: 5rem;
+  min-width: 5rem;
   left: 0;
 }
 
@@ -362,19 +362,19 @@ th[data-sort-direction='desc']::after {
 #transactions-table td:nth-child(2) {
   width: 6rem;
   min-width: 6rem;
-  left: 4.5rem;
+  left: 5rem;
 }
 
 #transactions-table th:nth-child(3),
 #transactions-table td:nth-child(3) {
   width: 4rem;
   min-width: 4rem;
-  left: 10.5rem;
+  left: 11rem;
 }
 
 #transactions-table th:nth-child(4),
 #transactions-table td:nth-child(4) {
-  left: 14.5rem;
+  left: 15rem;
 }
 
 #transactions-table th:nth-child(1),

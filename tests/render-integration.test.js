@@ -85,6 +85,35 @@ describe('renderTransactionTable XSS handling', () => {
     expect(row.querySelector('.edit-quantity').value).toBe('3');
     expect(window.__pwned2).toBeUndefined();
   });
+
+  it('escapes a quote-breakout attempt in the date field of an editable row instead of injecting an attribute', () => {
+    const evilDate =
+      '2024-01-01" onfocus="window.__pwned3 = true" autofocus x="';
+    window.PFD.ui.renderTransactionTable(
+      [
+        {
+          id: '1',
+          market: 'TW',
+          date: evilDate,
+          symbol: 'AAA',
+          name: 'n',
+          action: 'buy',
+          quantity: 3,
+          price: 4,
+          fee: 5,
+        },
+      ],
+      { editingId: '1' },
+    );
+    const row = document.querySelector('#transactions-table tbody tr');
+    expect(row.querySelector('.edit-date').getAttribute('value')).toBe(
+      evilDate,
+    );
+    expect(row.querySelector('.edit-date').hasAttribute('autofocus')).toBe(
+      false,
+    );
+    expect(window.__pwned3).toBeUndefined();
+  });
 });
 
 describe('renderSymbolPnlTable stale price tag', () => {

@@ -207,6 +207,7 @@
   function handleDeleteTransaction(id, market) {
     if (blockIfDemoMode()) return;
     storage.deleteTransaction(market, id);
+    if (state.editingTxId === id) state.editingTxId = null;
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();

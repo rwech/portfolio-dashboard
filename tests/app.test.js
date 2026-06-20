@@ -336,6 +336,28 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
     ).not.toBeNull();
   });
 
+  it('deleting the row currently being edited clears editingTxId instead of leaving the edit form orphaned', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'AAA',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+
+    const txId = app.state.transactions[0].id;
+    app.handleEditStart(txId);
+    expect(app.state.editingTxId).toBe(txId);
+
+    app.handleDeleteTransaction(txId, 'TW');
+
+    expect(app.state.editingTxId).toBeNull();
+    expect(window.PFD.storage.loadTransactions('TW')).toHaveLength(0);
+  });
+
   it('saving a manual price override updates the override panel and clearing it removes the override', async () => {
     const app = await setupApp();
     app.handleAddTransaction('US', {

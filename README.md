@@ -1,7 +1,5 @@
 # portfolio-dashboard
 
-[![Test](https://github.com/rwech/portfolio-dashboard/actions/workflows/test.yml/badge.svg)](https://github.com/rwech/portfolio-dashboard/actions/workflows/test.yml)
-
 投資績效儀表板：一個純前端靜態網頁，用來瀏覽你自己的台股／美股投資績效。可依年度、市場篩選，切換顯示幣別並看到匯率換算統計，並透過介面新增／刪除交易紀錄。
 
 ## 功能

@@ -31,10 +31,4 @@
 
 ## 自動化測試
 
-執行 `npm install` 後，使用 `npm test` 依序執行：
-
-1. **ESLint**：程式碼風格與常見錯誤檢查。
-2. **[Vitest](https://vitest.dev/) 單元測試**：涵蓋 `src/` 下核心邏輯（CSV 解析、ROI 計算、現價/匯率轉換、表格渲染的 XSS 防護與報價過期標示等）與 `api/stock-price.js`，並啟用 coverage 報告；若統計式/分支/函式/行數覆蓋率低於 `vitest.config.js` 設定的門檻，測試會失敗（用來防止覆蓋率隨著新功能加入而悄悄下降）。
-3. **ESM loader 迴歸測試**（`scripts/check-api-esm.mjs`）：以 Node 原生 ESM loader 重新載入 `api/stock-price.js`，確保其 `export default` 寫法在 Vercel 等純 ESM 執行環境下不會出錯（曾發生過用 `module.exports` 寫法在 production 噴錯、但本機 Vitest 測試因為自帶轉譯而沒抓到的真實案例）。
-
-GitHub Actions（[`.github/workflows/test.yml`](.github/workflows/test.yml)）會在每次 push 到 `main` 與每個 Pull Request 自動執行上述 `npm test`，確保變更不會破壞既有功能或拉低測試覆蓋率。
+執行 `npm install` 後，使用 `npm test` 跑 `src/` 下核心邏輯（CSV 解析、ROI 計算、現價/匯率轉換、表格渲染的 XSS 防護與報價過期標示）的單元測試，測試框架為 [Vitest](https://vitest.dev/)。

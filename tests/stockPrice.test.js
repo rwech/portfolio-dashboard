@@ -10,13 +10,23 @@ describe('stockPrice.resolveCurrentPrice', () => {
   });
 
   it('uses the cached price and carries its fetchedAt timestamp', () => {
-    const fetchedAt = '2024-01-01T00:00:00.000Z';
+    const fetchedAt = new Date().toISOString();
     const resolved = resolveCurrentPrice('AAA', {
       priceOverrides: {},
       priceCache: { AAA: { price: 99, source: 'live', fetchedAt } },
       avgCost: 10,
     });
     expect(resolved).toMatchObject({ value: 99, source: 'live', fetchedAt });
+  });
+
+  it('downgrades a live-sourced cache entry to cache once it goes stale, so live and stale never overlap', () => {
+    const fetchedAt = '2024-01-01T00:00:00.000Z';
+    const resolved = resolveCurrentPrice('AAA', {
+      priceOverrides: {},
+      priceCache: { AAA: { price: 99, source: 'live', fetchedAt } },
+      avgCost: 10,
+    });
+    expect(resolved).toMatchObject({ value: 99, source: 'cache', fetchedAt });
   });
 
   it('falls back to avgCost as an estimate when nothing is cached', () => {

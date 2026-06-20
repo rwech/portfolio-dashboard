@@ -16,7 +16,26 @@
     fxResult: null,
     filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
     demoMode: false,
+    sort: { column: null, direction: 'asc' },
+    txSort: { column: 'date', direction: 'desc' },
   };
+
+  function compareForSort(a, b, column) {
+    const av = a[column];
+    const bv = b[column];
+    if (typeof av === 'string' || typeof bv === 'string') {
+      return String(av ?? '').localeCompare(String(bv ?? ''));
+    }
+    const an = Number.isFinite(av) ? av : -Infinity;
+    const bn = Number.isFinite(bv) ? bv : -Infinity;
+    return an - bn;
+  }
+
+  function sortRows(rows, sort) {
+    if (!sort.column) return rows;
+    const sorted = [...rows].sort((a, b) => compareForSort(a, b, sort.column));
+    return sort.direction === 'desc' ? sorted.reverse() : sorted;
+  }
 
   function reloadTransactionsFromStorage() {
     state.transactions = [...storage.loadTransactions('TW'), ...storage.loadTransactions('US')];
@@ -73,8 +92,10 @@
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
-    ui.renderTransactionTable(filteredTx, handleDeleteTransaction);
-    ui.renderSymbolPnlTable(symbolPnl, state.filters.displayCurrency);
+    ui.renderTransactionTable(sortRows(filteredTx, state.txSort), handleDeleteTransaction);
+    ui.updateSortIndicators('transactions-table', state.txSort);
+    ui.renderSymbolPnlTable(sortRows(symbolPnl, state.sort), state.filters.displayCurrency);
+    ui.updateSortIndicators('symbol-pnl-table', state.sort);
     ui.renderPriceOverridePanel(fullSummary.perSymbol, state.priceOverrides, {
       onOverrideChange: handlePriceOverrideChange,
       onOverrideClear: handlePriceOverrideClear,
@@ -137,9 +158,20 @@
     render();
   }
 
+  let isRefreshing = false;
+
   async function handleRefreshAll() {
-    state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
-    await refreshAllPrices();
+    if (isRefreshing) return;
+    isRefreshing = true;
+    const btn = document.getElementById('refresh-all-btn');
+    btn.disabled = true;
+    try {
+      state.fxResult = await exchangeRate.getExchangeRate({ forceRefresh: true });
+      await refreshAllPrices();
+    } finally {
+      btn.disabled = false;
+      isRefreshing = false;
+    }
   }
 
   function handleExport(market) {
@@ -200,6 +232,30 @@
 
     document.getElementById('refresh-all-btn').addEventListener('click', handleRefreshAll);
 
+    document.querySelectorAll('#symbol-pnl-table thead th[data-sort-key]').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (state.sort.column === key) {
+          state.sort.direction = state.sort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.sort = { column: key, direction: 'asc' };
+        }
+        render();
+      });
+    });
+
+    document.querySelectorAll('#transactions-table thead th[data-sort-key]').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (state.txSort.column === key) {
+          state.txSort.direction = state.txSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          state.txSort = { column: key, direction: 'asc' };
+        }
+        render();
+      });
+    });
+
     document.getElementById('add-transaction-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const form = e.target;
@@ -233,6 +289,12 @@
     });
 
     document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
+
+    document.getElementById('theme-select').addEventListener('change', (e) => {
+      const theme = e.target.value;
+      document.documentElement.setAttribute('data-theme', theme);
+      storage.saveTheme(theme);
+    });
 
     let pendingImportMarket = null;
     document.querySelectorAll('#import-menu .dropdown-item').forEach((item) => {
@@ -271,6 +333,10 @@
   }
 
   async function init() {
+    const theme = storage.loadTheme();
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-select').value = theme;
+
     reloadTransactionsFromStorage();
     if (state.transactions.length === 0) {
       const [tw, us] = await Promise.all([csv.fetchInitialCsv('TW'), csv.fetchInitialCsv('US')]);

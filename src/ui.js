@@ -97,8 +97,7 @@
 
   function renderTransactionTable(transactions, onDelete) {
     const tbody = document.querySelector('#transactions-table tbody');
-    const sorted = [...transactions].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    tbody.innerHTML = sorted
+    tbody.innerHTML = transactions
       .map(
         (tx) => `<tr data-id="${tx.id}" data-market="${tx.market}">
           <td>${tx.date}</td>
@@ -142,6 +141,16 @@
         </tr>`;
       })
       .join('');
+  }
+
+  function updateSortIndicators(tableId, sort) {
+    document.querySelectorAll(`#${tableId} thead th[data-sort-key]`).forEach((th) => {
+      if (th.dataset.sortKey === sort.column) {
+        th.dataset.sortDirection = sort.direction;
+      } else {
+        delete th.dataset.sortDirection;
+      }
+    });
   }
 
   function renderPriceOverridePanel(perSymbolStats, priceOverrides, handlers) {
@@ -267,6 +276,7 @@
     renderSummaryCards,
     renderTransactionTable,
     renderSymbolPnlTable,
+    updateSortIndicators,
     renderPriceOverridePanel,
     renderBackupReminderBanner,
     renderDemoModeBanner,

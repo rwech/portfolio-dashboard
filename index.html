@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>投資績效儀表板</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
@@ -13,6 +14,11 @@
       <input type="checkbox" id="demo-mode-toggle" />
       示範模式
     </label>
+    <select id="theme-select">
+      <option value="neon">霓虹深色</option>
+      <option value="midnight">午夜藍</option>
+      <option value="forest">森林綠</option>
+    </select>
   </header>
 
   <div id="demo-mode-banner" class="banner banner-info" hidden>
@@ -71,7 +77,18 @@
       <div class="table-scroll">
         <table id="symbol-pnl-table">
           <thead>
-            <tr><th>標的</th><th>市場</th><th>ROI%</th><th>已實現損益</th><th>未實現損益</th><th>股數</th><th>最後價</th><th>市場價值</th><th>平均成本</th><th>持有成本</th></tr>
+            <tr>
+              <th data-sort-key="symbol">標的</th>
+              <th data-sort-key="market">市場</th>
+              <th data-sort-key="roiPct">ROI%</th>
+              <th data-sort-key="realizedGain">已實現損益</th>
+              <th data-sort-key="unrealizedGain">未實現損益</th>
+              <th data-sort-key="remainingQty">股數</th>
+              <th data-sort-key="currentPrice">最後價</th>
+              <th data-sort-key="marketValue">市場價值</th>
+              <th data-sort-key="avgCost">平均成本</th>
+              <th data-sort-key="costBasisHeld">持有成本</th>
+            </tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -205,7 +222,7 @@
       <div class="table-scroll">
         <table id="transactions-table">
           <thead>
-            <tr><th>日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
+            <tr><th data-sort-key="date">日期</th><th>市場</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th><th></th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -215,6 +232,7 @@
 
   <footer>
     <p>資料僅儲存於瀏覽器 localStorage，請定期使用「匯出 CSV」備份。股價來自非官方來源，重要決策請自行核對。</p>
+    <p>v1.0.0</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

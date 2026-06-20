@@ -36,7 +36,7 @@ async function fetchYahooChart(yahooSymbol) {
   }
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const origin = req.headers.origin;
 
   // Same-origin requests (e.g. the all-in-on-Vercel deploy mode) typically don't send an
@@ -76,4 +76,4 @@ module.exports = async (req, res) => {
 
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
   res.status(200).json(body);
-};
+}

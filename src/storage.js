@@ -7,6 +7,7 @@
     FX_CACHE: 'pfd.exchangeRate.cache',
     UI_FILTERS: 'pfd.ui.lastFilters',
     UNEXPORTED_COUNT: 'pfd.ui.unexportedChangeCount',
+    THEME: 'pfd.ui.theme',
   };
 
   function readJson(key, fallback) {
@@ -112,6 +113,14 @@
     writeJson(KEYS.UNEXPORTED_COUNT, 0);
   }
 
+  function loadTheme() {
+    return readJson(KEYS.THEME, 'neon');
+  }
+
+  function saveTheme(theme) {
+    writeJson(KEYS.THEME, theme);
+  }
+
   window.PFD = window.PFD || {};
   window.PFD.storage = {
     KEYS,
@@ -132,5 +141,7 @@
     loadUnexportedChangeCount,
     incrementUnexportedChanges,
     resetUnexportedChanges,
+    loadTheme,
+    saveTheme,
   };
 })();

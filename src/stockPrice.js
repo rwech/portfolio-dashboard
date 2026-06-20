@@ -57,7 +57,8 @@
     }
     const cached = priceCache[symbol];
     if (cached && typeof cached.price === 'number') {
-      return { value: cached.price, source: cached.source === 'live' ? 'live' : 'cache', fetchedAt: cached.fetchedAt || null };
+      const stillLive = cached.source === 'live' && !isPriceStale('live', cached.fetchedAt);
+      return { value: cached.price, source: stillLive ? 'live' : 'cache', fetchedAt: cached.fetchedAt || null };
     }
     return { value: avgCost, source: 'estimate', fetchedAt: null };
   }

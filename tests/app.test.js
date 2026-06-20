@@ -891,7 +891,9 @@ describe('app: import via the file-input + dropdown wiring', () => {
       fee: 0,
     });
 
-    document.getElementById('add-tx-import-market-select').value = 'US';
+    document
+      .querySelector('#add-tx-import-menu .dropdown-item[data-market="US"]')
+      .click();
     const file = new File(
       [
         'date,symbol,name,action,quantity,price,fee\n2024-02-01,APPENDED,,buy,1,1,0\n',

@@ -480,14 +480,22 @@
         e.target.value = '';
       });
 
+    let pendingAddTxImportMarket = null;
+    document
+      .querySelectorAll('#add-tx-import-menu .dropdown-item')
+      .forEach((item) => {
+        item.addEventListener('click', () => {
+          pendingAddTxImportMarket = item.dataset.market;
+          document.getElementById('add-tx-import-csv-input').click();
+        });
+      });
+
     document
       .getElementById('add-tx-import-csv-input')
       .addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const market = document.getElementById(
-          'add-tx-import-market-select',
-        ).value;
+        const market = pendingAddTxImportMarket;
         const reader = new FileReader();
         reader.onload = () =>
           handleAppendImportText(String(reader.result), market);

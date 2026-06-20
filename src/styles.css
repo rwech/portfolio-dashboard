@@ -122,7 +122,9 @@ section {
 
 body.demo-mode-active #add-transaction-form,
 body.demo-mode-active #export-btn,
-body.demo-mode-active .file-input-label,
+body.demo-mode-active #import-btn,
+body.demo-mode-active #add-tx-import-btn,
+body.demo-mode-active #backup-reminder-export-btn,
 body.demo-mode-active .edit-tx-btn,
 body.demo-mode-active .delete-tx-btn,
 body.demo-mode-active .override-save-btn,
@@ -443,8 +445,7 @@ input:focus {
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
 }
 
-button,
-.file-input-label {
+button {
   display: inline-flex;
   align-items: center;
   font-family: inherit;
@@ -460,8 +461,7 @@ button,
     border-color 0.15s ease;
 }
 
-button:hover,
-.file-input-label:hover {
+button:hover {
   background: #2f343f;
   border-color: var(--accent);
   box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.3);
@@ -650,7 +650,6 @@ footer {
   .toolbar select,
   .toolbar input,
   .toolbar button,
-  .toolbar .file-input-label,
   #add-transaction-form select,
   #add-transaction-form input,
   #add-transaction-form button {

@@ -216,6 +216,30 @@
     });
   }
 
+  function initDropdownMenus() {
+    const dropdowns = document.querySelectorAll('.dropdown');
+    function closeAll() {
+      dropdowns.forEach((d) => {
+        d.querySelector('.dropdown-menu').hidden = true;
+        d.querySelector('.dropdown-toggle').setAttribute('aria-expanded', 'false');
+      });
+    }
+    dropdowns.forEach((dropdown) => {
+      const toggle = dropdown.querySelector('.dropdown-toggle');
+      const menu = dropdown.querySelector('.dropdown-menu');
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = !menu.hidden;
+        closeAll();
+        if (!wasOpen) {
+          menu.hidden = false;
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+    document.addEventListener('click', closeAll);
+  }
+
   function renderImportFeedback(elId, { notice, errors } = {}) {
     const el = document.getElementById(elId);
     const parts = [];
@@ -248,6 +272,7 @@
     renderDemoModeBanner,
     renderImportFeedback,
     initTabs,
+    initDropdownMenus,
     formatMoney,
     formatPct,
     escapeHtml,

@@ -192,6 +192,7 @@
 
   function wireStaticHandlers() {
     ui.initTabs();
+    ui.initDropdownMenus();
 
     document.getElementById('filter-year').addEventListener('change', (e) => handleFilterChange({ year: e.target.value }));
     document.getElementById('filter-market').addEventListener('change', (e) => handleFilterChange({ market: e.target.value }));
@@ -223,8 +224,8 @@
       form.reset();
     });
 
-    document.getElementById('export-btn').addEventListener('click', () => {
-      handleExport(document.getElementById('tx-market-select').value);
+    document.querySelectorAll('#export-menu .dropdown-item').forEach((item) => {
+      item.addEventListener('click', () => handleExport(item.dataset.market));
     });
     document.getElementById('backup-reminder-export-btn').addEventListener('click', () => {
       handleExport('TW');
@@ -233,10 +234,18 @@
 
     document.getElementById('demo-mode-toggle').addEventListener('change', (e) => setDemoMode(e.target.checked));
 
+    let pendingImportMarket = null;
+    document.querySelectorAll('#import-menu .dropdown-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        pendingImportMarket = item.dataset.market;
+        document.getElementById('import-csv-input').click();
+      });
+    });
+
     document.getElementById('import-csv-input').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      const market = document.getElementById('tx-market-select').value;
+      const market = pendingImportMarket;
       const reader = new FileReader();
       reader.onload = () => handleReplaceImportText(String(reader.result), market);
       reader.readAsText(file);

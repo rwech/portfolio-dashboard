@@ -55,6 +55,8 @@
     const priceCtx = { priceOverrides: state.priceOverrides, priceCache: state.priceCache };
     const fxRate = state.fxResult ? state.fxResult.rate : null;
 
+    state.filters.year = roi.resolveYearFilter(state.transactions, state.filters.year);
+
     const fullSummary = roi.computePortfolioSummary(state.transactions, priceCtx, { year: 'all', market: 'all' });
     const filteredSummary = roi.computePortfolioSummary(state.transactions, priceCtx, state.filters);
     const filteredTx = roi.filterTransactions(state.transactions, state.filters);

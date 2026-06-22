@@ -431,9 +431,9 @@ describe('roi.computeRoiTrend', () => {
       today: '2024-03-01',
     });
     expect(points).toEqual([
-      { date: '2024-01-31', roiPct: 0 },
-      { date: '2024-02-29', roiPct: 0 },
-      { date: '2024-03-01', roiPct: 0 },
+      { date: '2024-01-31', roiPct: 0, totalAssets: 3000 },
+      { date: '2024-02-29', roiPct: 0, totalAssets: 3000 },
+      { date: '2024-03-01', roiPct: 0, totalAssets: 3000 },
     ]);
   });
 
@@ -471,9 +471,9 @@ describe('roi.computeRoiTrend', () => {
     // Only the 2024 buy counts: avgCost=200, totalInvested=2000, qty=10.
     // unrealizedGain = (150 - 200) * 10 = -500 -> roiPct = -500/2000*100 = -25.
     expect(points).toEqual([
-      { date: '2024-01-31', roiPct: -25 },
-      { date: '2024-02-29', roiPct: -25 },
-      { date: '2024-03-01', roiPct: -25 },
+      { date: '2024-01-31', roiPct: -25, totalAssets: 1500 },
+      { date: '2024-02-29', roiPct: -25, totalAssets: 1500 },
+      { date: '2024-03-01', roiPct: -25, totalAssets: 1500 },
     ]);
   });
 
@@ -498,7 +498,9 @@ describe('roi.computeRoiTrend', () => {
       displayCurrency: 'USD',
       today: '2023-01-31',
     });
-    expect(points).toEqual([{ date: '2023-01-31', roiPct: 0 }]);
+    expect(points).toEqual([
+      { date: '2023-01-31', roiPct: 0, totalAssets: 1000 },
+    ]);
   });
 
   it('falls back to avgCost as the estimate price when resolveHistoricalPrice returns a non-number', () => {
@@ -523,7 +525,9 @@ describe('roi.computeRoiTrend', () => {
       today: '2024-01-31',
     });
     // price falls back to avgCost (100), so unrealizedGain is 0 and roiPct is 0.
-    expect(points).toEqual([{ date: '2024-01-31', roiPct: 0 }]);
+    expect(points).toEqual([
+      { date: '2024-01-31', roiPct: 0, totalAssets: 1000 },
+    ]);
   });
 
   it('converts totalInvested/realizedGain/unrealizedGain into the display currency via fxRate', () => {
@@ -547,7 +551,9 @@ describe('roi.computeRoiTrend', () => {
       displayCurrency: 'USD',
       today: '2024-01-31',
     });
-    expect(points).toEqual([{ date: '2024-01-31', roiPct: 0 }]);
+    expect(points).toEqual([
+      { date: '2024-01-31', roiPct: 0, totalAssets: 1000 },
+    ]);
   });
 
   it('omits a snapshot date when the year-scoped transaction list is empty as of that date', () => {
@@ -584,8 +590,49 @@ describe('roi.computeRoiTrend', () => {
     // Jan/Feb 2024 have no 2024-dated transactions yet (AAA is from 2023), so
     // those snapshot dates are omitted; only Mar/Apr (after BBB's buy) appear.
     expect(points).toEqual([
-      { date: '2024-03-31', roiPct: 0 },
-      { date: '2024-04-01', roiPct: 0 },
+      { date: '2024-03-31', roiPct: 0, totalAssets: 250 },
+      { date: '2024-04-01', roiPct: 0, totalAssets: 250 },
+    ]);
+  });
+
+  it('computes totalAssets as costBasisHeld + unrealizedGain, distinct from the totalInvested-based ROI denominator, after a partial sell', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-02-01',
+        action: 'sell',
+        quantity: 4,
+        price: 150,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: 'all',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => 120,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2024-02-29',
+    });
+    // Before the sell: qty=10, costBasisHeld=1000, unrealizedGain=(120-100)*10=200 -> totalAssets=1200.
+    // After the sell: qty=6, costBasisHeld=600, unrealizedGain=(120-100)*6=120 -> totalAssets=720,
+    // even though totalInvested (1000) + realizedGain (200) + unrealizedGain (120) = 1320 -- the two
+    // metrics diverge because totalInvested still counts the cost of shares no longer held.
+    expect(points).toEqual([
+      { date: '2024-01-31', roiPct: 20, totalAssets: 1200 },
+      { date: '2024-02-29', roiPct: 32, totalAssets: 720 },
     ]);
   });
 });

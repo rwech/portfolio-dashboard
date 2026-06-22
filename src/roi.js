@@ -153,6 +153,7 @@
       let totalInvested = 0;
       let realizedGain = 0;
       let unrealizedGain = 0;
+      let costBasisHeld = 0;
 
       statsMap.forEach((stat) => {
         const currency = currencyForMarket(stat.market);
@@ -179,6 +180,12 @@
           displayCurrency,
           fxRate,
         );
+        costBasisHeld += convertAmount(
+          stat.costBasisHeld,
+          currency,
+          displayCurrency,
+          fxRate,
+        );
       });
 
       if (totalInvested === 0) return;
@@ -186,6 +193,7 @@
       points.push({
         date: snapshotDate,
         roiPct: roiPct(realizedGain, unrealizedGain, totalInvested),
+        totalAssets: costBasisHeld + unrealizedGain,
       });
     });
 

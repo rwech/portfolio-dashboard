@@ -210,6 +210,7 @@
       document.getElementById('roi-trend-chart'),
       roiTrendSnapshots,
       state.filters.roiTrendMode,
+      state.filters.displayCurrency,
     );
 
     storage.saveUiFilters(state.filters);

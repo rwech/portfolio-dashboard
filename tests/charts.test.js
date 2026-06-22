@@ -152,34 +152,41 @@ describe('charts.renderRoiTrendChart', () => {
     FakeChart.instances = [];
   });
 
-  it('creates a line chart with YYYY-MM labels and the ROI% data series', () => {
+  it('creates a line chart with YYYY-MM labels and the ROI%/total-assets data series', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
       [
-        { date: '2024-01-31', roiPct: 5 },
-        { date: '2024-02-29', roiPct: 7.5 },
+        { date: '2024-01-31', roiPct: 5, totalAssets: 1000 },
+        { date: '2024-02-29', roiPct: 7.5, totalAssets: 1100 },
       ],
       'cumulative',
+      'TWD',
     );
     const config = FakeChart.instances[0].config;
     expect(config.type).toBe('line');
     expect(config.data.labels).toEqual(['2024-01', '2024-02']);
     expect(config.data.datasets[0].data).toEqual([5, 7.5]);
+    expect(config.data.datasets[1].label).toBe('總資產');
+    expect(config.data.datasets[1].data).toEqual([1000, 1100]);
+    expect(config.data.datasets[0].yAxisID).toBe('y');
+    expect(config.data.datasets[1].yAxisID).toBe('y1');
   });
 
   it('destroys the previous trend chart instance before creating a new one', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: 5 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
     );
     const firstInstance = FakeChart.instances[0];
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-02-29', roiPct: 1 }],
+      [{ date: '2024-02-29', roiPct: 1, totalAssets: 900 }],
       'cumulative',
+      'TWD',
     );
     expect(firstInstance.destroy).toHaveBeenCalled();
     expect(FakeChart.instances).toHaveLength(2);
@@ -187,13 +194,13 @@ describe('charts.renderRoiTrendChart', () => {
 
   it('does not create a chart when snapshots is empty', () => {
     const canvas = document.createElement('canvas');
-    renderRoiTrendChart(canvas, [], 'cumulative');
+    renderRoiTrendChart(canvas, [], 'cumulative', 'TWD');
     expect(FakeChart.instances).toHaveLength(0);
   });
 
   it('does not create a chart when snapshots is not an array', () => {
     const canvas = document.createElement('canvas');
-    renderRoiTrendChart(canvas, null, 'cumulative');
+    renderRoiTrendChart(canvas, null, 'cumulative', 'TWD');
     expect(FakeChart.instances).toHaveLength(0);
   });
 
@@ -201,8 +208,20 @@ describe('charts.renderRoiTrendChart', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: NaN }],
+      [{ date: '2024-01-31', roiPct: NaN, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
+    );
+    expect(FakeChart.instances).toHaveLength(0);
+  });
+
+  it('does not create a chart when a totalAssets value is not finite', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: NaN }],
+      'cumulative',
+      'TWD',
     );
     expect(FakeChart.instances).toHaveLength(0);
   });
@@ -211,31 +230,92 @@ describe('charts.renderRoiTrendChart', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: 5 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
     );
     const config = FakeChart.instances[0].config;
     expect(config.options.scales.y.ticks.callback(12.34)).toBe('12.34%');
   });
 
-  it('formats the tooltip label as ROI: X.XX%', () => {
+  it('positions the total-assets axis on the right with no chart-area gridlines', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: 5.678 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
+    );
+    const config = FakeChart.instances[0].config;
+    expect(config.options.scales.y1.position).toBe('right');
+    expect(config.options.scales.y1.grid.drawOnChartArea).toBe(false);
+  });
+
+  it('shows a combined tooltip across both series when hovering anywhere along the x-axis', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
+      'cumulative',
+      'TWD',
+    );
+    const config = FakeChart.instances[0].config;
+    expect(config.options.interaction).toEqual({
+      mode: 'index',
+      intersect: false,
+    });
+  });
+
+  it('displays the legend now that there are two series to distinguish', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
+      'cumulative',
+      'TWD',
+    );
+    expect(FakeChart.instances[0].config.options.plugins.legend.display).toBe(
+      true,
+    );
+  });
+
+  it('formats the ROI tooltip label as ROI: X.XX%', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5.678, totalAssets: 1000 }],
+      'cumulative',
+      'TWD',
     );
     const labelFn =
       FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
-    expect(labelFn({ parsed: { y: 5.678 } })).toBe('ROI: 5.68%');
+    expect(labelFn({ datasetIndex: 0, parsed: { y: 5.678 } })).toBe(
+      'ROI: 5.68%',
+    );
+  });
+
+  it('formats the total-assets tooltip label with the amount and display currency', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1234.5 }],
+      'cumulative',
+      'TWD',
+    );
+    const labelFn =
+      FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
+    expect(labelFn({ datasetIndex: 1, parsed: { y: 1234.5 } })).toBe(
+      '總資產: 1,234.5 TWD',
+    );
   });
 
   it('uses the cumulative title when modeLabel is "cumulative"', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: 5 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
     );
     expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
       'ROI 趨勢（累積）',
@@ -246,8 +326,9 @@ describe('charts.renderRoiTrendChart', () => {
     const canvas = document.createElement('canvas');
     renderRoiTrendChart(
       canvas,
-      [{ date: '2024-01-31', roiPct: 5 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'year-scoped',
+      'TWD',
     );
     expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
       'ROI 趨勢（年度重置）',
@@ -256,7 +337,12 @@ describe('charts.renderRoiTrendChart', () => {
 
   it('falls back to the cumulative title for an unrecognized modeLabel', () => {
     const canvas = document.createElement('canvas');
-    renderRoiTrendChart(canvas, [{ date: '2024-01-31', roiPct: 5 }], 'bogus');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
+      'bogus',
+      'TWD',
+    );
     expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
       'ROI 趨勢（累積）',
     );
@@ -276,8 +362,9 @@ describe('charts.resizeCharts', () => {
     renderSymbolAllocationChart(canvas2, [{ symbol: 'A', value: 10 }], 'TWD');
     renderRoiTrendChart(
       canvas3,
-      [{ date: '2024-01-31', roiPct: 5 }],
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
       'cumulative',
+      'TWD',
     );
     const [allocation, symbolAllocation, roiTrend] = FakeChart.instances;
     resizeCharts();

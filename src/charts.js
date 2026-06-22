@@ -128,13 +128,23 @@
     });
   }
 
-  function renderRoiTrendChart(canvasEl, snapshots, modeLabel) {
+  function renderRoiTrendChart(
+    canvasEl,
+    snapshots,
+    modeLabel,
+    displayCurrency,
+  ) {
     if (roiTrendChart) {
       roiTrendChart.destroy();
       roiTrendChart = null;
     }
     if (!Array.isArray(snapshots) || snapshots.length === 0) return;
-    if (snapshots.some((s) => !Number.isFinite(s.roiPct))) return;
+    if (
+      snapshots.some(
+        (s) => !Number.isFinite(s.roiPct) || !Number.isFinite(s.totalAssets),
+      )
+    )
+      return;
 
     const titleText =
       ROI_TREND_MODE_LABELS[modeLabel] || ROI_TREND_MODE_LABELS.cumulative;
@@ -152,21 +162,41 @@
             fill: true,
             tension: 0.25,
             pointRadius: 2,
+            yAxisID: 'y',
+          },
+          {
+            label: '總資產',
+            data: snapshots.map((s) => s.totalAssets),
+            borderColor: '#39ff8f',
+            backgroundColor: 'rgba(57, 255, 143, 0.15)',
+            fill: false,
+            tension: 0.25,
+            pointRadius: 2,
+            yAxisID: 'y1',
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         scales: {
           y: { ticks: { callback: (v) => `${v}%` } },
+          y1: {
+            position: 'right',
+            ticks: { callback: (v) => v.toLocaleString() },
+            grid: { drawOnChartArea: false },
+          },
         },
         plugins: {
           title: { display: true, text: titleText },
-          legend: { display: false },
+          legend: { display: true, position: 'bottom' },
           tooltip: {
             callbacks: {
-              label: (ctx) => `ROI: ${ctx.parsed.y.toFixed(2)}%`,
+              label: (ctx) =>
+                ctx.datasetIndex === 0
+                  ? `ROI: ${ctx.parsed.y.toFixed(2)}%`
+                  : `總資產: ${ctx.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${displayCurrency}`,
             },
           },
         },

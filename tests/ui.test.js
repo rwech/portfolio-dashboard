@@ -100,13 +100,19 @@ describe('ui.renderFilterControls', () => {
       <select id="filter-year"></select>
       <select id="filter-market"><option value="all">全部</option><option value="TW">台股</option></select>
       <select id="filter-currency"><option value="TWD">TWD</option><option value="USD">USD</option></select>
+      <select id="roi-trend-mode"><option value="cumulative">累積</option><option value="year-scoped">年度重置</option></select>
     `;
   });
 
-  it('populates the year dropdown from the transactions and syncs market/currency selects', () => {
+  it('populates the year dropdown from the transactions and syncs market/currency/roi-trend-mode selects', () => {
     const state = {
       transactions: [{ date: '2024-05-01' }, { date: '2023-01-01' }],
-      filters: { year: '2024', market: 'TW', displayCurrency: 'USD' },
+      filters: {
+        year: '2024',
+        market: 'TW',
+        displayCurrency: 'USD',
+        roiTrendMode: 'year-scoped',
+      },
     };
     ui.renderFilterControls(state);
     const yearSelect = document.getElementById('filter-year');
@@ -118,12 +124,18 @@ describe('ui.renderFilterControls', () => {
     expect(yearSelect.value).toBe('2024');
     expect(document.getElementById('filter-market').value).toBe('TW');
     expect(document.getElementById('filter-currency').value).toBe('USD');
+    expect(document.getElementById('roi-trend-mode').value).toBe('year-scoped');
   });
 
   it('falls back the year select to "all" when the selected year no longer exists', () => {
     const state = {
       transactions: [{ date: '2023-01-01' }],
-      filters: { year: '2099', market: 'all', displayCurrency: 'TWD' },
+      filters: {
+        year: '2099',
+        market: 'all',
+        displayCurrency: 'TWD',
+        roiTrendMode: 'cumulative',
+      },
     };
     ui.renderFilterControls(state);
     expect(document.getElementById('filter-year').value).toBe('all');

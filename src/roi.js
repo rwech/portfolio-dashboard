@@ -81,6 +81,117 @@
     return result;
   }
 
+  function currencyForMarket(market) {
+    return market === 'TW' ? 'TWD' : 'USD';
+  }
+
+  function lastDayOfMonth(yearNum, monthIdx) {
+    return new Date(Date.UTC(yearNum, monthIdx + 1, 0))
+      .toISOString()
+      .slice(0, 10);
+  }
+
+  function generateMonthEndSnapshotDates(earliestDate, year, today) {
+    const windowStart = year === 'all' ? earliestDate : `${year}-01-01`;
+    const windowEndCandidate = year === 'all' ? today : `${year}-12-31`;
+    const windowEnd = windowEndCandidate < today ? windowEndCandidate : today;
+    const start = windowStart > earliestDate ? windowStart : earliestDate;
+
+    if (start > windowEnd) return [];
+
+    const dates = [];
+    let cursorYear = Number(start.slice(0, 4));
+    let cursorMonth = Number(start.slice(5, 7)) - 1;
+
+    while (true) {
+      const monthStart = `${cursorYear}-${String(cursorMonth + 1).padStart(2, '0')}-01`;
+      if (monthStart > windowEnd) break;
+
+      const monthEnd = lastDayOfMonth(cursorYear, cursorMonth);
+      const cappedMonthEnd = monthEnd < windowEnd ? monthEnd : windowEnd;
+      if (cappedMonthEnd >= start) dates.push(cappedMonthEnd);
+
+      cursorMonth += 1;
+      if (cursorMonth > 11) {
+        cursorMonth = 0;
+        cursorYear += 1;
+      }
+    }
+
+    return dates;
+  }
+
+  function computeRoiTrend(
+    allTx,
+    { year, mode, resolveHistoricalPrice, fxRate, displayCurrency, today },
+  ) {
+    if (allTx.length === 0) return [];
+
+    const earliestDate = allTx.reduce(
+      (min, tx) => (tx.date < min ? tx.date : min),
+      allTx[0].date,
+    );
+    const snapshotDates = generateMonthEndSnapshotDates(
+      earliestDate,
+      year,
+      today,
+    );
+
+    const points = [];
+    snapshotDates.forEach((snapshotDate) => {
+      const txsUpToD = allTx.filter((tx) => tx.date <= snapshotDate);
+      if (txsUpToD.length === 0) return;
+
+      const txsForStats =
+        mode === 'year-scoped' && year !== 'all'
+          ? txsUpToD.filter((tx) => tx.date.slice(0, 4) === String(year))
+          : txsUpToD;
+      if (txsForStats.length === 0) return;
+
+      const statsMap = computeSymbolStats(txsForStats, 'all');
+
+      let totalInvested = 0;
+      let realizedGain = 0;
+      let unrealizedGain = 0;
+
+      statsMap.forEach((stat) => {
+        const currency = currencyForMarket(stat.market);
+        const priceAsOfDate = resolveHistoricalPrice(stat.symbol, snapshotDate);
+        const price =
+          typeof priceAsOfDate === 'number' ? priceAsOfDate : stat.avgCost;
+        const symbolUnrealized = (price - stat.avgCost) * stat.remainingQty;
+
+        totalInvested += convertAmount(
+          stat.totalInvested,
+          currency,
+          displayCurrency,
+          fxRate,
+        );
+        realizedGain += convertAmount(
+          stat.realizedGain,
+          currency,
+          displayCurrency,
+          fxRate,
+        );
+        unrealizedGain += convertAmount(
+          symbolUnrealized,
+          currency,
+          displayCurrency,
+          fxRate,
+        );
+      });
+
+      if (totalInvested === 0) return;
+
+      points.push({
+        date: snapshotDate,
+        roiPct: roiPct(realizedGain, unrealizedGain, totalInvested),
+      });
+    });
+
+    return points;
+  }
+
   function roiPct(realizedGain, unrealizedGain, totalInvested) {
     if (totalInvested === 0) return null;
     return ((realizedGain + unrealizedGain) / totalInvested) * 100;
@@ -204,5 +315,7 @@
     convertSummaryToDisplayCurrency,
     convertAmount,
     roiPct,
+    generateMonthEndSnapshotDates,
+    computeRoiTrend,
   };
 })();

@@ -15,10 +15,17 @@
 
   let allocationChart = null;
   let symbolAllocationChart = null;
+  let roiTrendChart = null;
+
+  const ROI_TREND_MODE_LABELS = {
+    cumulative: 'ROI 趨勢（累積）',
+    'year-scoped': 'ROI 趨勢（年度重置）',
+  };
 
   function resizeCharts() {
     if (allocationChart) allocationChart.resize();
     if (symbolAllocationChart) symbolAllocationChart.resize();
+    if (roiTrendChart) roiTrendChart.resize();
   }
 
   function renderAllocationChart(canvasEl, byMarketTotals, displayCurrency) {
@@ -121,10 +128,57 @@
     });
   }
 
+  function renderRoiTrendChart(canvasEl, snapshots, modeLabel) {
+    if (roiTrendChart) {
+      roiTrendChart.destroy();
+      roiTrendChart = null;
+    }
+    if (!Array.isArray(snapshots) || snapshots.length === 0) return;
+    if (snapshots.some((s) => !Number.isFinite(s.roiPct))) return;
+
+    const titleText =
+      ROI_TREND_MODE_LABELS[modeLabel] || ROI_TREND_MODE_LABELS.cumulative;
+
+    roiTrendChart = new Chart(canvasEl, {
+      type: 'line',
+      data: {
+        labels: snapshots.map((s) => s.date.slice(0, 7)),
+        datasets: [
+          {
+            label: 'ROI %',
+            data: snapshots.map((s) => s.roiPct),
+            borderColor: '#00e5ff',
+            backgroundColor: 'rgba(0, 229, 255, 0.15)',
+            fill: true,
+            tension: 0.25,
+            pointRadius: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { ticks: { callback: (v) => `${v}%` } },
+        },
+        plugins: {
+          title: { display: true, text: titleText },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `ROI: ${ctx.parsed.y.toFixed(2)}%`,
+            },
+          },
+        },
+      },
+    });
+  }
+
   window.PFD = window.PFD || {};
   window.PFD.charts = {
     renderAllocationChart,
     renderSymbolAllocationChart,
+    renderRoiTrendChart,
     resizeCharts,
   };
 })();

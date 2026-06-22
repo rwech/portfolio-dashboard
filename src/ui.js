@@ -65,6 +65,8 @@
     document.getElementById('filter-market').value = state.filters.market;
     document.getElementById('filter-currency').value =
       state.filters.displayCurrency;
+    document.getElementById('roi-trend-mode').value =
+      state.filters.roiTrendMode;
   }
 
   function renderFxStatusPanel(fxResult) {

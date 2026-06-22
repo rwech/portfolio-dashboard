@@ -5,6 +5,7 @@
   const csv = window.PFD.csv;
   const exchangeRate = window.PFD.exchangeRate;
   const stockPrice = window.PFD.stockPrice;
+  const historicalPrice = window.PFD.historicalPrice;
   const roi = window.PFD.roi;
   const charts = window.PFD.charts;
   const ui = window.PFD.ui;
@@ -13,8 +14,14 @@
     transactions: [],
     priceOverrides: {},
     priceCache: {},
+    historicalPriceCache: {},
     fxResult: null,
-    filters: { year: 'all', market: 'all', displayCurrency: 'TWD' },
+    filters: {
+      year: 'all',
+      market: 'all',
+      displayCurrency: 'TWD',
+      roiTrendMode: 'cumulative',
+    },
     demoMode: false,
     sort: { column: null, direction: 'asc' },
     txSort: { column: 'date', direction: 'desc' },
@@ -188,6 +195,23 @@
       state.filters.displayCurrency,
     );
 
+    const today = new Date().toISOString().slice(0, 10);
+    const roiTrendSnapshots = roi.computeRoiTrend(state.transactions, {
+      year: state.filters.year,
+      mode: state.filters.roiTrendMode,
+      resolveHistoricalPrice: historicalPrice.buildResolver(
+        state.historicalPriceCache,
+      ),
+      fxRate,
+      displayCurrency: state.filters.displayCurrency,
+      today,
+    });
+    charts.renderRoiTrendChart(
+      document.getElementById('roi-trend-chart'),
+      roiTrendSnapshots,
+      state.filters.roiTrendMode,
+    );
+
     storage.saveUiFilters(state.filters);
   }
 
@@ -213,6 +237,7 @@
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
+    refreshHistoricalPrices();
     return true;
   }
 
@@ -223,6 +248,7 @@
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
+    refreshHistoricalPrices();
   }
 
   function handleEditStart(id) {
@@ -254,6 +280,7 @@
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
+    refreshHistoricalPrices();
   }
 
   function handlePriceOverrideChange(symbol, value) {
@@ -291,6 +318,51 @@
     render();
   }
 
+  function allTransactedSymbols() {
+    const map = new Map();
+    state.transactions.forEach((tx) => {
+      if (!map.has(tx.symbol)) map.set(tx.symbol, tx.market);
+    });
+    return Array.from(map, ([symbol, market]) => ({ symbol, market }));
+  }
+
+  let isRefreshingHistoricalPrices = false;
+
+  async function refreshHistoricalPrices() {
+    if (isRefreshingHistoricalPrices) return;
+    if (state.transactions.length === 0) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const earliestDate = state.transactions.reduce(
+      (min, tx) => (tx.date < min ? tx.date : min),
+      state.transactions[0].date,
+    );
+
+    const symbolDateRanges = allTransactedSymbols().map(
+      ({ symbol, market }) => ({
+        symbol,
+        market,
+        fromDate: earliestDate,
+        toDate: today,
+      }),
+    );
+
+    const gaps = historicalPrice.findGaps(
+      symbolDateRanges,
+      state.historicalPriceCache,
+    );
+    if (gaps.length === 0) return;
+
+    isRefreshingHistoricalPrices = true;
+    try {
+      await historicalPrice.fetchHistoricalPrices(gaps);
+      state.historicalPriceCache = storage.loadHistoricalPriceCache();
+      render();
+    } finally {
+      isRefreshingHistoricalPrices = false;
+    }
+  }
+
   let isRefreshing = false;
 
   async function handleRefreshAll() {
@@ -303,6 +375,7 @@
         forceRefresh: true,
       });
       await refreshAllPrices();
+      await refreshHistoricalPrices();
     } finally {
       btn.disabled = false;
       isRefreshing = false;
@@ -336,6 +409,7 @@
       errors,
     });
     render();
+    refreshHistoricalPrices();
   }
 
   function handleAppendImportText(text, market) {
@@ -350,6 +424,7 @@
       errors,
     });
     render();
+    refreshHistoricalPrices();
   }
 
   async function setDemoMode(enabled) {
@@ -384,6 +459,11 @@
       .getElementById('filter-currency')
       .addEventListener('change', (e) =>
         handleFilterChange({ displayCurrency: e.target.value }),
+      );
+    document
+      .getElementById('roi-trend-mode')
+      .addEventListener('change', (e) =>
+        handleFilterChange({ roiTrendMode: e.target.value }),
       );
 
     document
@@ -529,6 +609,7 @@
 
     state.priceOverrides = storage.loadPriceOverrides();
     state.priceCache = storage.loadPriceCache();
+    state.historicalPriceCache = storage.loadHistoricalPriceCache();
 
     const savedFilters = storage.loadUiFilters();
     if (savedFilters) Object.assign(state.filters, savedFilters);
@@ -539,6 +620,7 @@
     render();
 
     await refreshAllPrices();
+    await refreshHistoricalPrices();
   }
 
   window.PFD = window.PFD || {};

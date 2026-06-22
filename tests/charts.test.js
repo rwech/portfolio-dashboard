@@ -15,8 +15,12 @@ FakeChart.instances = [];
 global.Chart = FakeChart;
 await import('../src/charts.js');
 
-const { renderAllocationChart, renderSymbolAllocationChart, resizeCharts } =
-  window.PFD.charts;
+const {
+  renderAllocationChart,
+  renderSymbolAllocationChart,
+  renderRoiTrendChart,
+  resizeCharts,
+} = window.PFD.charts;
 
 describe('charts.renderAllocationChart', () => {
   beforeEach(() => {
@@ -143,23 +147,146 @@ describe('charts.renderSymbolAllocationChart', () => {
   });
 });
 
+describe('charts.renderRoiTrendChart', () => {
+  beforeEach(() => {
+    FakeChart.instances = [];
+  });
+
+  it('creates a line chart with YYYY-MM labels and the ROI% data series', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [
+        { date: '2024-01-31', roiPct: 5 },
+        { date: '2024-02-29', roiPct: 7.5 },
+      ],
+      'cumulative',
+    );
+    const config = FakeChart.instances[0].config;
+    expect(config.type).toBe('line');
+    expect(config.data.labels).toEqual(['2024-01', '2024-02']);
+    expect(config.data.datasets[0].data).toEqual([5, 7.5]);
+  });
+
+  it('destroys the previous trend chart instance before creating a new one', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5 }],
+      'cumulative',
+    );
+    const firstInstance = FakeChart.instances[0];
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-02-29', roiPct: 1 }],
+      'cumulative',
+    );
+    expect(firstInstance.destroy).toHaveBeenCalled();
+    expect(FakeChart.instances).toHaveLength(2);
+  });
+
+  it('does not create a chart when snapshots is empty', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(canvas, [], 'cumulative');
+    expect(FakeChart.instances).toHaveLength(0);
+  });
+
+  it('does not create a chart when snapshots is not an array', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(canvas, null, 'cumulative');
+    expect(FakeChart.instances).toHaveLength(0);
+  });
+
+  it('does not create a chart when a roiPct value is not finite', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: NaN }],
+      'cumulative',
+    );
+    expect(FakeChart.instances).toHaveLength(0);
+  });
+
+  it('formats the y-axis tick label as a percentage', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5 }],
+      'cumulative',
+    );
+    const config = FakeChart.instances[0].config;
+    expect(config.options.scales.y.ticks.callback(12.34)).toBe('12.34%');
+  });
+
+  it('formats the tooltip label as ROI: X.XX%', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5.678 }],
+      'cumulative',
+    );
+    const labelFn =
+      FakeChart.instances[0].config.options.plugins.tooltip.callbacks.label;
+    expect(labelFn({ parsed: { y: 5.678 } })).toBe('ROI: 5.68%');
+  });
+
+  it('uses the cumulative title when modeLabel is "cumulative"', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5 }],
+      'cumulative',
+    );
+    expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
+      'ROI 趨勢（累積）',
+    );
+  });
+
+  it('uses the year-scoped title when modeLabel is "year-scoped"', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5 }],
+      'year-scoped',
+    );
+    expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
+      'ROI 趨勢（年度重置）',
+    );
+  });
+
+  it('falls back to the cumulative title for an unrecognized modeLabel', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(canvas, [{ date: '2024-01-31', roiPct: 5 }], 'bogus');
+    expect(FakeChart.instances[0].config.options.plugins.title.text).toBe(
+      'ROI 趨勢（累積）',
+    );
+  });
+});
+
 describe('charts.resizeCharts', () => {
   beforeEach(() => {
     FakeChart.instances = [];
   });
 
-  it('resizes both chart instances when they exist', () => {
+  it('resizes all three chart instances when they exist', () => {
     const canvas1 = document.createElement('canvas');
     const canvas2 = document.createElement('canvas');
+    const canvas3 = document.createElement('canvas');
     renderAllocationChart(canvas1, { TW: 100, US: 100 }, 'TWD');
     renderSymbolAllocationChart(canvas2, [{ symbol: 'A', value: 10 }], 'TWD');
-    const [allocation, symbolAllocation] = FakeChart.instances;
+    renderRoiTrendChart(
+      canvas3,
+      [{ date: '2024-01-31', roiPct: 5 }],
+      'cumulative',
+    );
+    const [allocation, symbolAllocation, roiTrend] = FakeChart.instances;
     resizeCharts();
     expect(allocation.resize).toHaveBeenCalled();
     expect(symbolAllocation.resize).toHaveBeenCalled();
+    expect(roiTrend.resize).toHaveBeenCalled();
   });
 
-  it('is a no-op when neither chart has been created yet', () => {
+  it('is a no-op when none of the charts have been created yet', () => {
     expect(() => resizeCharts()).not.toThrow();
   });
 });

@@ -12,6 +12,8 @@ const {
   convertSummaryToDisplayCurrency,
   roiPct,
   resolveYearFilter,
+  generateMonthEndSnapshotDates,
+  computeRoiTrend,
 } = window.PFD.roi;
 
 describe('roi.computeSymbolStats', () => {
@@ -335,5 +337,255 @@ describe('roi.convertSummaryToDisplayCurrency', () => {
     const result = convertSummaryToDisplayCurrency(byMarket, 'USD', 32);
     expect(result.totalInvested).toBeCloseTo(100 + 100);
     expect(result.currency).toBe('USD');
+  });
+});
+
+describe('roi.generateMonthEndSnapshotDates', () => {
+  it('generates a monthly span from the earliest transaction to today for "all"', () => {
+    const dates = generateMonthEndSnapshotDates(
+      '2024-01-15',
+      'all',
+      '2024-04-10',
+    );
+    expect(dates).toEqual([
+      '2024-01-31',
+      '2024-02-29',
+      '2024-03-31',
+      '2024-04-10',
+    ]);
+  });
+
+  it('clips the window to Jan 1 - Dec 31 of a past selected year', () => {
+    const dates = generateMonthEndSnapshotDates(
+      '2022-01-01',
+      '2023',
+      '2024-06-01',
+    );
+    expect(dates).toHaveLength(12);
+    expect(dates[0]).toBe('2023-01-31');
+    expect(dates[dates.length - 1]).toBe('2023-12-31');
+  });
+
+  it('clips the window end to today when the selected year is the current year', () => {
+    const dates = generateMonthEndSnapshotDates(
+      '2024-01-01',
+      '2024',
+      '2024-03-01',
+    );
+    expect(dates).toEqual(['2024-01-31', '2024-02-29', '2024-03-01']);
+  });
+
+  it('returns an empty array when the selected year window precedes any transaction', () => {
+    const dates = generateMonthEndSnapshotDates(
+      '2024-06-01',
+      '2023',
+      '2024-06-01',
+    );
+    expect(dates).toEqual([]);
+  });
+});
+
+describe('roi.computeRoiTrend', () => {
+  it('returns [] when there are no transactions', () => {
+    expect(
+      computeRoiTrend([], {
+        year: 'all',
+        mode: 'cumulative',
+        resolveHistoricalPrice: () => null,
+        fxRate: null,
+        displayCurrency: 'USD',
+        today: '2024-01-01',
+      }),
+    ).toEqual([]);
+  });
+
+  it('cumulative mode keeps the full lifetime avg-cost baseline even when a later year is selected', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2023-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 200,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: '2024',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => 150,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2024-03-01',
+    });
+    expect(points).toEqual([
+      { date: '2024-01-31', roiPct: 0 },
+      { date: '2024-02-29', roiPct: 0 },
+      { date: '2024-03-01', roiPct: 0 },
+    ]);
+  });
+
+  it("year-scoped mode restricts the avg-cost baseline to that year's own transactions", () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2023-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 200,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: '2024',
+      mode: 'year-scoped',
+      resolveHistoricalPrice: () => 150,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2024-03-01',
+    });
+    // Only the 2024 buy counts: avgCost=200, totalInvested=2000, qty=10.
+    // unrealizedGain = (150 - 200) * 10 = -500 -> roiPct = -500/2000*100 = -25.
+    expect(points).toEqual([
+      { date: '2024-01-31', roiPct: -25 },
+      { date: '2024-02-29', roiPct: -25 },
+      { date: '2024-03-01', roiPct: -25 },
+    ]);
+  });
+
+  it('year-scoped mode falls back to cumulative when "all" is selected', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2023-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: 'all',
+      mode: 'year-scoped',
+      resolveHistoricalPrice: () => 100,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2023-01-31',
+    });
+    expect(points).toEqual([{ date: '2023-01-31', roiPct: 0 }]);
+  });
+
+  it('falls back to avgCost as the estimate price when resolveHistoricalPrice returns a non-number', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: 'all',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => null,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2024-01-31',
+    });
+    // price falls back to avgCost (100), so unrealizedGain is 0 and roiPct is 0.
+    expect(points).toEqual([{ date: '2024-01-31', roiPct: 0 }]);
+  });
+
+  it('converts totalInvested/realizedGain/unrealizedGain into the display currency via fxRate', () => {
+    const txs = [
+      {
+        symbol: '2330',
+        name: '台積電',
+        market: 'TW',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 3200,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: 'all',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => 3200,
+      fxRate: 32,
+      displayCurrency: 'USD',
+      today: '2024-01-31',
+    });
+    expect(points).toEqual([{ date: '2024-01-31', roiPct: 0 }]);
+  });
+
+  it('omits a snapshot date when the year-scoped transaction list is empty as of that date', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2023-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: 'BBB',
+        name: 'B',
+        market: 'US',
+        date: '2024-03-01',
+        action: 'buy',
+        quantity: 5,
+        price: 50,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: '2024',
+      mode: 'year-scoped',
+      resolveHistoricalPrice: () => 50,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2024-04-01',
+    });
+    // Jan/Feb 2024 have no 2024-dated transactions yet (AAA is from 2023), so
+    // those snapshot dates are omitted; only Mar/Apr (after BBB's buy) appear.
+    expect(points).toEqual([
+      { date: '2024-03-31', roiPct: 0 },
+      { date: '2024-04-01', roiPct: 0 },
+    ]);
   });
 });

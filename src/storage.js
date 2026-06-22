@@ -3,6 +3,7 @@
     TX_TW: 'pfd.transactions.tw',
     TX_US: 'pfd.transactions.us',
     PRICE_CACHE: 'pfd.priceCache',
+    HISTORICAL_PRICE_CACHE: 'pfd.historicalPriceCache',
     PRICE_OVERRIDES: 'pfd.priceOverrides',
     FX_CACHE: 'pfd.exchangeRate.cache',
     UI_FILTERS: 'pfd.ui.lastFilters',
@@ -88,6 +89,14 @@
     writeJson(KEYS.PRICE_CACHE, cache);
   }
 
+  function loadHistoricalPriceCache() {
+    return readJson(KEYS.HISTORICAL_PRICE_CACHE, {});
+  }
+
+  function saveHistoricalPriceCache(cache) {
+    writeJson(KEYS.HISTORICAL_PRICE_CACHE, cache);
+  }
+
   function loadPriceOverrides() {
     return readJson(KEYS.PRICE_OVERRIDES, {});
   }
@@ -153,6 +162,8 @@
     updateTransaction,
     loadPriceCache,
     savePriceCache,
+    loadHistoricalPriceCache,
+    saveHistoricalPriceCache,
     loadPriceOverrides,
     savePriceOverride,
     clearPriceOverride,

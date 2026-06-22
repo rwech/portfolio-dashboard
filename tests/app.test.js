@@ -39,6 +39,8 @@ function makeFetchMock() {
       };
     if (u.includes('/api/stock-price'))
       return { ok: true, json: async () => ({}) };
+    if (u.includes('/api/historical-price'))
+      return { ok: true, json: async () => ({}) };
     return { ok: false, text: async () => '', json: async () => ({}) };
   });
 }
@@ -57,6 +59,7 @@ async function setupApp() {
   await import('../src/csv.js');
   await import('../src/exchangeRate.js');
   await import('../src/stockPrice.js');
+  await import('../src/historicalPrice.js');
   await import('../src/roi.js');
   await import('../src/charts.js');
   await import('../src/ui.js');
@@ -768,6 +771,7 @@ describe('app: render with no usable fx rate', () => {
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');
     await import('../src/stockPrice.js');
+    await import('../src/historicalPrice.js');
     await import('../src/roi.js');
     await import('../src/charts.js');
     await import('../src/ui.js');
@@ -806,6 +810,7 @@ describe('app: restoring saved UI filters on init', () => {
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');
     await import('../src/stockPrice.js');
+    await import('../src/historicalPrice.js');
     await import('../src/roi.js');
     await import('../src/charts.js');
     await import('../src/ui.js');

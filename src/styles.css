@@ -287,7 +287,8 @@ body.demo-mode-active .override-clear-btn {
   gap: 1rem;
 }
 
-#charts canvas {
+#allocation-chart,
+#symbol-allocation-chart {
   width: 100%;
   max-width: 480px;
 }
@@ -303,6 +304,19 @@ body.demo-mode-active .override-clear-btn {
 .symbol-allocation-chart-wrap {
   height: 320px;
   max-width: 420px;
+}
+
+.line-chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 260px;
+  margin: 0 auto;
+}
+
+.roi-trend-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.4rem;
 }
 
 .hint {

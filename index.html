@@ -117,6 +117,18 @@
         <div class="bar-chart-wrap symbol-allocation-chart-wrap">
           <canvas id="symbol-allocation-chart"></canvas>
         </div>
+        <div class="line-chart-wrap">
+          <div class="roi-trend-controls">
+            <label
+              >ROI 趨勢模式
+              <select id="roi-trend-mode">
+                <option value="cumulative">累積（自起始日）</option>
+                <option value="year-scoped">年度重置</option>
+              </select>
+            </label>
+          </div>
+          <canvas id="roi-trend-chart"></canvas>
+        </div>
       </section>
     </div>
 
@@ -425,6 +437,7 @@
     <script src="src/csv.js"></script>
     <script src="src/exchangeRate.js"></script>
     <script src="src/stockPrice.js"></script>
+    <script src="src/historicalPrice.js"></script>
     <script src="src/roi.js"></script>
     <script src="src/charts.js"></script>
     <script src="src/ui.js"></script>

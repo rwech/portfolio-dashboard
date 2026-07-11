@@ -214,7 +214,7 @@ describe('ui.renderSummaryCards', () => {
     return document.querySelectorAll('#summary-cards .summary-card');
   }
 
-  it('renders exactly three cards: cost (with held-cost sub-field), gain, and ROI', () => {
+  it('renders exactly three cards: cost (with held-cost and total-value sub-fields), gain, and ROI', () => {
     ui.renderSummaryCards(baseSummary);
     expect(cards()).toHaveLength(3);
     const costCard = cards()[0];
@@ -222,6 +222,9 @@ describe('ui.renderSummaryCards', () => {
     expect(costCard.querySelector('.value').textContent).toContain('1,000');
     expect(costCard.textContent).toContain('目前持股成本');
     expect(costCard.textContent).toContain('800 TWD');
+    // 總價值與持股成本並排對照（差額即未實現損益）
+    expect(costCard.textContent).toContain('目前總價值');
+    expect(costCard.textContent).toContain('850 TWD');
   });
 
   it('renders the gain with a positive sign and class', () => {
@@ -232,13 +235,12 @@ describe('ui.renderSummaryCards', () => {
     expect(html).toContain('+15.00%');
   });
 
-  it('shows total value and simple annualized ROI on the ROI card', () => {
+  it('keeps the ROI card ratios-only: annualized ROI present, total value absent', () => {
     ui.renderSummaryCards(baseSummary);
     const roiCard = cards()[2];
-    expect(roiCard.textContent).toContain('目前總價值');
-    expect(roiCard.textContent).toContain('850 TWD');
     expect(roiCard.textContent).toContain('年化（簡易）');
     expect(roiCard.textContent).toContain('7.50%');
+    expect(roiCard.textContent).not.toContain('目前總價值');
   });
 
   it('renders a dash when the annualized ROI is unavailable', () => {

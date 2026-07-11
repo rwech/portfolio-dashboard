@@ -1616,7 +1616,7 @@ describe('app: overview summary cards (merged cost, total value, market breakdow
     expect(cards[0].textContent).toContain('目前持股成本');
   });
 
-  it('shows 目前總價值 = 持股成本 + 未實現損益 on the ROI card', async () => {
+  it('shows 目前總價值 = 持股成本 + 未實現損益 on the cost card, next to held cost', async () => {
     const app = await setupApp();
     // 沒有 API 現價 → estimate（=平均成本）→ 未實現 0，總價值 = 持股成本 = 1,000
     app.handleAddTransaction('TW', {
@@ -1628,12 +1628,12 @@ describe('app: overview summary cards (merged cost, total value, market breakdow
       price: 100,
       fee: 0,
     });
-    const roiCard = document.querySelectorAll(
-      '#summary-cards .summary-card',
-    )[2];
-    expect(roiCard.textContent).toContain('目前總價值');
-    expect(roiCard.textContent).toContain('1,000 TWD');
-    expect(roiCard.textContent).toContain('年化（簡易）');
+    const cards = document.querySelectorAll('#summary-cards .summary-card');
+    expect(cards[0].textContent).toContain('目前總價值');
+    expect(cards[0].textContent).toContain('1,000 TWD');
+    // ROI 卡維持純比率：只有年化，沒有絕對金額
+    expect(cards[2].textContent).toContain('年化（簡易）');
+    expect(cards[2].textContent).not.toContain('目前總價值');
   });
 
   it('shows per-market gain sub-fields for 市場=全部 and hides them for a single market', async () => {

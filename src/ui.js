@@ -127,10 +127,16 @@
         formatMoney(summary.totalInvested, summary.currency),
         '',
         [
+          // 持股成本與總價值並排對照，兩者差額即未實現損益
           [
             [
               '目前持股成本',
               formatMoney(summary.costBasisHeld, summary.currency),
+              '',
+            ],
+            [
+              '目前總價值',
+              formatMoney(summary.totalValue, summary.currency),
               '',
             ],
           ],
@@ -146,16 +152,7 @@
         'ROI%',
         withSign(formatPct(summary.roiPct), summary.roiPct),
         signedClass(summary.roiPct),
-        [
-          [
-            [
-              '目前總價值',
-              formatMoney(summary.totalValue, summary.currency),
-              '',
-            ],
-            ['年化（簡易）', formatPct(summary.annualizedRoiPct), ''],
-          ],
-        ],
+        [[['年化（簡易）', formatPct(summary.annualizedRoiPct), '']]],
       ],
     ];
 

@@ -171,6 +171,7 @@
               </tr>
             </thead>
             <tbody></tbody>
+            <tfoot></tfoot>
           </table>
         </div>
       </section>
@@ -421,6 +422,14 @@
           </div>
         </div>
         <div id="import-errors" class="import-feedback" hidden></div>
+        <div class="tx-search-wrap">
+          <input
+            type="search"
+            id="tx-search-input"
+            placeholder="搜尋代號或名稱…"
+            aria-label="搜尋代號或名稱"
+          />
+        </div>
         <div class="table-scroll">
           <table id="transactions-table">
             <thead>
@@ -449,6 +458,8 @@
       </p>
       <p>v1.0.0</p>
     </footer>
+
+    <div id="toast-container" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="src/config.js"></script>

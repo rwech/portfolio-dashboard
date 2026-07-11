@@ -20,6 +20,7 @@ const {
   renderSymbolAllocationChart,
   renderRoiTrendChart,
   resizeCharts,
+  groupTopN,
 } = window.PFD.charts;
 
 describe('charts.renderAllocationChart', () => {
@@ -147,6 +148,110 @@ describe('charts.renderSymbolAllocationChart', () => {
   });
 });
 
+describe('charts.groupTopN', () => {
+  it('returns the entries sorted by descending value when there are fewer than n', () => {
+    const grouped = groupTopN(
+      [
+        { symbol: 'A', value: 10 },
+        { symbol: 'B', value: 30 },
+        { symbol: 'C', value: 20 },
+      ],
+      8,
+    );
+    expect(grouped).toEqual([
+      { symbol: 'B', value: 30 },
+      { symbol: 'C', value: 20 },
+      { symbol: 'A', value: 10 },
+    ]);
+  });
+
+  it('returns the entries unchanged in count when there are exactly n', () => {
+    const data = [
+      { symbol: 'A', value: 2 },
+      { symbol: 'B', value: 1 },
+    ];
+    const grouped = groupTopN(data, 2);
+    expect(grouped).toHaveLength(2);
+    expect(grouped.map((s) => s.symbol)).toEqual(['A', 'B']);
+  });
+
+  it('keeps the top n and aggregates the remainder into a trailing 其他 slice', () => {
+    const data = [
+      { symbol: 'S1', value: 100 },
+      { symbol: 'S2', value: 90 },
+      { symbol: 'S3', value: 80 },
+      { symbol: 'S4', value: 5 },
+      { symbol: 'S5', value: 3 },
+    ];
+    const grouped = groupTopN(data, 3);
+    expect(grouped).toHaveLength(4);
+    expect(grouped.map((s) => s.symbol)).toEqual(['S1', 'S2', 'S3', '其他']);
+    expect(grouped[3].value).toBe(8); // 5 + 3
+  });
+
+  it('sorts before grouping so a small early entry falls into 其他', () => {
+    const data = [
+      { symbol: 'TINY', value: 1 },
+      { symbol: 'BIG', value: 100 },
+      { symbol: 'MID', value: 50 },
+    ];
+    const grouped = groupTopN(data, 2);
+    expect(grouped.map((s) => s.symbol)).toEqual(['BIG', 'MID', '其他']);
+    expect(grouped[2].value).toBe(1);
+  });
+
+  it('does not mutate the input array', () => {
+    const data = [
+      { symbol: 'A', value: 1 },
+      { symbol: 'B', value: 2 },
+    ];
+    groupTopN(data, 1);
+    expect(data.map((s) => s.symbol)).toEqual(['A', 'B']);
+  });
+});
+
+describe('charts.renderSymbolAllocationChart top-8 grouping', () => {
+  beforeEach(() => {
+    FakeChart.instances = [];
+  });
+
+  it('renders at most 8 named slices plus a 其他 slice when holdings exceed 8', () => {
+    const canvas = document.createElement('canvas');
+    const holdings = Array.from({ length: 12 }, (_, i) => ({
+      symbol: `S${i + 1}`,
+      value: 120 - i * 10, // S1 largest ... S12 smallest
+    }));
+    renderSymbolAllocationChart(canvas, holdings, 'TWD');
+    const config = FakeChart.instances[0].config;
+    expect(config.data.labels).toHaveLength(9);
+    expect(config.data.labels.slice(0, 8)).toEqual([
+      'S1',
+      'S2',
+      'S3',
+      'S4',
+      'S5',
+      'S6',
+      'S7',
+      'S8',
+    ]);
+    expect(config.data.labels[8]).toBe('其他');
+    // 其他 = S9..S12 values: 40 + 30 + 20 + 10
+    expect(config.data.datasets[0].data[8]).toBe(100);
+  });
+
+  it('keeps all slices when there are 8 or fewer holdings', () => {
+    const canvas = document.createElement('canvas');
+    const holdings = Array.from({ length: 8 }, (_, i) => ({
+      symbol: `S${i + 1}`,
+      value: 80 - i * 10,
+    }));
+    renderSymbolAllocationChart(canvas, holdings, 'TWD');
+    const config = FakeChart.instances[0].config;
+    expect(config.data.labels).toHaveLength(8);
+    expect(config.data.labels).not.toContain('其他');
+  });
+});
+
 describe('charts.renderRoiTrendChart', () => {
   beforeEach(() => {
     FakeChart.instances = [];
@@ -224,6 +329,20 @@ describe('charts.renderRoiTrendChart', () => {
       'TWD',
     );
     expect(FakeChart.instances).toHaveLength(0);
+  });
+
+  it('keeps x-axis labels horizontal and auto-skips them with a max of ~12 ticks', () => {
+    const canvas = document.createElement('canvas');
+    renderRoiTrendChart(
+      canvas,
+      [{ date: '2024-01-31', roiPct: 5, totalAssets: 1000 }],
+      'cumulative',
+      'TWD',
+    );
+    const ticks = FakeChart.instances[0].config.options.scales.x.ticks;
+    expect(ticks.autoSkip).toBe(true);
+    expect(ticks.maxTicksLimit).toBe(12);
+    expect(ticks.maxRotation).toBe(0);
   });
 
   it('formats the y-axis tick label as a percentage', () => {

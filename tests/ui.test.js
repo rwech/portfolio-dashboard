@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '../src/stockPrice.js';
 import '../src/ui.js';
 
@@ -384,6 +384,90 @@ describe('ui.renderPriceOverridePanel', () => {
     expect(row.querySelector('.override-clear-btn').disabled).toBe(false);
     row.querySelector('.override-clear-btn').click();
     expect(onOverrideClear).toHaveBeenCalledWith('AAPL');
+  });
+});
+
+describe('ui.showToast', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="toast-container"></div>';
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('renders the message as an info toast and auto-dismisses after the default 5s', () => {
+    ui.showToast('已新增 2330 買進 1000 股');
+    const toast = document.querySelector('#toast-container .toast');
+    expect(toast).not.toBeNull();
+    expect(toast.classList.contains('toast-info')).toBe(true);
+    expect(toast.getAttribute('role')).toBe('status');
+    expect(toast.querySelector('.toast-message').textContent).toBe(
+      '已新增 2330 買進 1000 股',
+    );
+
+    vi.advanceTimersByTime(4999);
+    expect(document.querySelector('#toast-container .toast')).not.toBeNull();
+    vi.advanceTimersByTime(1);
+    expect(document.querySelector('#toast-container .toast')).toBeNull();
+  });
+
+  it('marks an error toast with the error class and an assertive alert role', () => {
+    ui.showToast('symbol 不可為空', { type: 'error' });
+    const toast = document.querySelector('.toast');
+    expect(toast.classList.contains('toast-error')).toBe(true);
+    expect(toast.getAttribute('role')).toBe('alert');
+  });
+
+  it('respects a custom durationMs instead of the default', () => {
+    ui.showToast('稍縱即逝', { durationMs: 1000 });
+    vi.advanceTimersByTime(999);
+    expect(document.querySelector('.toast')).not.toBeNull();
+    vi.advanceTimersByTime(1);
+    expect(document.querySelector('.toast')).toBeNull();
+  });
+
+  it('renders an action button that fires the callback and dismisses the toast immediately', () => {
+    const onAction = vi.fn();
+    ui.showToast('已刪除 2330 買進 1000 股', {
+      actionLabel: '復原',
+      onAction,
+      durationMs: 6000,
+    });
+    const btn = document.querySelector('.toast .toast-action-btn');
+    expect(btn.textContent).toBe('復原');
+
+    btn.click();
+    expect(onAction).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.toast')).toBeNull();
+
+    // the auto-dismiss timer must have been cleared; advancing time is a no-op
+    vi.advanceTimersByTime(10000);
+    expect(onAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders no action button when actionLabel is given without a callback', () => {
+    ui.showToast('無動作', { actionLabel: '復原' });
+    expect(document.querySelector('.toast')).not.toBeNull();
+    expect(document.querySelector('.toast-action-btn')).toBeNull();
+  });
+
+  it('stacks multiple toasts and dismissing one is idempotent and leaves the rest', () => {
+    const first = ui.showToast('first');
+    ui.showToast('second');
+    expect(document.querySelectorAll('.toast')).toHaveLength(2);
+
+    first.dismiss();
+    expect(document.querySelectorAll('.toast')).toHaveLength(1);
+    first.dismiss(); // second dismiss is a harmless no-op
+    expect(document.querySelectorAll('.toast')).toHaveLength(1);
+    expect(document.querySelector('.toast-message').textContent).toBe('second');
+  });
+
+  it('returns null and does nothing when the toast container is missing', () => {
+    document.body.innerHTML = '';
+    expect(ui.showToast('nowhere to go')).toBeNull();
   });
 });
 

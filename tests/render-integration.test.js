@@ -237,6 +237,94 @@ describe('renderSymbolPnlTable stale price tag', () => {
   });
 });
 
+describe('renderSymbolPnlTable totals row', () => {
+  beforeEach(setupDom);
+
+  function stat(overrides) {
+    return {
+      symbol: 'AAA',
+      name: '',
+      market: 'US',
+      remainingQty: 10,
+      avgCost: 100,
+      currentPrice: 100,
+      priceSource: 'live',
+      priceFetchedAt: new Date().toISOString(),
+      roiPct: 5,
+      realizedGain: 0,
+      unrealizedGain: 0,
+      marketValue: 0,
+      costBasisHeld: 0,
+      ...overrides,
+    };
+  }
+
+  it('renders a 合計 row in tfoot summing realized/unrealized gains, market value and cost basis', () => {
+    window.PFD.ui.renderSymbolPnlTable(
+      [
+        stat({
+          symbol: 'AAA',
+          realizedGain: 100,
+          unrealizedGain: -30,
+          marketValue: 1000,
+          costBasisHeld: 900,
+        }),
+        stat({
+          symbol: 'BBB',
+          realizedGain: 50,
+          unrealizedGain: 80,
+          marketValue: 2500,
+          costBasisHeld: 2100,
+        }),
+      ],
+      'TWD',
+    );
+    const cells = [
+      ...document.querySelectorAll('#symbol-pnl-table tfoot tr td'),
+    ].map((td) => td.textContent);
+    expect(cells).toHaveLength(10);
+    expect(cells[0]).toBe('合計');
+    expect(cells[3]).toBe('+150 TWD'); // realized 100 + 50
+    expect(cells[4]).toBe('+50 TWD'); // unrealized -30 + 80
+    expect(cells[7]).toBe('3,500 TWD'); // market value 1000 + 2500
+    expect(cells[9]).toBe('3,000 TWD'); // cost basis 900 + 2100
+  });
+
+  it('leaves non-summable columns (市場, ROI%, 股數, 最後價, 平均成本) as —', () => {
+    window.PFD.ui.renderSymbolPnlTable([stat({})], 'TWD');
+    const cells = [
+      ...document.querySelectorAll('#symbol-pnl-table tfoot tr td'),
+    ].map((td) => td.textContent);
+    expect(cells[1]).toBe('—');
+    expect(cells[2]).toBe('—');
+    expect(cells[5]).toBe('—');
+    expect(cells[6]).toBe('—');
+    expect(cells[8]).toBe('—');
+  });
+
+  it('colors the summed gains with the positive/negative helpers', () => {
+    window.PFD.ui.renderSymbolPnlTable(
+      [stat({ realizedGain: 100, unrealizedGain: -30 })],
+      'TWD',
+    );
+    const cells = document.querySelectorAll('#symbol-pnl-table tfoot tr td');
+    expect(cells[3].classList.contains('positive')).toBe(true);
+    expect(cells[4].classList.contains('negative')).toBe(true);
+  });
+
+  it('renders no totals row when there are no per-symbol stats', () => {
+    window.PFD.ui.renderSymbolPnlTable([], 'TWD');
+    expect(document.querySelector('#symbol-pnl-table tfoot tr')).toBeNull();
+  });
+
+  it('clears a previously rendered totals row when re-rendered with no stats', () => {
+    window.PFD.ui.renderSymbolPnlTable([stat({ realizedGain: 1 })], 'TWD');
+    expect(document.querySelector('#symbol-pnl-table tfoot tr')).not.toBeNull();
+    window.PFD.ui.renderSymbolPnlTable([], 'TWD');
+    expect(document.querySelector('#symbol-pnl-table tfoot tr')).toBeNull();
+  });
+});
+
 describe('renderPriceOverridePanel unrecognized priceSource', () => {
   beforeEach(setupDom);
 

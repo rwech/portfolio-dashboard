@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '../src/stockPrice.js';
+import '../src/csv.js';
+import '../src/importer.js';
 import '../src/ui.js';
 
 const ui = window.PFD.ui;
@@ -301,30 +303,171 @@ describe('ui.renderBackupReminderBanner', () => {
   });
 });
 
-describe('ui.renderImportFeedback', () => {
+describe('ui import modal', () => {
   beforeEach(() => {
-    document.body.innerHTML = '<div id="import-errors" hidden></div>';
+    document.body.innerHTML =
+      '<div id="import-modal" hidden><div id="import-modal-body"></div></div>';
   });
 
-  it('hides and clears the panel when there is nothing to report', () => {
-    const el = document.getElementById('import-errors');
-    el.hidden = false;
-    el.innerHTML = 'stale content';
-    ui.renderImportFeedback('import-errors', {});
-    expect(el.hidden).toBe(true);
-    expect(el.innerHTML).toBe('');
+  function body() {
+    return document.getElementById('import-modal-body');
+  }
+
+  it('openImportModal / closeImportModal toggle visibility and clear the body', () => {
+    ui.openImportModal();
+    expect(document.getElementById('import-modal').hidden).toBe(false);
+    body().innerHTML = 'stale';
+    ui.closeImportModal();
+    expect(document.getElementById('import-modal').hidden).toBe(true);
+    expect(body().innerHTML).toBe('');
   });
 
-  it('shows a notice and lists skipped rows with their line numbers and reasons', () => {
-    ui.renderImportFeedback('import-errors', {
-      notice: '已匯入 3 筆',
-      errors: [{ line: 4, reason: 'quantity 必須是大於 0 的數字' }],
+  describe('renderImportMappingStep', () => {
+    const headerFields = ['成交日期', '證券代號', '買賣別', '股數', '價格'];
+    const mapping = {
+      date: 0,
+      symbol: 1,
+      name: null,
+      action: 2,
+      quantity: 3,
+      price: 4,
+      fee: null,
+    };
+
+    it('renders one select per target field, preselected from the mapping', () => {
+      ui.renderImportMappingStep({ headerFields, mapping }, {});
+      const selects = body().querySelectorAll('.mapping-select');
+      expect(selects).toHaveLength(7);
+      expect(body().querySelector('[data-field="date"]').value).toBe('0');
+      expect(body().querySelector('[data-field="name"]').value).toBe('');
     });
-    const el = document.getElementById('import-errors');
-    expect(el.hidden).toBe(false);
-    expect(el.innerHTML).toContain('已匯入 3 筆');
-    expect(el.innerHTML).toContain('第 4 列');
-    expect(el.innerHTML).toContain('quantity 必須是大於 0 的數字');
+
+    it('escapes header field names in the options', () => {
+      ui.renderImportMappingStep(
+        { headerFields: ['<img src=x onerror=alert(1)>'], mapping },
+        {},
+      );
+      expect(body().querySelector('img')).toBeNull();
+    });
+
+    it('apply passes the selected mapping; cancel fires onCancel', () => {
+      const onApply = vi.fn();
+      const onCancel = vi.fn();
+      ui.renderImportMappingStep(
+        { headerFields, mapping },
+        { onApply, onCancel },
+      );
+      body().querySelector('.mapping-apply-btn').click();
+      expect(onApply).toHaveBeenCalledWith(mapping);
+      body().querySelector('.modal-cancel-btn').click();
+      expect(onCancel).toHaveBeenCalled();
+    });
+
+    it('blocks apply and shows which required fields are missing', () => {
+      const onApply = vi.fn();
+      ui.renderImportMappingStep(
+        { headerFields, mapping: { ...mapping, date: null, action: null } },
+        { onApply },
+      );
+      body().querySelector('.mapping-apply-btn').click();
+      expect(onApply).not.toHaveBeenCalled();
+      const err = body().querySelector('.mapping-error');
+      expect(err.hidden).toBe(false);
+      expect(err.textContent).toContain('日期');
+      expect(err.textContent).toContain('買賣');
+    });
+  });
+
+  describe('renderImportPreviewStep', () => {
+    const basePreview = {
+      marketLabel: '台股',
+      validCount: 12,
+      errors: [],
+      dateRange: { from: '2024-01-01', to: '2024-06-30' },
+      symbolCount: 3,
+      duplicateCount: 10,
+      newCount: 2,
+      existingCount: 40,
+      previewRows: [
+        {
+          date: '2024-01-01',
+          symbol: '2330',
+          name: '台積電',
+          action: 'buy',
+          quantity: 100,
+          price: 560,
+          fee: 20,
+        },
+      ],
+      encoding: 'utf-8',
+    };
+
+    it('renders the headline stats and the will-add count', () => {
+      ui.renderImportPreviewStep(basePreview, {});
+      const text = body().textContent;
+      expect(text).toContain('12');
+      expect(text).toContain('2024-01-01 ～ 2024-06-30');
+      expect(text).toContain('3 檔標的');
+      expect(document.getElementById('import-add-count').textContent).toBe('2');
+      expect(body().querySelector('.import-preview-table')).not.toBeNull();
+    });
+
+    it('mentions Big5 only when that encoding was detected', () => {
+      ui.renderImportPreviewStep(basePreview, {});
+      expect(body().textContent).not.toContain('Big5');
+      ui.renderImportPreviewStep({ ...basePreview, encoding: 'big5' }, {});
+      expect(body().textContent).toContain('Big5');
+    });
+
+    it('caps the displayed error list and notes how many are omitted', () => {
+      const errors = Array.from({ length: 14 }, (_, i) => ({
+        line: i + 2,
+        reason: 'quantity 必須是大於 0 的數字',
+      }));
+      ui.renderImportPreviewStep({ ...basePreview, errors }, {});
+      const list = body().querySelector('.import-error-list');
+      expect(list.querySelectorAll('li')).toHaveLength(10);
+      expect(list.textContent).toContain('14');
+      expect(list.textContent).toContain('其餘 4 列');
+    });
+
+    it('replace checkbox switches the add count, shows the warning, and reaches onConfirm', () => {
+      const onConfirm = vi.fn();
+      ui.renderImportPreviewStep(basePreview, { onConfirm });
+      const checkbox = document.getElementById('import-replace-checkbox');
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change'));
+      expect(document.getElementById('import-add-count').textContent).toBe(
+        '12',
+      );
+      const warning = document.getElementById('import-replace-warning');
+      expect(warning.hidden).toBe(false);
+      expect(warning.textContent).toContain('40');
+      document.getElementById('import-confirm-btn').click();
+      expect(onConfirm).toHaveBeenCalledWith({ replace: true });
+    });
+
+    it('disables confirm when nothing would be written', () => {
+      ui.renderImportPreviewStep({ ...basePreview, newCount: 0 }, {});
+      const confirmBtn = document.getElementById('import-confirm-btn');
+      expect(confirmBtn.disabled).toBe(true);
+      // 勾選取代後有有效列可寫入 → 恢復可按
+      const checkbox = document.getElementById('import-replace-checkbox');
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change'));
+      expect(confirmBtn.disabled).toBe(false);
+    });
+
+    it('disables confirm in replace mode when the file has no valid rows', () => {
+      ui.renderImportPreviewStep(
+        { ...basePreview, validCount: 0, newCount: 0, previewRows: [] },
+        {},
+      );
+      const checkbox = document.getElementById('import-replace-checkbox');
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change'));
+      expect(document.getElementById('import-confirm-btn').disabled).toBe(true);
+    });
   });
 });
 

@@ -427,24 +427,152 @@
     document.addEventListener('click', closeAll);
   }
 
-  function renderImportFeedback(elId, { notice, errors } = {}) {
-    const el = document.getElementById(elId);
-    const parts = [];
-    if (notice) parts.push(`<div class="import-notice">${notice}</div>`);
-    if (errors && errors.length) {
-      parts.push(
-        `<div class="import-error-list">匯入時略過 ${errors.length} 列：<ul>${errors
-          .map((e) => `<li>第 ${e.line} 列：${e.reason}</li>`)
-          .join('')}</ul></div>`,
+  function openImportModal() {
+    document.getElementById('import-modal').hidden = false;
+  }
+
+  function closeImportModal() {
+    document.getElementById('import-modal').hidden = true;
+    document.getElementById('import-modal-body').innerHTML = '';
+  }
+
+  const IMPORT_ERROR_DISPLAY_LIMIT = 10;
+
+  function importErrorListHtml(errors) {
+    if (!errors.length) return '';
+    const shown = errors.slice(0, IMPORT_ERROR_DISPLAY_LIMIT);
+    const restCount = errors.length - shown.length;
+    return `<div class="import-error-list">格式錯誤、將被略過的 ${errors.length} 列：<ul>${shown
+      .map((e) => `<li>第 ${e.line} 列：${escapeHtml(e.reason)}</li>`)
+      .join(
+        '',
+      )}</ul>${restCount > 0 ? `<p>…其餘 ${restCount} 列省略</p>` : ''}</div>`;
+  }
+
+  // 匯入精靈第一步：來源欄位 → 標準欄位的對應。
+  function renderImportMappingStep({ headerFields, mapping }, handlers) {
+    const importer = window.PFD.importer;
+    const body = document.getElementById('import-modal-body');
+
+    const optionsFor = (selectedIdx, optional) => {
+      const skipLabel = optional ? '（略過）' : '（請選擇）';
+      return (
+        `<option value=""${selectedIdx === null ? ' selected' : ''}>${skipLabel}</option>` +
+        headerFields
+          .map(
+            (h, i) =>
+              `<option value="${i}"${i === selectedIdx ? ' selected' : ''}>${escapeHtml(h)}</option>`,
+          )
+          .join('')
       );
-    }
-    if (!parts.length) {
-      el.hidden = true;
-      el.innerHTML = '';
-      return;
-    }
-    el.hidden = false;
-    el.innerHTML = parts.join('');
+    };
+
+    body.innerHTML = `
+      <p>你的檔案欄位名稱與標準欄位不同，請確認以下自動猜測的對應：</p>
+      <div class="mapping-grid">
+        ${importer.TARGET_FIELDS.map((field) => {
+          const optional = importer.OPTIONAL_FIELDS.includes(field);
+          return `<label class="mapping-row">${importer.FIELD_LABELS[field]}（${field}${optional ? '，可略過' : ''}）
+            <select class="mapping-select" data-field="${field}">${optionsFor(mapping[field], optional)}</select>
+          </label>`;
+        }).join('')}
+      </div>
+      <p class="mapping-error" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="mapping-apply-btn">套用</button>
+        <button type="button" class="modal-cancel-btn">取消</button>
+      </div>`;
+
+    body.querySelector('.mapping-apply-btn').addEventListener('click', () => {
+      const result = {};
+      body.querySelectorAll('.mapping-select').forEach((sel) => {
+        result[sel.dataset.field] = sel.value === '' ? null : Number(sel.value);
+      });
+      const missing = importer.REQUIRED_FIELDS.filter(
+        (f) => result[f] === null,
+      );
+      if (missing.length) {
+        const err = body.querySelector('.mapping-error');
+        err.hidden = false;
+        err.textContent = `請先為必填欄位選擇來源欄：${missing
+          .map((f) => importer.FIELD_LABELS[f])
+          .join('、')}`;
+        return;
+      }
+      handlers.onApply(result);
+    });
+    body
+      .querySelector('.modal-cancel-btn')
+      .addEventListener('click', handlers.onCancel);
+  }
+
+  // 匯入精靈第二步：統計預覽與確認。
+  function renderImportPreviewStep(preview, handlers) {
+    const body = document.getElementById('import-modal-body');
+    const {
+      marketLabel,
+      validCount,
+      errors,
+      dateRange,
+      symbolCount,
+      duplicateCount,
+      newCount,
+      existingCount,
+      previewRows,
+      encoding,
+    } = preview;
+
+    const rangeText = dateRange ? `${dateRange.from} ～ ${dateRange.to}、` : '';
+    const previewTable = previewRows.length
+      ? `<table class="import-preview-table">
+          <thead><tr><th>日期</th><th>代號</th><th>名稱</th><th>買賣</th><th>股數</th><th>單價</th><th>手續費</th></tr></thead>
+          <tbody>${previewRows
+            .map(
+              (tx) =>
+                `<tr><td>${tx.date}</td><td>${escapeHtml(tx.symbol)}</td><td>${escapeHtml(tx.name || '')}</td><td>${tx.action === 'buy' ? '買進' : '賣出'}</td><td>${tx.quantity}</td><td>${tx.price}</td><td>${tx.fee}</td></tr>`,
+            )
+            .join('')}</tbody>
+        </table>`
+      : '';
+
+    body.innerHTML = `
+      ${encoding === 'big5' ? '<p class="import-encoding-note">已自動偵測為 Big5 編碼並轉換。</p>' : ''}
+      <p class="import-stats">解析成功 <b>${validCount}</b> 筆（${rangeText}${symbolCount} 檔標的），與現有${marketLabel}資料重複 <b>${duplicateCount}</b> 筆。</p>
+      ${importErrorListHtml(errors)}
+      <p class="import-will-add">將新增 <b id="import-add-count">${newCount}</b> 筆${marketLabel}交易</p>
+      ${previewRows.length ? `<p class="import-preview-caption">前 ${previewRows.length} 筆預覽：</p>${previewTable}` : ''}
+      <label class="import-replace-option">
+        <input type="checkbox" id="import-replace-checkbox" />
+        清空${marketLabel}現有紀錄後匯入（進階）
+      </label>
+      <p id="import-replace-warning" class="import-replace-warning" hidden>
+        ⚠ 現有 ${existingCount} 筆${marketLabel}紀錄將被刪除且無法復原
+      </p>
+      <div class="modal-actions">
+        <button type="button" id="import-confirm-btn">確認匯入</button>
+        <button type="button" class="modal-cancel-btn">取消</button>
+      </div>`;
+
+    const replaceCheckbox = body.querySelector('#import-replace-checkbox');
+    const confirmBtn = body.querySelector('#import-confirm-btn');
+    const syncConfirmState = () => {
+      const replace = replaceCheckbox.checked;
+      body.querySelector('#import-add-count').textContent = String(
+        replace ? validCount : newCount,
+      );
+      body.querySelector('#import-replace-warning').hidden = !replace;
+      // 沒有任何資料會被寫入（或取代模式下檔案沒有有效列）時不允許確認
+      confirmBtn.disabled = replace ? validCount === 0 : newCount === 0;
+    };
+    replaceCheckbox.addEventListener('change', syncConfirmState);
+    syncConfirmState();
+
+    confirmBtn.addEventListener('click', () =>
+      handlers.onConfirm({ replace: replaceCheckbox.checked }),
+    );
+    body
+      .querySelector('.modal-cancel-btn')
+      .addEventListener('click', handlers.onCancel);
   }
 
   const TOAST_DEFAULT_DURATION_MS = 5000;
@@ -507,7 +635,10 @@
     renderDemoModeBanner,
     renderEmptyState,
     renderPriceQualityWarning,
-    renderImportFeedback,
+    openImportModal,
+    closeImportModal,
+    renderImportMappingStep,
+    renderImportPreviewStep,
     showToast,
     initTabs,
     initDropdownMenus,

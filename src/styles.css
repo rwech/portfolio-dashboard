@@ -165,7 +165,6 @@ section {
 body.demo-mode-active #add-transaction-form,
 body.demo-mode-active #export-btn,
 body.demo-mode-active #import-btn,
-body.demo-mode-active #add-tx-import-btn,
 body.demo-mode-active #backup-reminder-export-btn,
 body.demo-mode-active .edit-tx-btn,
 body.demo-mode-active .delete-tx-btn,
@@ -315,9 +314,121 @@ body.demo-mode-active .override-clear-btn {
   font-weight: 600;
 }
 
-.import-notice {
+/* 匯入預覽/欄位對應 modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 90; /* toast (100) 之下 */
+}
+
+/* display:flex 會蓋掉 hidden 屬性的預設 display:none，需明確還原 */
+.modal-overlay[hidden] {
+  display: none;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  max-width: 620px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal h3 {
+  margin-bottom: 0.75rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal-actions #import-confirm-btn,
+.modal-actions .mapping-apply-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b1021;
+  font-weight: 600;
+}
+
+.modal-actions #import-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.mapping-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.mapping-error {
+  color: var(--danger);
+  margin-top: 0.75rem;
+}
+
+.import-stats,
+.import-will-add {
+  margin-top: 0.5rem;
+}
+
+.import-will-add b {
   color: var(--accent);
-  margin-bottom: 0.4rem;
+}
+
+.import-encoding-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.import-preview-caption {
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.import-preview-table {
+  width: 100%;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.import-replace-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.import-replace-warning {
+  color: var(--danger);
+  margin-top: 0.5rem;
+}
+
+.modal .import-error-list {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
 }
 
 #charts {
@@ -726,18 +837,6 @@ button[type='submit']:hover {
 .badge-us {
   background: rgba(177, 74, 255, 0.18);
   color: #b14aff;
-}
-
-.import-feedback {
-  padding: 0.5rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-bottom: 0.5rem;
-  background: var(--surface-alt);
-}
-
-.import-feedback .import-error-list {
-  color: var(--danger);
 }
 
 footer {

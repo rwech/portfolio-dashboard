@@ -29,6 +29,7 @@ src/
   config.js          可調整設定（如 apiBaseUrl）
   storage.js          localStorage 讀寫（交易紀錄、現價快取、篩選條件等）
   csv.js              CSV 解析／序列化／下載
+  importer.js          匯入 pipeline 純邏輯：編碼偵測（UTF-8/Big5）、欄位對應猜測、值正規化、去重分析
   exchangeRate.js      匯率抓取與快取
   stockPrice.js        現價抓取（呼叫 /api/stock-price）與快取/估計值 fallback
   roi.js               ROI／損益核心計算邏輯（與 UI 完全無關，最適合寫單元測試）

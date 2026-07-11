@@ -243,84 +243,12 @@
           <button type="submit">新增</button>
         </form>
 
-        <h3>批次匯入 CSV（新增至現有資料）</h3>
-        <details class="csv-format-help">
-          <summary>CSV 格式說明</summary>
-          <p>第一列為標題列，需依序包含以下欄位：</p>
-          <table>
-            <thead>
-              <tr>
-                <th>欄位</th>
-                <th>說明</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>date</td>
-                <td>交易日期，格式 <code>YYYY-MM-DD</code></td>
-              </tr>
-              <tr>
-                <td>symbol</td>
-                <td>股票代號，例如 <code>2330</code> 或 <code>AAPL</code></td>
-              </tr>
-              <tr>
-                <td>name</td>
-                <td>顯示名稱，可空白</td>
-              </tr>
-              <tr>
-                <td>action</td>
-                <td><code>buy</code>（買進）或 <code>sell</code>（賣出）</td>
-              </tr>
-              <tr>
-                <td>quantity</td>
-                <td>股數，必須大於 0</td>
-              </tr>
-              <tr>
-                <td>price</td>
-                <td>
-                  單股成交價，需大於等於 0（台股為 TWD，美股為
-                  USD，依匯入時選擇的市場決定）
-                </td>
-              </tr>
-              <tr>
-                <td>fee</td>
-                <td>手續費，可空白（視為 0）</td>
-              </tr>
-            </tbody>
-          </table>
-          <p>範例：<code>2024-01-10,2330,台積電,buy,300,560,20</code></p>
-          <p>
-            格式不符的列會被略過並標示行號與原因，其餘正確的列仍會正常匯入。
-          </p>
-        </details>
-        <div class="toolbar">
-          <div class="dropdown">
-            <button
-              id="add-tx-import-btn"
-              type="button"
-              class="import-btn dropdown-toggle"
-              aria-haspopup="true"
-              aria-expanded="false"
-            >
-              匯入 CSV（新增）
-            </button>
-            <div class="dropdown-menu" id="add-tx-import-menu" hidden>
-              <button type="button" class="dropdown-item" data-market="TW">
-                台股
-              </button>
-              <button type="button" class="dropdown-item" data-market="US">
-                美股
-              </button>
-            </div>
-            <input
-              id="add-tx-import-csv-input"
-              type="file"
-              accept=".csv"
-              hidden
-            />
-          </div>
-        </div>
-        <div id="add-tx-import-feedback" class="import-feedback" hidden></div>
+        <h3>批次匯入 CSV</h3>
+        <p class="hint">
+          批次匯入已整合至「交易紀錄」分頁的「匯入
+          CSV」：匯入前會先顯示預覽，並自動略過與現有資料重複的紀錄，不會覆蓋你的資料。
+        </p>
+        <button id="goto-import-btn" type="button">前往匯入 CSV</button>
       </section>
     </div>
 
@@ -329,7 +257,7 @@
         <h2>交易紀錄</h2>
         <p class="hint">
           匯入 CSV
-          會「取代」對應市場現有的交易紀錄；若要新增交易而不覆蓋現有資料，請至「新增交易」分頁。若只是想瀏覽範例資料，請開啟頁首的「示範模式」，不會修改你的真實資料。
+          會先顯示預覽與統計，確認後才寫入；預設只新增、自動略過與現有資料重複的紀錄，適合定期把券商完整匯出檔直接重匯。若只是想瀏覽範例資料，請開啟頁首的「示範模式」，不會修改你的真實資料。
         </p>
         <details class="csv-format-help">
           <summary>CSV 格式說明</summary>
@@ -408,7 +336,7 @@
               aria-haspopup="true"
               aria-expanded="false"
             >
-              匯入 CSV（取代）
+              匯入 CSV
             </button>
             <div class="dropdown-menu" id="import-menu" hidden>
               <button type="button" class="dropdown-item" data-market="TW">
@@ -421,7 +349,6 @@
             <input id="import-csv-input" type="file" accept=".csv" hidden />
           </div>
         </div>
-        <div id="import-errors" class="import-feedback" hidden></div>
         <div class="tx-search-wrap">
           <input
             type="search"
@@ -459,12 +386,25 @@
       <p>v1.0.0</p>
     </footer>
 
+    <div id="import-modal" class="modal-overlay" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-modal-title"
+      >
+        <h3 id="import-modal-title">匯入 CSV</h3>
+        <div id="import-modal-body"></div>
+      </div>
+    </div>
+
     <div id="toast-container" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="src/config.js"></script>
     <script src="src/storage.js"></script>
     <script src="src/csv.js"></script>
+    <script src="src/importer.js"></script>
     <script src="src/exchangeRate.js"></script>
     <script src="src/stockPrice.js"></script>
     <script src="src/historicalPrice.js"></script>

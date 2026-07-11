@@ -3,6 +3,7 @@
 
   const storage = window.PFD.storage;
   const csv = window.PFD.csv;
+  const importer = window.PFD.importer;
   const exchangeRate = window.PFD.exchangeRate;
   const stockPrice = window.PFD.stockPrice;
   const historicalPrice = window.PFD.historicalPrice;
@@ -471,41 +472,93 @@
     render();
   }
 
-  function loadRowsIntoMarket(rows, market, mode) {
-    if (mode === 'replace') {
-      storage.replaceTransactions(market, rows);
-    } else {
-      rows.forEach((row) => storage.addTransaction(market, row));
+  function marketLabelFor(market) {
+    return market === 'TW' ? '台股' : '美股';
+  }
+
+  // 匯入第二步：以確定的欄位對應解析全檔、與現有資料做去重分析，
+  // 顯示預覽統計，使用者確認後才真正寫入。
+  function openImportPreview(session) {
+    const { text, encoding, market, mapping } = session;
+    const { rows, errors } = importer.parseWithMapping(text, mapping, market);
+    const existing = storage.loadTransactions(market);
+    const analysis = importer.analyzeImport(rows, existing);
+
+    ui.renderImportPreviewStep(
+      {
+        marketLabel: marketLabelFor(market),
+        validCount: rows.length,
+        errors,
+        dateRange: analysis.stats.dateRange,
+        symbolCount: analysis.stats.symbolCount,
+        duplicateCount: analysis.duplicateCount,
+        newCount: analysis.newRows.length,
+        existingCount: existing.length,
+        previewRows: rows.slice(0, 5),
+        encoding,
+      },
+      {
+        onConfirm: ({ replace }) => {
+          if (replace) {
+            storage.replaceTransactions(market, rows);
+          } else {
+            storage.appendTransactions(market, analysis.newRows);
+          }
+          storage.incrementUnexportedChanges();
+          ui.closeImportModal();
+          reloadTransactionsFromStorage();
+          render();
+          refreshHistoricalPrices();
+          const label = marketLabelFor(market);
+          const message = replace
+            ? `已以匯入資料取代${label}交易紀錄（${rows.length} 筆）`
+            : `已新增 ${analysis.newRows.length} 筆${label}交易${
+                analysis.duplicateCount > 0
+                  ? `（略過重複 ${analysis.duplicateCount} 筆）`
+                  : ''
+              }`;
+          ui.showToast(message, { type: 'success' });
+        },
+        onCancel: () => ui.closeImportModal(),
+      },
+    );
+  }
+
+  async function handleImportFile(file, market) {
+    if (blockIfDemoMode()) return;
+    const buffer = await file.arrayBuffer();
+    const { text, encoding } = importer.decodeCsvBytes(buffer);
+    const headerFields = importer.readHeader(text);
+    if (headerFields.length === 0) {
+      ui.showToast('檔案是空的或讀不到標題列', { type: 'error' });
+      return;
     }
-  }
 
-  function handleReplaceImportText(text, market) {
-    if (blockIfDemoMode()) return;
-    const { rows, errors } = csv.parseCsv(text, market);
-    loadRowsIntoMarket(rows, market, 'replace');
-    reloadTransactionsFromStorage();
-    const marketLabel = market === 'TW' ? '台股' : '美股';
-    ui.renderImportFeedback('import-errors', {
-      notice: `已使用匯入資料取代現有的${marketLabel}交易紀錄（${rows.length} 筆）`,
-      errors,
-    });
-    render();
-    refreshHistoricalPrices();
-  }
+    const { mapping: guessed, isExactSchema } =
+      importer.guessMapping(headerFields);
+    const session = { text, encoding, market };
+    ui.openImportModal();
 
-  function handleAppendImportText(text, market) {
-    if (blockIfDemoMode()) return;
-    const { rows, errors } = csv.parseCsv(text, market);
-    loadRowsIntoMarket(rows, market, 'append');
-    reloadTransactionsFromStorage();
-    storage.incrementUnexportedChanges();
-    const marketLabel = market === 'TW' ? '台股' : '美股';
-    ui.renderImportFeedback('add-tx-import-feedback', {
-      notice: `已新增 ${rows.length} 筆${marketLabel}交易至現有資料`,
-      errors,
-    });
-    render();
-    refreshHistoricalPrices();
+    if (isExactSchema) {
+      session.mapping = guessed;
+      openImportPreview(session);
+      return;
+    }
+
+    // 欄名非標準 schema：先走欄位對應精靈，沿用上次存過的對應（若有）
+    const signature = importer.headerSignature(headerFields);
+    const saved = storage.loadImportMapping(signature);
+    ui.renderImportMappingStep(
+      { headerFields, mapping: saved || guessed },
+      {
+        onApply: (mapping) => {
+          storage.saveImportMapping(signature, mapping);
+          session.mapping = mapping;
+          openImportPreview(session);
+        },
+        onCancel: () => ui.closeImportModal(),
+      },
+    );
   }
 
   async function setDemoMode(enabled) {
@@ -657,36 +710,14 @@
       .addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const market = pendingImportMarket;
-        const reader = new FileReader();
-        reader.onload = () =>
-          handleReplaceImportText(String(reader.result), market);
-        reader.readAsText(file);
+        handleImportFile(file, pendingImportMarket);
         e.target.value = '';
       });
 
-    let pendingAddTxImportMarket = null;
-    document
-      .querySelectorAll('#add-tx-import-menu .dropdown-item')
-      .forEach((item) => {
-        item.addEventListener('click', () => {
-          pendingAddTxImportMarket = item.dataset.market;
-          document.getElementById('add-tx-import-csv-input').click();
-        });
-      });
-
-    document
-      .getElementById('add-tx-import-csv-input')
-      .addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const market = pendingAddTxImportMarket;
-        const reader = new FileReader();
-        reader.onload = () =>
-          handleAppendImportText(String(reader.result), market);
-        reader.readAsText(file);
-        e.target.value = '';
-      });
+    document.getElementById('goto-import-btn').addEventListener('click', () => {
+      // 重用 initTabs 綁定的分頁切換邏輯
+      document.querySelector('.tab-btn[data-tab="transactions"]').click();
+    });
 
     window.addEventListener('beforeunload', (e) => {
       if (storage.loadUnexportedChangeCount() > 0) {
@@ -740,8 +771,7 @@
     handleEditStart,
     handleEditCancel,
     handleEditSave,
-    handleReplaceImportText,
-    handleAppendImportText,
+    handleImportFile,
     handlePriceOverrideChange,
     handlePriceOverrideClear,
     handleExport,

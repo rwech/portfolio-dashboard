@@ -226,6 +226,46 @@ describe('ui.renderSummaryCards', () => {
   });
 });
 
+describe('ui.renderEmptyState', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <section id="onboarding-empty-state" hidden></section>
+      <section id="summary-cards"></section>
+      <section id="charts"></section>
+    `;
+  });
+
+  it('shows the empty state instead of the summary cards and charts', () => {
+    ui.renderEmptyState(true);
+    expect(document.getElementById('onboarding-empty-state').hidden).toBe(
+      false,
+    );
+    expect(document.getElementById('summary-cards').hidden).toBe(true);
+    expect(document.getElementById('charts').hidden).toBe(true);
+  });
+
+  it('restores the summary cards and charts once data exists', () => {
+    ui.renderEmptyState(true);
+    ui.renderEmptyState(false);
+    expect(document.getElementById('onboarding-empty-state').hidden).toBe(true);
+    expect(document.getElementById('summary-cards').hidden).toBe(false);
+    expect(document.getElementById('charts').hidden).toBe(false);
+  });
+});
+
+describe('ui.renderPriceQualityWarning', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="price-quality-warning" hidden></div>';
+  });
+
+  it('shows the warning when prices are unreliable and hides it otherwise', () => {
+    ui.renderPriceQualityWarning(true);
+    expect(document.getElementById('price-quality-warning').hidden).toBe(false);
+    ui.renderPriceQualityWarning(false);
+    expect(document.getElementById('price-quality-warning').hidden).toBe(true);
+  });
+});
+
 describe('ui.renderDemoModeBanner', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="demo-mode-banner" hidden></div>';

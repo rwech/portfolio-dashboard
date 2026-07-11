@@ -182,8 +182,20 @@
         ),
       }));
 
+    const showEmptyState = state.transactions.length === 0 && !state.demoMode;
+    // 只要任一「目前持有」標的的現價是估計值或已過期報價，
+    // 未實現損益與 ROI% 就不可靠，需要提醒使用者。
+    const hasUnreliableHeldPrice = fullSummary.perSymbol.some(
+      (s) =>
+        s.remainingQty > 0 &&
+        (s.priceSource === 'estimate' ||
+          stockPrice.isPriceStale(s.priceSource, s.priceFetchedAt)),
+    );
+
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
+    ui.renderEmptyState(showEmptyState);
+    ui.renderPriceQualityWarning(!showEmptyState && hasUnreliableHeldPrice);
     ui.renderSummaryCards(converted);
     const searchedTx = filterBySearch(filteredTx, state.txSearch);
 
@@ -609,6 +621,22 @@
     document
       .getElementById('demo-mode-toggle')
       .addEventListener('change', (e) => setDemoMode(e.target.checked));
+
+    document
+      .getElementById('empty-state-demo-btn')
+      .addEventListener('click', () => {
+        const toggle = document.getElementById('demo-mode-toggle');
+        toggle.checked = true;
+        // 走與使用者手動勾選完全相同的 change 事件路徑
+        toggle.dispatchEvent(new Event('change'));
+      });
+
+    document
+      .getElementById('empty-state-add-tx-btn')
+      .addEventListener('click', () => {
+        // 重用 initTabs 綁定的分頁切換邏輯
+        document.querySelector('.tab-btn[data-tab="add-tx"]').click();
+      });
 
     document.getElementById('theme-select').addEventListener('change', (e) => {
       const theme = e.target.value;

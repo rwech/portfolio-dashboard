@@ -840,6 +840,179 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
   });
 });
 
+describe('app: first-run empty state on the overview tab', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function emptyStateEl() {
+    return document.getElementById('onboarding-empty-state');
+  }
+
+  it('shows the empty state instead of summary cards when there are no transactions and demo mode is off', async () => {
+    await setupApp();
+    expect(emptyStateEl().hidden).toBe(false);
+    expect(document.getElementById('summary-cards').hidden).toBe(true);
+    expect(document.getElementById('charts').hidden).toBe(true);
+  });
+
+  it('hides the empty state as soon as a transaction exists', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    expect(emptyStateEl().hidden).toBe(true);
+    expect(document.getElementById('summary-cards').hidden).toBe(false);
+    expect(document.getElementById('charts').hidden).toBe(false);
+  });
+
+  it('hides the empty state while demo mode is on and restores it when demo mode turns off with no real data', async () => {
+    const app = await setupApp();
+    await app.setDemoMode(true);
+    expect(emptyStateEl().hidden).toBe(true);
+    await app.setDemoMode(false);
+    expect(emptyStateEl().hidden).toBe(false);
+  });
+
+  it('its demo button checks the header toggle and enables demo mode through the normal change path', async () => {
+    const app = await setupApp();
+    document.getElementById('empty-state-demo-btn').click();
+
+    await vi.waitFor(() =>
+      expect(document.getElementById('demo-mode-banner').hidden).toBe(false),
+    );
+    expect(app.state.demoMode).toBe(true);
+    expect(document.getElementById('demo-mode-toggle').checked).toBe(true);
+    expect(emptyStateEl().hidden).toBe(true);
+  });
+
+  it('its add-transaction button switches to the 新增交易 tab', async () => {
+    await setupApp();
+    document.getElementById('empty-state-add-tx-btn').click();
+
+    expect(
+      document.querySelector('.tab-panel[data-tab-panel="add-tx"]').hidden,
+    ).toBe(false);
+    expect(
+      document.querySelector('.tab-panel[data-tab-panel="overview"]').hidden,
+    ).toBe(true);
+    expect(
+      document
+        .querySelector('.tab-btn[data-tab="add-tx"]')
+        .classList.contains('active'),
+    ).toBe(true);
+  });
+});
+
+describe('app: estimate/stale price warning on the overview tab', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function warningEl() {
+    return document.getElementById('price-quality-warning');
+  }
+
+  it('shows the warning when a held symbol falls back to an estimate price', async () => {
+    const app = await setupApp();
+    // no /api/stock-price data in the mock, so the price resolves to an estimate
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 500,
+      fee: 0,
+    });
+    expect(warningEl().hidden).toBe(false);
+  });
+
+  it('hides the warning when the only held symbol has a manual override', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 500,
+      fee: 0,
+    });
+    app.handlePriceOverrideChange('2330', 520);
+    expect(warningEl().hidden).toBe(true);
+  });
+
+  it('shows the warning for a stale cached quote and hides it again once the quote is fresh', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAPL',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+
+    const old = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    app.state.priceCache = {
+      AAPL: { price: 105, source: 'live', fetchedAt: old },
+    };
+    app.render();
+    expect(warningEl().hidden).toBe(false);
+
+    app.state.priceCache = {
+      AAPL: { price: 105, source: 'live', fetchedAt: new Date().toISOString() },
+    };
+    app.render();
+    expect(warningEl().hidden).toBe(true);
+  });
+
+  it('ignores estimate prices on fully-sold symbols (no false warning)', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'SOLD',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-02-01',
+      symbol: 'SOLD',
+      name: '',
+      action: 'sell',
+      quantity: 10,
+      price: 120,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-03-01',
+      symbol: 'HELD',
+      name: '',
+      action: 'buy',
+      quantity: 5,
+      price: 100,
+      fee: 0,
+    });
+    app.state.priceCache = {
+      HELD: { price: 105, source: 'live', fetchedAt: new Date().toISOString() },
+    };
+    app.render();
+    // SOLD is an estimate but no longer held, HELD is fresh → no warning
+    expect(warningEl().hidden).toBe(true);
+  });
+});
+
 describe('app: transaction search', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

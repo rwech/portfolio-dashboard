@@ -108,6 +108,25 @@
     </nav>
 
     <div class="tab-panel" data-tab-panel="overview">
+      <section id="onboarding-empty-state" aria-label="尚無交易紀錄" hidden>
+        <h2>還沒有交易紀錄</h2>
+        <p>
+          所有資料只會儲存在這個瀏覽器的 localStorage，不會上傳到任何伺服器。
+        </p>
+        <div class="empty-state-actions">
+          <button id="empty-state-demo-btn" type="button">
+            開啟示範模式看看
+          </button>
+          <button id="empty-state-add-tx-btn" type="button">
+            新增第一筆交易
+          </button>
+        </div>
+      </section>
+
+      <div id="price-quality-warning" class="price-quality-warning" hidden>
+        ⚠ 部分持股現價為估計值或已過期，未實現損益與 ROI% 僅供參考
+      </div>
+
       <section id="summary-cards" aria-label="績效總覽"></section>
 
       <section id="charts" aria-label="圖表">

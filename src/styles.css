@@ -221,6 +221,46 @@ body.demo-mode-active .override-clear-btn {
   text-shadow: 0 0 6px var(--accent);
 }
 
+#onboarding-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+#onboarding-empty-state h2 {
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+}
+
+#onboarding-empty-state p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.empty-state-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+#empty-state-demo-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0b1021;
+  font-weight: 600;
+}
+
+#empty-state-demo-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.price-quality-warning {
+  font-size: 0.85rem;
+  color: var(--warning);
+  margin-bottom: 0.75rem;
+}
+
 #summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

@@ -150,6 +150,9 @@
   }
 
   function staleBadge(stat) {
+    // 「報價已過期」只對真正的報價（即時/快取）有意義；
+    // 估計值與手動覆寫本來就不是報價，另外掛過期標籤只會造成雜訊。
+    if (stat.priceSource !== 'live' && stat.priceSource !== 'cache') return '';
     const isStale = window.PFD.stockPrice.isPriceStale(
       stat.priceSource,
       stat.priceFetchedAt,
@@ -355,6 +358,16 @@
     document.getElementById('demo-mode-banner').hidden = !enabled;
   }
 
+  function renderEmptyState(show) {
+    document.getElementById('onboarding-empty-state').hidden = !show;
+    document.getElementById('summary-cards').hidden = show;
+    document.getElementById('charts').hidden = show;
+  }
+
+  function renderPriceQualityWarning(show) {
+    document.getElementById('price-quality-warning').hidden = !show;
+  }
+
   function renderBackupReminderBanner(count, threshold) {
     const banner = document.getElementById('backup-reminder-banner');
     const text = document.getElementById('backup-reminder-text');
@@ -492,6 +505,8 @@
     renderPriceOverridePanel,
     renderBackupReminderBanner,
     renderDemoModeBanner,
+    renderEmptyState,
+    renderPriceQualityWarning,
     renderImportFeedback,
     showToast,
     initTabs,

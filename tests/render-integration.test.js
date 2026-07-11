@@ -132,7 +132,7 @@ describe('renderSymbolPnlTable stale price tag', () => {
     costBasisHeld: 1000,
   };
 
-  it('flags a position with no live price data (estimate) as stale', () => {
+  it('shows only the 估計值 badge for an estimate row, never a redundant stale badge (an estimate is not a quote)', () => {
     window.PFD.ui.renderSymbolPnlTable(
       [
         {
@@ -145,8 +145,30 @@ describe('renderSymbolPnlTable stale price tag', () => {
       'USD',
     );
     expect(
-      document.querySelector('#symbol-pnl-table .badge-stale'),
+      document.querySelector('#symbol-pnl-table .badge-estimate'),
     ).not.toBeNull();
+    expect(document.querySelector('#symbol-pnl-table .badge-stale')).toBeNull();
+  });
+
+  it('does not add a stale badge to an estimate row in the price-override panel either', () => {
+    window.PFD.ui.renderPriceOverridePanel(
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'estimate',
+          priceFetchedAt: null,
+        },
+      ],
+      {},
+      { onOverrideChange: () => {}, onOverrideClear: () => {} },
+    );
+    expect(
+      document.querySelector('#price-override-table .badge-estimate'),
+    ).not.toBeNull();
+    expect(
+      document.querySelector('#price-override-table .badge-stale'),
+    ).toBeNull();
   });
 
   it('flags a cached price older than the stale threshold', () => {

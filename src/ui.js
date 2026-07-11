@@ -400,6 +400,53 @@
     el.innerHTML = parts.join('');
   }
 
+  const TOAST_DEFAULT_DURATION_MS = 5000;
+
+  function showToast(
+    message,
+    {
+      type = 'info',
+      actionLabel,
+      onAction,
+      durationMs = TOAST_DEFAULT_DURATION_MS,
+    } = {},
+  ) {
+    const container = document.getElementById('toast-container');
+    if (!container) return null;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+    const text = document.createElement('span');
+    text.className = 'toast-message';
+    text.textContent = message;
+    toast.appendChild(text);
+
+    let timer = null;
+    function dismiss() {
+      if (timer !== null) clearTimeout(timer);
+      timer = null;
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }
+
+    if (actionLabel && typeof onAction === 'function') {
+      const actionBtn = document.createElement('button');
+      actionBtn.type = 'button';
+      actionBtn.className = 'toast-action-btn';
+      actionBtn.textContent = actionLabel;
+      actionBtn.addEventListener('click', () => {
+        dismiss();
+        onAction();
+      });
+      toast.appendChild(actionBtn);
+    }
+
+    container.appendChild(toast);
+    timer = setTimeout(dismiss, durationMs);
+    return { dismiss, el: toast };
+  }
+
   window.PFD = window.PFD || {};
   window.PFD.ui = {
     renderFilterControls,
@@ -412,6 +459,7 @@
     renderBackupReminderBanner,
     renderDemoModeBanner,
     renderImportFeedback,
+    showToast,
     initTabs,
     initDropdownMenus,
     formatMoney,

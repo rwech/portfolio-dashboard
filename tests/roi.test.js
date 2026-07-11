@@ -636,3 +636,48 @@ describe('roi.computeRoiTrend', () => {
     ]);
   });
 });
+
+describe('annualizedRoiPct', () => {
+  const { annualizedRoiPct } = window.PFD.roi;
+
+  it('returns roughly the original ROI for a one-year holding period', () => {
+    const result = annualizedRoiPct(10, '2023-01-01', '2024-01-01');
+    expect(result).toBeGreaterThan(9.9);
+    expect(result).toBeLessThan(10.2);
+  });
+
+  it('amplifies a six-month ROI when annualized', () => {
+    const result = annualizedRoiPct(10, '2024-01-01', '2024-07-01');
+    // (1.1)^(365.25/182) - 1 ≈ 21%
+    expect(result).toBeGreaterThan(20);
+    expect(result).toBeLessThan(23);
+  });
+
+  it('shrinks a multi-year ROI when annualized', () => {
+    const result = annualizedRoiPct(100, '2020-01-01', '2024-01-01');
+    // doubling over 4 years ≈ 18.9%/yr
+    expect(result).toBeGreaterThan(18);
+    expect(result).toBeLessThan(20);
+  });
+
+  it('returns null for holding periods shorter than 30 days (extrapolation nonsense)', () => {
+    expect(annualizedRoiPct(5, '2024-01-01', '2024-01-20')).toBeNull();
+    expect(annualizedRoiPct(5, '2024-01-01', '2024-01-01')).toBeNull();
+  });
+
+  it('returns null for a null/undefined/non-finite ROI', () => {
+    expect(annualizedRoiPct(null, '2023-01-01', '2024-01-01')).toBeNull();
+    expect(annualizedRoiPct(undefined, '2023-01-01', '2024-01-01')).toBeNull();
+    expect(annualizedRoiPct(NaN, '2023-01-01', '2024-01-01')).toBeNull();
+  });
+
+  it('returns null for invalid dates', () => {
+    expect(annualizedRoiPct(10, 'not-a-date', '2024-01-01')).toBeNull();
+    expect(annualizedRoiPct(10, '2023-01-01', 'not-a-date')).toBeNull();
+  });
+
+  it('clamps a total-loss ROI at -100 instead of producing NaN', () => {
+    expect(annualizedRoiPct(-100, '2023-01-01', '2024-01-01')).toBe(-100);
+    expect(annualizedRoiPct(-150, '2023-01-01', '2024-01-01')).toBe(-100);
+  });
+});

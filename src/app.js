@@ -120,6 +120,39 @@
       fxRate,
     );
 
+    const today = new Date().toISOString().slice(0, 10);
+
+    // 摘要卡的附加資料：目前總價值（與 ROI 趨勢圖「總資產」同定義）、
+    // 簡易年化（以篩選範圍內最早交易日起算）、市場=全部時的各市場損益小計。
+    const earliestFilteredDate = filteredTx.reduce(
+      (min, tx) => (tx.date < min ? tx.date : min),
+      filteredTx.length > 0 ? filteredTx[0].date : null,
+    );
+    const marketGain = (market) => {
+      const m = filteredSummary.byMarket[market];
+      return roi.convertAmount(
+        m.realizedGain + m.unrealizedGain,
+        m.currency,
+        state.filters.displayCurrency,
+        fxRate,
+      );
+    };
+    const summaryForCards = {
+      ...converted,
+      totalValue: converted.costBasisHeld + converted.unrealizedGain,
+      annualizedRoiPct:
+        earliestFilteredDate === null
+          ? null
+          : roi.annualizedRoiPct(converted.roiPct, earliestFilteredDate, today),
+      marketBreakdown:
+        state.filters.market === 'all'
+          ? [
+              { label: '台股', gain: marketGain('TW') },
+              { label: '美股', gain: marketGain('US') },
+            ]
+          : null,
+    };
+
     const allocationData = {
       TW: roi.convertAmount(
         filteredSummary.byMarket.TW.costBasisHeld,
@@ -197,7 +230,7 @@
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderEmptyState(showEmptyState);
     ui.renderPriceQualityWarning(!showEmptyState && hasUnreliableHeldPrice);
-    ui.renderSummaryCards(converted);
+    ui.renderSummaryCards(summaryForCards);
     const searchedTx = filterBySearch(filteredTx, state.txSearch);
 
     // 搜尋框位於重新渲染的 tbody 之外，值與焦點天然保留；
@@ -241,7 +274,6 @@
       state.filters.displayCurrency,
     );
 
-    const today = new Date().toISOString().slice(0, 10);
     const roiTrendSnapshots = roi.computeRoiTrend(state.transactions, {
       year: state.filters.year,
       mode: state.filters.roiTrendMode,

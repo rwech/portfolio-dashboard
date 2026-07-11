@@ -1589,3 +1589,80 @@ describe('app: refresh-all-prices button', () => {
     expect(fxCalls).toHaveLength(1);
   });
 });
+
+describe('app: overview summary cards (merged cost, total value, market breakdown)', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function summaryText() {
+    return document.getElementById('summary-cards').textContent;
+  }
+
+  it('renders three cards with the held cost merged into the invested-cost card', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+    const cards = document.querySelectorAll('#summary-cards .summary-card');
+    expect(cards).toHaveLength(3);
+    expect(cards[0].textContent).toContain('總投入成本');
+    expect(cards[0].textContent).toContain('目前持股成本');
+  });
+
+  it('shows 目前總價值 = 持股成本 + 未實現損益 on the ROI card', async () => {
+    const app = await setupApp();
+    // 沒有 API 現價 → estimate（=平均成本）→ 未實現 0，總價值 = 持股成本 = 1,000
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+    const roiCard = document.querySelectorAll(
+      '#summary-cards .summary-card',
+    )[2];
+    expect(roiCard.textContent).toContain('目前總價值');
+    expect(roiCard.textContent).toContain('1,000 TWD');
+    expect(roiCard.textContent).toContain('年化（簡易）');
+  });
+
+  it('shows per-market gain sub-fields for 市場=全部 and hides them for a single market', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '',
+      action: 'buy',
+      quantity: 10,
+      price: 100,
+      fee: 0,
+    });
+    app.handleAddTransaction('US', {
+      date: '2024-01-01',
+      symbol: 'AAPL',
+      name: '',
+      action: 'buy',
+      quantity: 1,
+      price: 100,
+      fee: 0,
+    });
+
+    expect(app.state.filters.market).toBe('all');
+    expect(summaryText()).toContain('台股');
+    expect(summaryText()).toContain('美股');
+
+    app.handleFilterChange({ market: 'TW' });
+    expect(summaryText()).not.toContain('台股');
+    expect(summaryText()).not.toContain('美股');
+  });
+});

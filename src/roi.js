@@ -205,6 +205,24 @@
     return ((realizedGain + unrealizedGain) / totalInvested) * 100;
   }
 
+  // 以最早交易日起算的簡易複利年化：((1 + roi)^(365.25/days) - 1)。
+  // 平均成本法下沒有逐筆現金流，這只是近似值（非 XIRR）；
+  // 期間不足 30 天時外插會產生荒謬數字，直接回傳 null 不顯示。
+  const MIN_ANNUALIZE_DAYS = 30;
+
+  function annualizedRoiPct(roiPctValue, fromDate, today) {
+    if (roiPctValue === null || roiPctValue === undefined) return null;
+    if (!Number.isFinite(roiPctValue)) return null;
+    const from = new Date(fromDate);
+    const to = new Date(today);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
+    const days = (to - from) / (24 * 60 * 60 * 1000);
+    if (days < MIN_ANNUALIZE_DAYS) return null;
+    const growth = 1 + roiPctValue / 100;
+    if (growth <= 0) return -100; // 虧損 100% 以上，年化沒有意義，鉗在 -100%
+    return (Math.pow(growth, 365.25 / days) - 1) * 100;
+  }
+
   function summarizeMarket(statsMap) {
     let totalInvested = 0;
     let costBasisHeld = 0;
@@ -323,6 +341,7 @@
     convertSummaryToDisplayCurrency,
     convertAmount,
     roiPct,
+    annualizedRoiPct,
     generateMonthEndSnapshotDates,
     computeRoiTrend,
   };

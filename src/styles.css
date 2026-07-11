@@ -611,9 +611,8 @@ th[data-sort-direction='desc']::after {
   z-index: 2;
 }
 
-#symbol-pnl-table tfoot td {
-  border-top: 2px solid var(--border);
-  border-bottom: none;
+#symbol-pnl-table tbody tr.totals-row td {
+  border-bottom: 2px solid var(--border);
   font-weight: 600;
 }
 

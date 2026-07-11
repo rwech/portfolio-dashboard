@@ -259,7 +259,7 @@ describe('renderSymbolPnlTable totals row', () => {
     };
   }
 
-  it('renders a 合計 row in tfoot summing realized/unrealized gains, market value and cost basis', () => {
+  it('renders a 合計 row as the first row of tbody, summing realized/unrealized gains, market value and cost basis', () => {
     window.PFD.ui.renderSymbolPnlTable(
       [
         stat({
@@ -279,9 +279,17 @@ describe('renderSymbolPnlTable totals row', () => {
       ],
       'TWD',
     );
-    const cells = [
-      ...document.querySelectorAll('#symbol-pnl-table tfoot tr td'),
-    ].map((td) => td.textContent);
+    const tbody = document.querySelector('#symbol-pnl-table tbody');
+    const rows = tbody.querySelectorAll('tr');
+    expect(rows).toHaveLength(3); // totals row + 2 data rows
+    expect(tbody.firstElementChild.classList.contains('totals-row')).toBe(true);
+    // data rows remain in their original order after the totals row
+    expect(rows[1].dataset.symbol).toBe('AAA');
+    expect(rows[2].dataset.symbol).toBe('BBB');
+
+    const cells = [...rows[0].querySelectorAll('td')].map(
+      (td) => td.textContent,
+    );
     expect(cells).toHaveLength(10);
     expect(cells[0]).toBe('合計');
     expect(cells[3]).toBe('+150 TWD'); // realized 100 + 50
@@ -293,7 +301,7 @@ describe('renderSymbolPnlTable totals row', () => {
   it('leaves non-summable columns (市場, ROI%, 股數, 最後價, 平均成本) as —', () => {
     window.PFD.ui.renderSymbolPnlTable([stat({})], 'TWD');
     const cells = [
-      ...document.querySelectorAll('#symbol-pnl-table tfoot tr td'),
+      ...document.querySelectorAll('#symbol-pnl-table tbody tr.totals-row td'),
     ].map((td) => td.textContent);
     expect(cells[1]).toBe('—');
     expect(cells[2]).toBe('—');
@@ -307,21 +315,29 @@ describe('renderSymbolPnlTable totals row', () => {
       [stat({ realizedGain: 100, unrealizedGain: -30 })],
       'TWD',
     );
-    const cells = document.querySelectorAll('#symbol-pnl-table tfoot tr td');
+    const cells = document.querySelectorAll(
+      '#symbol-pnl-table tbody tr.totals-row td',
+    );
     expect(cells[3].classList.contains('positive')).toBe(true);
     expect(cells[4].classList.contains('negative')).toBe(true);
   });
 
   it('renders no totals row when there are no per-symbol stats', () => {
     window.PFD.ui.renderSymbolPnlTable([], 'TWD');
-    expect(document.querySelector('#symbol-pnl-table tfoot tr')).toBeNull();
+    expect(
+      document.querySelector('#symbol-pnl-table tbody tr.totals-row'),
+    ).toBeNull();
   });
 
   it('clears a previously rendered totals row when re-rendered with no stats', () => {
     window.PFD.ui.renderSymbolPnlTable([stat({ realizedGain: 1 })], 'TWD');
-    expect(document.querySelector('#symbol-pnl-table tfoot tr')).not.toBeNull();
+    expect(
+      document.querySelector('#symbol-pnl-table tbody tr.totals-row'),
+    ).not.toBeNull();
     window.PFD.ui.renderSymbolPnlTable([], 'TWD');
-    expect(document.querySelector('#symbol-pnl-table tfoot tr')).toBeNull();
+    expect(
+      document.querySelector('#symbol-pnl-table tbody tr.totals-row'),
+    ).toBeNull();
   });
 });
 

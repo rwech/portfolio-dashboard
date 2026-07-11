@@ -66,6 +66,15 @@
     return withIds;
   }
 
+  // Re-inserts a previously deleted transaction as-is (keeps its original id),
+  // unlike addTransaction which always generates a fresh id. Used by undo.
+  function restoreTransaction(market, tx) {
+    const list = loadTransactions(market);
+    list.push({ ...tx });
+    saveTransactions(market, list);
+    return tx;
+  }
+
   function deleteTransaction(market, id) {
     const list = loadTransactions(market).filter((tx) => tx.id !== id);
     saveTransactions(market, list);
@@ -139,6 +148,12 @@
     return count;
   }
 
+  function decrementUnexportedChanges() {
+    const count = Math.max(0, loadUnexportedChangeCount() - 1);
+    writeJson(KEYS.UNEXPORTED_COUNT, count);
+    return count;
+  }
+
   function resetUnexportedChanges() {
     writeJson(KEYS.UNEXPORTED_COUNT, 0);
   }
@@ -157,6 +172,7 @@
     loadTransactions,
     saveTransactions,
     addTransaction,
+    restoreTransaction,
     replaceTransactions,
     deleteTransaction,
     updateTransaction,
@@ -173,6 +189,7 @@
     saveUiFilters,
     loadUnexportedChangeCount,
     incrementUnexportedChanges,
+    decrementUnexportedChanges,
     resetUnexportedChanges,
     loadTheme,
     saveTheme,

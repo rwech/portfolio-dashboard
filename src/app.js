@@ -54,12 +54,18 @@
 
   function blockIfDemoMode() {
     if (!state.demoMode) return false;
-    alert('示範模式僅供瀏覽範例資料，請先關閉示範模式再進行此操作。');
+    ui.showToast('示範模式僅供瀏覽範例資料，請先關閉示範模式再進行此操作。', {
+      type: 'error',
+    });
     return true;
   }
 
   function currencyFor(market) {
     return market === 'TW' ? 'TWD' : 'USD';
+  }
+
+  function actionLabelFor(action) {
+    return String(action).toLowerCase() === 'buy' ? '買進' : '賣出';
   }
 
   function render() {
@@ -225,10 +231,10 @@
     if (blockIfDemoMode()) return false;
     const reason = csv.validateRow(tx);
     if (reason) {
-      alert(reason);
+      ui.showToast(reason, { type: 'error' });
       return false;
     }
-    storage.addTransaction(market, {
+    const added = storage.addTransaction(market, {
       ...tx,
       action: tx.action.toLowerCase(),
       quantity: Number(tx.quantity),
@@ -239,17 +245,40 @@
     storage.incrementUnexportedChanges();
     render();
     refreshHistoricalPrices();
+    ui.showToast(
+      `已新增 ${added.symbol} ${actionLabelFor(added.action)} ${added.quantity} 股`,
+      { type: 'success' },
+    );
     return true;
   }
 
   function handleDeleteTransaction(id, market) {
     if (blockIfDemoMode()) return;
+    const deletedTx = storage
+      .loadTransactions(market)
+      .find((tx) => tx.id === id);
     storage.deleteTransaction(market, id);
     if (state.editingTxId === id) state.editingTxId = null;
     reloadTransactionsFromStorage();
     storage.incrementUnexportedChanges();
     render();
     refreshHistoricalPrices();
+    if (!deletedTx) return;
+    ui.showToast(
+      `已刪除 ${deletedTx.symbol} ${actionLabelFor(deletedTx.action)} ${deletedTx.quantity} 股`,
+      {
+        type: 'info',
+        durationMs: 6000,
+        actionLabel: '復原',
+        onAction: () => {
+          storage.restoreTransaction(market, deletedTx);
+          storage.decrementUnexportedChanges();
+          reloadTransactionsFromStorage();
+          render();
+          refreshHistoricalPrices();
+        },
+      },
+    );
   }
 
   function handleEditStart(id) {
@@ -267,7 +296,7 @@
     if (blockIfDemoMode()) return;
     const reason = csv.validateRow(updates);
     if (reason) {
-      alert(reason);
+      ui.showToast(reason, { type: 'error' });
       return;
     }
     storage.updateTransaction(market, id, {
@@ -370,15 +399,27 @@
     if (isRefreshing) return;
     isRefreshing = true;
     const btn = document.getElementById('refresh-all-btn');
+    const originalLabel = btn.textContent;
     btn.disabled = true;
+    btn.classList.add('is-refreshing');
+    btn.textContent = '更新中…';
     try {
       state.fxResult = await exchangeRate.getExchangeRate({
         forceRefresh: true,
       });
       await refreshAllPrices();
       await refreshHistoricalPrices();
+      if (state.fxResult && state.fxResult.source === 'live') {
+        ui.showToast('匯率與現價已更新', { type: 'success' });
+      } else {
+        ui.showToast('無法取得最新匯率（可能離線中），顯示的資料可能非最新', {
+          type: 'warning',
+        });
+      }
     } finally {
       btn.disabled = false;
+      btn.classList.remove('is-refreshing');
+      btn.textContent = originalLabel;
       isRefreshing = false;
     }
   }

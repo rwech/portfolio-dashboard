@@ -125,6 +125,25 @@ describe('storage transactions', () => {
     expect(list[0].id).toBe(replaced[0].id);
   });
 
+  it('restoreTransaction re-inserts a deleted transaction with its original id and market intact', () => {
+    const original = storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'buy',
+      quantity: 1000,
+      price: 500,
+      fee: 20,
+    });
+    storage.deleteTransaction('TW', original.id);
+    expect(storage.loadTransactions('TW')).toHaveLength(0);
+
+    storage.restoreTransaction('TW', original);
+    const list = storage.loadTransactions('TW');
+    expect(list).toHaveLength(1);
+    expect(list[0]).toEqual(original); // same id, not a regenerated one
+  });
+
   it('deleteTransaction removes only the matching id', () => {
     const a = storage.addTransaction('TW', {
       date: '2024-01-01',
@@ -260,6 +279,15 @@ describe('storage fx cache, ui filters, and unexported change tracking', () => {
     expect(storage.incrementUnexportedChanges()).toBe(1);
     expect(storage.incrementUnexportedChanges()).toBe(2);
     expect(storage.loadUnexportedChangeCount()).toBe(2);
+  });
+
+  it('decrementUnexportedChanges decreases the count but never goes below 0', () => {
+    storage.incrementUnexportedChanges();
+    storage.incrementUnexportedChanges();
+    expect(storage.decrementUnexportedChanges()).toBe(1);
+    expect(storage.decrementUnexportedChanges()).toBe(0);
+    expect(storage.decrementUnexportedChanges()).toBe(0); // clamped, no -1
+    expect(storage.loadUnexportedChangeCount()).toBe(0);
   });
 
   it('resetUnexportedChanges sets the count back to 0', () => {

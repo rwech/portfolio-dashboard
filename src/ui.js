@@ -274,15 +274,12 @@
     renderSymbolPnlTotalsRow(perSymbolStats, displayCurrency);
   }
 
+  // 合計列渲染於 tbody 最前面（而非 tfoot），讓使用者不必捲到表格
+  // 最下面就能看到總覽數字；必須在資料列的 innerHTML 設定「之後」呼叫。
   function renderSymbolPnlTotalsRow(perSymbolStats, displayCurrency) {
-    const table = document.getElementById('symbol-pnl-table');
-    if (!table) return;
-    let tfoot = table.querySelector('tfoot');
-    if (!tfoot) tfoot = table.createTFoot();
-    if (perSymbolStats.length === 0) {
-      tfoot.innerHTML = '';
-      return;
-    }
+    const tbody = document.querySelector('#symbol-pnl-table tbody');
+    if (!tbody) return;
+    if (perSymbolStats.length === 0) return;
 
     // 這些金額在 app.js render() 已轉為顯示幣別，可直接加總。
     const sum = (key) =>
@@ -292,7 +289,9 @@
     const marketValue = sum('marketValue');
     const costBasisHeld = sum('costBasisHeld');
 
-    tfoot.innerHTML = `<tr class="totals-row">
+    const totalsRow = document.createElement('tr');
+    totalsRow.className = 'totals-row';
+    totalsRow.innerHTML = `
       <td>合計</td>
       <td>—</td>
       <td>—</td>
@@ -303,7 +302,8 @@
       <td>${formatMoney(marketValue, displayCurrency)}</td>
       <td>—</td>
       <td>${formatMoney(costBasisHeld, displayCurrency)}</td>
-    </tr>`;
+    `;
+    tbody.insertBefore(totalsRow, tbody.firstChild);
   }
 
   function updateSortIndicators(tableId, sort) {

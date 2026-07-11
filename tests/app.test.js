@@ -74,6 +74,16 @@ function txTableRowCount() {
   return document.querySelectorAll('#transactions-table tbody tr').length;
 }
 
+function toastMessages() {
+  return [
+    ...document.querySelectorAll('#toast-container .toast .toast-message'),
+  ].map((el) => el.textContent);
+}
+
+function demoBlockToastCount() {
+  return toastMessages().filter((m) => m.includes('示範模式')).length;
+}
+
 describe('app: demo mode / filter / import interaction', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -120,7 +130,8 @@ describe('app: demo mode / filter / import interaction', () => {
       fee: 0,
     });
 
-    expect(global.alert).toHaveBeenCalled();
+    expect(global.alert).not.toHaveBeenCalled(); // no jarring alert dialog
+    expect(demoBlockToastCount()).toBe(2); // one toast per blocked operation
 
     await app.setDemoMode(false);
     expect(txTableRowCount()).toBe(1); // the original import, not the blocked replacement/add
@@ -146,7 +157,8 @@ describe('app: demo mode / filter / import interaction', () => {
     app.handleDeleteTransaction(txId, 'TW');
     app.handlePriceOverrideChange('0050', 123);
     app.handlePriceOverrideClear('0050');
-    expect(global.alert).toHaveBeenCalledTimes(3);
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(demoBlockToastCount()).toBe(3);
 
     await app.setDemoMode(false);
     expect(app.state.transactions).toHaveLength(1); // delete was blocked
@@ -167,7 +179,8 @@ describe('app: demo mode / filter / import interaction', () => {
 
     const txId = app.state.transactions[0].id;
     app.handleEditStart(txId);
-    expect(global.alert).toHaveBeenCalled();
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(demoBlockToastCount()).toBe(1);
     expect(app.state.editingTxId).toBeNull();
 
     await app.setDemoMode(false);
@@ -191,7 +204,8 @@ describe('app: demo mode / filter / import interaction', () => {
       'date,symbol,name,action,quantity,price,fee\n2026-02-01,XYZ,,buy,1,1,0\n',
       'TW',
     );
-    expect(global.alert).toHaveBeenCalledTimes(2);
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(demoBlockToastCount()).toBe(2);
 
     await app.setDemoMode(false);
     expect(app.state.transactions).toHaveLength(1); // append was blocked, nothing extra landed
@@ -220,6 +234,79 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
     ).toContain('2330');
   });
 
+  it('handleAddTransaction shows a success toast naming the symbol, action, and quantity', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'buy',
+      quantity: 1000,
+      price: 500,
+      fee: 20,
+    });
+    expect(toastMessages()).toContain('已新增 2330 買進 1000 股');
+    expect(
+      document.querySelector('#toast-container .toast-success'),
+    ).not.toBeNull();
+
+    app.handleAddTransaction('TW', {
+      date: '2024-02-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'sell',
+      quantity: 200,
+      price: 600,
+      fee: 20,
+    });
+    expect(toastMessages()).toContain('已新增 2330 賣出 200 股');
+  });
+
+  it('deleting a transaction shows an undo toast, and undo restores the identical transaction and counter', async () => {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'buy',
+      quantity: 1000,
+      price: 500,
+      fee: 20,
+    });
+    const original = window.PFD.storage.loadTransactions('TW')[0];
+    const countBeforeDelete = window.PFD.storage.loadUnexportedChangeCount();
+
+    app.handleDeleteTransaction(original.id, 'TW');
+    expect(window.PFD.storage.loadTransactions('TW')).toHaveLength(0);
+    expect(txTableRowCount()).toBe(0);
+    expect(window.PFD.storage.loadUnexportedChangeCount()).toBe(
+      countBeforeDelete + 1,
+    );
+    expect(toastMessages()).toContain('已刪除 2330 買進 1000 股');
+
+    const undoToast = [
+      ...document.querySelectorAll('#toast-container .toast'),
+    ].find((t) => t.textContent.includes('已刪除'));
+    const undoBtn = undoToast.querySelector('.toast-action-btn');
+    expect(undoBtn.textContent).toBe('復原');
+    undoBtn.click();
+
+    const restored = window.PFD.storage.loadTransactions('TW');
+    expect(restored).toHaveLength(1);
+    expect(restored[0]).toEqual(original); // exact same object incl. id and market
+    expect(window.PFD.storage.loadUnexportedChangeCount()).toBe(
+      countBeforeDelete, // delete's increment was undone
+    );
+    expect(txTableRowCount()).toBe(1); // table re-rendered with the restored row
+    expect(undoToast.parentNode).toBeNull(); // undo toast dismissed itself
+  });
+
+  it('handleDeleteTransaction with an unknown id shows no undo toast and does not crash', async () => {
+    const app = await setupApp();
+    app.handleDeleteTransaction('no-such-id', 'TW');
+    expect(toastMessages().filter((m) => m.includes('已刪除'))).toHaveLength(0);
+  });
+
   it('handleAddTransaction rejects an empty symbol and a malformed date the same way CSV import does', async () => {
     const app = await setupApp();
 
@@ -233,7 +320,7 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
       fee: 0,
     });
     expect(missingSymbol).toBe(false);
-    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+    expect(toastMessages()).toContain('symbol 不可為空');
 
     const badDate = app.handleAddTransaction('TW', {
       date: '2024/01/01',
@@ -245,7 +332,8 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
       fee: 0,
     });
     expect(badDate).toBe(false);
-    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(toastMessages()).toContain('date 格式必須為 YYYY-MM-DD');
+    expect(global.alert).not.toHaveBeenCalled(); // validation feedback is a toast, never an alert
     expect(txTableRowCount()).toBe(0);
   });
 
@@ -266,14 +354,15 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
     let editingRow = document.querySelector('#transactions-table tbody tr');
     editingRow.querySelector('.edit-symbol').value = '';
     editingRow.querySelector('.save-edit-btn').click();
-    expect(global.alert).toHaveBeenCalledWith('symbol 不可為空');
+    expect(toastMessages()).toContain('symbol 不可為空');
     expect(app.state.editingTxId).toBe(txId);
 
     editingRow = document.querySelector('#transactions-table tbody tr');
     editingRow.querySelector('.edit-symbol').value = 'AAA';
     editingRow.querySelector('.edit-date').value = '';
     editingRow.querySelector('.save-edit-btn').click();
-    expect(global.alert).toHaveBeenCalledWith('date 格式必須為 YYYY-MM-DD');
+    expect(toastMessages()).toContain('date 格式必須為 YYYY-MM-DD');
+    expect(global.alert).not.toHaveBeenCalled();
     expect(app.state.editingTxId).toBe(txId);
   });
 
@@ -389,7 +478,7 @@ describe('app: add / delete / price override (real, non-demo data)', () => {
     editingRow.querySelector('.edit-quantity').value = '0';
     editingRow.querySelector('.save-edit-btn').click();
 
-    expect(global.alert).toHaveBeenCalled();
+    expect(toastMessages()).toContain('quantity 必須是大於 0 的數字');
     expect(app.state.editingTxId).not.toBeNull();
     expect(
       document.querySelector('#transactions-table tbody tr .edit-symbol'),
@@ -633,7 +722,7 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
     expect(window.PFD.storage.loadUnexportedChangeCount()).toBe(0);
   });
 
-  it('the add-transaction form rejects a non-positive quantity with an alert and does not add a row', async () => {
+  it('the add-transaction form rejects a non-positive quantity with an error toast and does not add a row', async () => {
     await setupApp();
     const form = document.getElementById('add-transaction-form');
     form.elements.market.value = 'TW';
@@ -645,7 +734,11 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
 
     form.dispatchEvent(new Event('submit', { cancelable: true }));
 
-    expect(global.alert).toHaveBeenCalled();
+    expect(global.alert).not.toHaveBeenCalled();
+    expect(toastMessages()).toContain('quantity 必須是大於 0 的數字');
+    expect(
+      document.querySelector('#toast-container .toast-error'),
+    ).not.toBeNull();
     expect(txTableRowCount()).toBe(0);
   });
 
@@ -928,6 +1021,48 @@ describe('app: refresh-all-prices button', () => {
     btn.click();
     expect(btn.disabled).toBe(true);
     await vi.waitFor(() => expect(btn.disabled).toBe(false));
+  });
+
+  it('swaps the button label to an in-progress state and shows a success toast when fx comes back live', async () => {
+    await setupApp();
+    const btn = document.getElementById('refresh-all-btn');
+    const originalLabel = btn.textContent;
+
+    btn.click();
+    expect(btn.textContent).toBe('更新中…');
+    expect(btn.classList.contains('is-refreshing')).toBe(true);
+
+    await vi.waitFor(() => expect(btn.disabled).toBe(false));
+    expect(btn.textContent).toBe(originalLabel);
+    expect(btn.classList.contains('is-refreshing')).toBe(false);
+    expect(toastMessages()).toContain('匯率與現價已更新');
+    expect(
+      document.querySelector('#toast-container .toast-success'),
+    ).not.toBeNull();
+  });
+
+  it('shows a warning toast instead when the fx rate falls back to the stale cache (offline)', async () => {
+    await setupApp(); // init fetches a live rate and caches it
+    const btn = document.getElementById('refresh-all-btn');
+
+    // subsequent fx fetches fail, forcing the stale-cache fallback
+    global.fetch = vi.fn(async (url) => {
+      const u = String(url);
+      if (u.includes('open.er-api.com')) throw new Error('offline');
+      return { ok: true, json: async () => ({}), text: async () => '' };
+    });
+
+    btn.click();
+    await vi.waitFor(() => expect(btn.disabled).toBe(false));
+
+    expect(window.PFD.app.state.fxResult.source).toBe('stale-cache');
+    expect(toastMessages().some((m) => m.includes('無法取得最新匯率'))).toBe(
+      true,
+    );
+    expect(
+      document.querySelector('#toast-container .toast-warning'),
+    ).not.toBeNull();
+    expect(toastMessages()).not.toContain('匯率與現價已更新');
   });
 
   it('ignores a second concurrent invocation while a refresh is already in flight', async () => {

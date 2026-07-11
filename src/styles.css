@@ -294,7 +294,8 @@ body.demo-mode-active .override-clear-btn {
 
 .summary-card .sub-fields {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
   margin-top: 0.4rem;
   padding-top: 0.4rem;
   border-top: 1px solid var(--border);
@@ -468,6 +469,20 @@ body.demo-mode-active .override-clear-btn {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 0.4rem;
+}
+
+/* 寬螢幕時配置圖與市值圓餅圖並排，ROI 趨勢佔滿整列，減少垂直捲動 */
+@media (min-width: 1100px) {
+  #charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    justify-items: center;
+  }
+
+  #charts .line-chart-wrap {
+    grid-column: 1 / -1;
+  }
 }
 
 .hint {

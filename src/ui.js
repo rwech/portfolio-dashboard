@@ -83,62 +83,92 @@
     el.textContent = `1 USD = ${fxResult.rate.toFixed(4)} TWD（${sourceLabel}，更新於 ${time}）`;
   }
 
+  // summary 除了 convertSummaryToDisplayCurrency 的欄位外，還帶
+  // totalValue（持股成本＋未實現）、annualizedRoiPct（可為 null）、
+  // marketBreakdown（市場=全部時的各市場損益小計，否則為 null）。
   function renderSummaryCards(summary) {
     const container = document.getElementById('summary-cards');
     const totalGain = summary.realizedGain + summary.unrealizedGain;
+
+    const gainSubGroups = [
+      [
+        [
+          '已實現',
+          withSign(
+            formatMoney(summary.realizedGain, summary.currency),
+            summary.realizedGain,
+          ),
+          signedClass(summary.realizedGain),
+        ],
+        [
+          '未實現',
+          withSign(
+            formatMoney(summary.unrealizedGain, summary.currency),
+            summary.unrealizedGain,
+          ),
+          signedClass(summary.unrealizedGain),
+        ],
+      ],
+    ];
+    if (summary.marketBreakdown) {
+      gainSubGroups.push(
+        summary.marketBreakdown.map(({ label, gain }) => [
+          label,
+          withSign(formatMoney(gain, summary.currency), gain),
+          signedClass(gain),
+        ]),
+      );
+    }
+
+    // 每張卡：[主標籤, 主值, 主值 class, 子欄位群組陣列]
     const cards = [
       [
         '總投入成本',
         formatMoney(summary.totalInvested, summary.currency),
         '',
-        null,
-      ],
-      [
-        '目前持股成本',
-        formatMoney(summary.costBasisHeld, summary.currency),
-        '',
-        null,
+        [
+          // 持股成本與總價值並排對照，兩者差額即未實現損益
+          [
+            [
+              '目前持股成本',
+              formatMoney(summary.costBasisHeld, summary.currency),
+              '',
+            ],
+            [
+              '目前總價值',
+              formatMoney(summary.totalValue, summary.currency),
+              '',
+            ],
+          ],
+        ],
       ],
       [
         '總損益',
         withSign(formatMoney(totalGain, summary.currency), totalGain),
         signedClass(totalGain),
-        [
-          [
-            '已實現',
-            withSign(
-              formatMoney(summary.realizedGain, summary.currency),
-              summary.realizedGain,
-            ),
-            signedClass(summary.realizedGain),
-          ],
-          [
-            '未實現',
-            withSign(
-              formatMoney(summary.unrealizedGain, summary.currency),
-              summary.unrealizedGain,
-            ),
-            signedClass(summary.unrealizedGain),
-          ],
-        ],
+        gainSubGroups,
       ],
       [
         'ROI%',
         withSign(formatPct(summary.roiPct), summary.roiPct),
         signedClass(summary.roiPct),
-        null,
+        [[['年化（簡易）', formatPct(summary.annualizedRoiPct), '']]],
       ],
     ];
+
     container.innerHTML = cards
-      .map(([label, value, cls, subFields]) => {
-        const subHtml = subFields
-          ? `<div class="sub-fields">${subFields
-              .map(
-                ([sLabel, sValue, sCls]) =>
-                  `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`,
-              )
-              .join('')}</div>`
-          : '';
+      .map(([label, value, cls, subGroups]) => {
+        const subHtml = (subGroups || [])
+          .map(
+            (group) =>
+              `<div class="sub-fields">${group
+                .map(
+                  ([sLabel, sValue, sCls]) =>
+                    `<div class="sub-field"><span class="sub-label">${sLabel}</span><span class="sub-value ${sCls}">${sValue}</span></div>`,
+                )
+                .join('')}</div>`,
+          )
+          .join('');
         return `<div class="summary-card"><div class="label">${label}</div><div class="value ${cls}">${value}</div>${subHtml}</div>`;
       })
       .join('');

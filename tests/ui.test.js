@@ -198,29 +198,94 @@ describe('ui.renderSummaryCards', () => {
     document.body.innerHTML = '<section id="summary-cards"></section>';
   });
 
-  it('renders total/cost/gain/ROI cards with a positive sign and class on gains', () => {
-    ui.renderSummaryCards({
-      currency: 'TWD',
-      totalInvested: 1000,
-      costBasisHeld: 800,
-      realizedGain: 100,
-      unrealizedGain: 50,
-      roiPct: 15,
-    });
+  const baseSummary = {
+    currency: 'TWD',
+    totalInvested: 1000,
+    costBasisHeld: 800,
+    realizedGain: 100,
+    unrealizedGain: 50,
+    roiPct: 15,
+    totalValue: 850,
+    annualizedRoiPct: 7.5,
+    marketBreakdown: null,
+  };
+
+  function cards() {
+    return document.querySelectorAll('#summary-cards .summary-card');
+  }
+
+  it('renders exactly three cards: cost (with held-cost and total-value sub-fields), gain, and ROI', () => {
+    ui.renderSummaryCards(baseSummary);
+    expect(cards()).toHaveLength(3);
+    const costCard = cards()[0];
+    expect(costCard.querySelector('.label').textContent).toBe('總投入成本');
+    expect(costCard.querySelector('.value').textContent).toContain('1,000');
+    expect(costCard.textContent).toContain('目前持股成本');
+    expect(costCard.textContent).toContain('800 TWD');
+    // 總價值與持股成本並排對照（差額即未實現損益）
+    expect(costCard.textContent).toContain('目前總價值');
+    expect(costCard.textContent).toContain('850 TWD');
+  });
+
+  it('renders the gain with a positive sign and class', () => {
+    ui.renderSummaryCards(baseSummary);
     const html = document.getElementById('summary-cards').innerHTML;
     expect(html).toContain('+150');
     expect(html).toContain('positive');
     expect(html).toContain('+15.00%');
   });
 
+  it('keeps the ROI card ratios-only: annualized ROI present, total value absent', () => {
+    ui.renderSummaryCards(baseSummary);
+    const roiCard = cards()[2];
+    expect(roiCard.textContent).toContain('年化（簡易）');
+    expect(roiCard.textContent).toContain('7.50%');
+    expect(roiCard.textContent).not.toContain('目前總價值');
+  });
+
+  it('renders a dash when the annualized ROI is unavailable', () => {
+    ui.renderSummaryCards({ ...baseSummary, annualizedRoiPct: null });
+    expect(cards()[2].textContent).toContain('—');
+  });
+
+  it('shows per-market gain sub-fields only when a marketBreakdown is provided', () => {
+    ui.renderSummaryCards(baseSummary);
+    expect(cards()[1].textContent).not.toContain('台股');
+
+    ui.renderSummaryCards({
+      ...baseSummary,
+      marketBreakdown: [
+        { label: '台股', gain: 120 },
+        { label: '美股', gain: -20 },
+      ],
+    });
+    const gainCard = cards()[1];
+    expect(gainCard.textContent).toContain('台股');
+    expect(gainCard.textContent).toContain('+120 TWD');
+    expect(gainCard.textContent).toContain('美股');
+    expect(gainCard.textContent).toContain('-20 TWD');
+    const marketValues = [...gainCard.querySelectorAll('.sub-value')];
+    expect(
+      marketValues.some(
+        (el) =>
+          el.textContent === '+120 TWD' && el.classList.contains('positive'),
+      ),
+    ).toBe(true);
+    expect(
+      marketValues.some(
+        (el) =>
+          el.textContent === '-20 TWD' && el.classList.contains('negative'),
+      ),
+    ).toBe(true);
+  });
+
   it('renders losses with a negative class and no leading plus sign', () => {
     ui.renderSummaryCards({
-      currency: 'TWD',
-      totalInvested: 1000,
-      costBasisHeld: 800,
+      ...baseSummary,
       realizedGain: -100,
       unrealizedGain: -50,
       roiPct: -15,
+      annualizedRoiPct: -8,
     });
     const html = document.getElementById('summary-cards').innerHTML;
     expect(html).toContain('negative');

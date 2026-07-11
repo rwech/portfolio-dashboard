@@ -323,3 +323,91 @@ describe('storage resilience to a corrupted localStorage value', () => {
     spy.mockRestore();
   });
 });
+
+describe('storage.appendTransactions (bulk import write)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('appends all rows in one write, preserving their pre-assigned ids', () => {
+    storage.addTransaction('TW', {
+      date: '2024-01-01',
+      symbol: 'OLD',
+      action: 'buy',
+      quantity: 1,
+      price: 1,
+      fee: 0,
+    });
+    const rows = [
+      {
+        id: 'id-1',
+        date: '2024-02-01',
+        symbol: 'A',
+        action: 'buy',
+        quantity: 1,
+        price: 1,
+        fee: 0,
+      },
+      {
+        id: 'id-2',
+        date: '2024-03-01',
+        symbol: 'B',
+        action: 'sell',
+        quantity: 2,
+        price: 2,
+        fee: 0,
+      },
+    ];
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    storage.appendTransactions('TW', rows);
+    expect(setItem).toHaveBeenCalledTimes(1);
+    setItem.mockRestore();
+
+    const list = storage.loadTransactions('TW');
+    expect(list).toHaveLength(3);
+    expect(list.map((tx) => tx.symbol)).toEqual(['OLD', 'A', 'B']);
+    expect(list[1].id).toBe('id-1');
+    expect(list[1].market).toBe('TW');
+  });
+
+  it('does not touch the other market', () => {
+    storage.appendTransactions('TW', [
+      {
+        id: 'x',
+        date: '2024-01-01',
+        symbol: 'A',
+        action: 'buy',
+        quantity: 1,
+        price: 1,
+        fee: 0,
+      },
+    ]);
+    expect(storage.loadTransactions('US')).toEqual([]);
+  });
+});
+
+describe('storage import mapping persistence', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('returns null for an unknown header signature', () => {
+    expect(storage.loadImportMapping('unknown')).toBeNull();
+  });
+
+  it('saves and reloads a mapping per header signature', () => {
+    const mapping = {
+      date: 0,
+      symbol: 1,
+      name: null,
+      action: 2,
+      quantity: 3,
+      price: 4,
+      fee: null,
+    };
+    storage.saveImportMapping('sig-a', mapping);
+    storage.saveImportMapping('sig-b', { ...mapping, date: 5 });
+    expect(storage.loadImportMapping('sig-a')).toEqual(mapping);
+    expect(storage.loadImportMapping('sig-b').date).toBe(5);
+  });
+});

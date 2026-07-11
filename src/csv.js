@@ -159,6 +159,7 @@
   window.PFD.csv = {
     CSV_HEADER,
     parseCsv,
+    parseCsvLine,
     stringifyCsv,
     fetchInitialCsv,
     fetchExampleCsv,

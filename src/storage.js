@@ -9,6 +9,7 @@
     UI_FILTERS: 'pfd.ui.lastFilters',
     UNEXPORTED_COUNT: 'pfd.ui.unexportedChangeCount',
     THEME: 'pfd.ui.theme',
+    IMPORT_MAPPINGS: 'pfd.importMappings',
   };
 
   function readJson(key, fallback) {
@@ -73,6 +74,16 @@
     list.push({ ...tx });
     saveTransactions(market, list);
     return tx;
+  }
+
+  // Bulk insert for CSV import: one read + one write instead of the
+  // per-row read/write addTransaction would do (O(n²) on large files).
+  // Rows are expected to already carry their own id (from the import parser).
+  function appendTransactions(market, rows) {
+    const list = loadTransactions(market);
+    rows.forEach((tx) => list.push({ ...tx, market }));
+    saveTransactions(market, list);
+    return list;
   }
 
   function deleteTransaction(market, id) {
@@ -158,6 +169,17 @@
     writeJson(KEYS.UNEXPORTED_COUNT, 0);
   }
 
+  function loadImportMapping(signature) {
+    const mappings = readJson(KEYS.IMPORT_MAPPINGS, {});
+    return mappings[signature] || null;
+  }
+
+  function saveImportMapping(signature, mapping) {
+    const mappings = readJson(KEYS.IMPORT_MAPPINGS, {});
+    mappings[signature] = mapping;
+    writeJson(KEYS.IMPORT_MAPPINGS, mappings);
+  }
+
   function loadTheme() {
     return readJson(KEYS.THEME, 'neon');
   }
@@ -174,6 +196,7 @@
     addTransaction,
     restoreTransaction,
     replaceTransactions,
+    appendTransactions,
     deleteTransaction,
     updateTransaction,
     loadPriceCache,
@@ -193,5 +216,7 @@
     resetUnexportedChanges,
     loadTheme,
     saveTheme,
+    loadImportMapping,
+    saveImportMapping,
   };
 })();

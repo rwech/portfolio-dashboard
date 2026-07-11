@@ -747,6 +747,136 @@ describe('app: DOM-wired interactions (filters, sorting, theme, add-transaction 
   });
 });
 
+describe('app: transaction search', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function typeSearch(value) {
+    const input = document.getElementById('tx-search-input');
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+    return input;
+  }
+
+  async function setupWithTransactions() {
+    const app = await setupApp();
+    app.handleAddTransaction('TW', {
+      date: '2024-01-01',
+      symbol: '2330',
+      name: '台積電',
+      action: 'buy',
+      quantity: 100,
+      price: 500,
+      fee: 20,
+    });
+    app.handleAddTransaction('TW', {
+      date: '2024-02-01',
+      symbol: '0050',
+      name: '元大台灣50',
+      action: 'buy',
+      quantity: 10,
+      price: 150,
+      fee: 5,
+    });
+    app.handleAddTransaction('US', {
+      date: '2025-03-01',
+      symbol: 'AAPL',
+      name: 'Apple Inc.',
+      action: 'buy',
+      quantity: 5,
+      price: 180,
+      fee: 1,
+    });
+    return app;
+  }
+
+  it('filters rows by a case-insensitive symbol substring', async () => {
+    const app = await setupWithTransactions();
+    expect(txTableRowCount()).toBe(3);
+
+    typeSearch('aapl');
+    expect(app.state.txSearch).toBe('aapl');
+    expect(txTableRowCount()).toBe(1);
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('AAPL');
+  });
+
+  it('filters rows by a name substring (including Chinese names)', async () => {
+    await setupWithTransactions();
+    typeSearch('台積');
+    expect(txTableRowCount()).toBe(1);
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('2330');
+  });
+
+  it('restores all rows when the search text is cleared', async () => {
+    await setupWithTransactions();
+    typeSearch('AAPL');
+    expect(txTableRowCount()).toBe(1);
+    typeSearch('');
+    expect(txTableRowCount()).toBe(3);
+  });
+
+  it('applies the search on top of the market and year filters', async () => {
+    const app = await setupWithTransactions();
+    app.handleFilterChange({ market: 'TW' });
+    typeSearch('5'); // substring of symbol/name only — matches 0050 / 元大台灣50
+    expect(txTableRowCount()).toBe(1); // 0050 only; other TW row (2330) has no "5"
+    expect(
+      document.querySelector('#transactions-table tbody tr').textContent,
+    ).toContain('0050');
+
+    app.handleFilterChange({ market: 'all', year: '2025' });
+    typeSearch('a');
+    expect(txTableRowCount()).toBe(1); // AAPL matches and is in 2025
+  });
+
+  it('keeps the filtered rows sorted according to the active sort', async () => {
+    const app = await setupWithTransactions();
+    app.state.txSort = { column: 'date', direction: 'asc' };
+    typeSearch('台'); // matches 台積電 and 元大台灣50
+    const rows = [
+      ...document.querySelectorAll('#transactions-table tbody tr'),
+    ].map((tr) => tr.textContent);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('2330'); // 2024-01-01 first under asc date sort
+    expect(rows[1]).toContain('0050');
+  });
+
+  it('preserves the input value across the full re-render triggered by typing', async () => {
+    await setupWithTransactions();
+    const input = typeSearch('AAPL');
+    expect(document.getElementById('tx-search-input')).toBe(input); // not re-created
+    expect(input.value).toBe('AAPL');
+  });
+
+  it('does not persist txSearch into the saved UI filters', async () => {
+    await setupWithTransactions();
+    typeSearch('AAPL');
+    const saved = JSON.parse(localStorage.getItem('pfd.ui.lastFilters'));
+    expect(saved).not.toHaveProperty('txSearch');
+  });
+
+  it('matches nothing (empty table) for a query that hits neither symbol nor name', async () => {
+    await setupWithTransactions();
+    typeSearch('ZZZZ');
+    expect(txTableRowCount()).toBe(0);
+  });
+
+  it('filterBySearch trims surrounding whitespace and returns all rows for a blank query', async () => {
+    const app = await setupWithTransactions();
+    const rows = app.state.transactions;
+    expect(app.filterBySearch(rows, '   ')).toHaveLength(3);
+    expect(app.filterBySearch(rows, ' aapl ')).toHaveLength(1);
+    expect(app.filterBySearch([{ symbol: 'X', name: null }], 'x')).toHaveLength(
+      1,
+    ); // null name must not crash
+  });
+});
+
 describe('app: render with no usable fx rate', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

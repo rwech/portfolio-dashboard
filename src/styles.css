@@ -386,19 +386,31 @@ th[data-sort-key] {
   user-select: none;
 }
 
+/* 可排序欄位常駐顯示淡色 ↕，點擊後由 ▲/▼ 取代 */
 th[data-sort-key]::after {
   display: inline-block;
   width: 1em;
   margin-left: 0.25rem;
-  content: '';
+  content: '↕';
+  opacity: 0.35;
+}
+
+th[data-sort-key]:hover {
+  color: var(--text);
+}
+
+th[data-sort-key]:hover::after {
+  opacity: 0.7;
 }
 
 th[data-sort-direction='asc']::after {
   content: '▲';
+  opacity: 1;
 }
 
 th[data-sort-direction='desc']::after {
   content: '▼';
+  opacity: 1;
 }
 
 .table-scroll th:first-child,
@@ -446,6 +458,21 @@ th[data-sort-direction='desc']::after {
   position: sticky;
   background: var(--surface);
   z-index: 2;
+}
+
+#symbol-pnl-table tfoot td {
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+  font-weight: 600;
+}
+
+.tx-search-wrap {
+  margin-bottom: 0.5rem;
+}
+
+#tx-search-input {
+  width: 100%;
+  max-width: 320px;
 }
 
 .tx-actions {

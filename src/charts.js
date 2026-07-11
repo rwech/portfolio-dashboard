@@ -17,6 +17,24 @@
   let symbolAllocationChart = null;
   let roiTrendChart = null;
 
+  const TOP_SYMBOL_SLICES = 8;
+  const OTHERS_LABEL = '其他';
+
+  // 依 value 由大到小排序，保留前 n 名，其餘合併為一筆「其他」。
+  // 純函式（不碰 DOM / Chart.js），方便單元測試。
+  function groupTopN(perSymbolAmounts, n) {
+    const sorted = [...perSymbolAmounts].sort((a, b) => b.value - a.value);
+    if (sorted.length <= n) return sorted;
+    const rest = sorted.slice(n);
+    return [
+      ...sorted.slice(0, n),
+      {
+        symbol: OTHERS_LABEL,
+        value: rest.reduce((sum, s) => sum + s.value, 0),
+      },
+    ];
+  }
+
   const ROI_TREND_MODE_LABELS = {
     cumulative: 'ROI 趨勢（累積）',
     'year-scoped': 'ROI 趨勢（年度重置）',
@@ -90,7 +108,7 @@
     const total = perSymbolAmounts.reduce((sum, s) => sum + s.value, 0);
     if (total <= 0) return;
 
-    const sorted = [...perSymbolAmounts].sort((a, b) => b.value - a.value);
+    const sorted = groupTopN(perSymbolAmounts, TOP_SYMBOL_SLICES);
 
     symbolAllocationChart = new Chart(canvasEl, {
       type: 'pie',
@@ -181,6 +199,9 @@
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         scales: {
+          x: {
+            ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 0 },
+          },
           y: { ticks: { callback: (v) => `${v}%` } },
           y1: {
             position: 'right',
@@ -210,5 +231,6 @@
     renderSymbolAllocationChart,
     renderRoiTrendChart,
     resizeCharts,
+    groupTopN,
   };
 })();

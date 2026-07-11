@@ -267,6 +267,40 @@
         </tr>`;
       })
       .join('');
+
+    renderSymbolPnlTotalsRow(perSymbolStats, displayCurrency);
+  }
+
+  function renderSymbolPnlTotalsRow(perSymbolStats, displayCurrency) {
+    const table = document.getElementById('symbol-pnl-table');
+    if (!table) return;
+    let tfoot = table.querySelector('tfoot');
+    if (!tfoot) tfoot = table.createTFoot();
+    if (perSymbolStats.length === 0) {
+      tfoot.innerHTML = '';
+      return;
+    }
+
+    // 這些金額在 app.js render() 已轉為顯示幣別，可直接加總。
+    const sum = (key) =>
+      perSymbolStats.reduce((total, stat) => total + stat[key], 0);
+    const realizedGain = sum('realizedGain');
+    const unrealizedGain = sum('unrealizedGain');
+    const marketValue = sum('marketValue');
+    const costBasisHeld = sum('costBasisHeld');
+
+    tfoot.innerHTML = `<tr class="totals-row">
+      <td>合計</td>
+      <td>—</td>
+      <td>—</td>
+      <td class="${signedClass(realizedGain)}">${withSign(formatMoney(realizedGain, displayCurrency), realizedGain)}</td>
+      <td class="${signedClass(unrealizedGain)}">${withSign(formatMoney(unrealizedGain, displayCurrency), unrealizedGain)}</td>
+      <td>—</td>
+      <td>—</td>
+      <td>${formatMoney(marketValue, displayCurrency)}</td>
+      <td>—</td>
+      <td>${formatMoney(costBasisHeld, displayCurrency)}</td>
+    </tr>`;
   }
 
   function updateSortIndicators(tableId, sort) {

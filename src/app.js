@@ -25,8 +25,26 @@
     demoMode: false,
     sort: { column: null, direction: 'asc' },
     txSort: { column: 'date', direction: 'desc' },
+    txSearch: '',
     editingTxId: null,
   };
+
+  // 依代號或名稱做不分大小寫的子字串搜尋（套用在年度/市場篩選之後）。
+  function filterBySearch(rows, query) {
+    const q = String(query || '')
+      .trim()
+      .toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (tx) =>
+        String(tx.symbol || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(tx.name || '')
+          .toLowerCase()
+          .includes(q),
+    );
+  }
 
   function compareForSort(a, b, column) {
     const av = a[column];
@@ -167,7 +185,16 @@
     ui.renderFilterControls(state);
     ui.renderFxStatusPanel(state.fxResult);
     ui.renderSummaryCards(converted);
-    ui.renderTransactionTable(sortRows(filteredTx, state.txSort), {
+    const searchedTx = filterBySearch(filteredTx, state.txSearch);
+
+    // 搜尋框位於重新渲染的 tbody 之外，值與焦點天然保留；
+    // 只在值不同步時回寫（例如程式端重設 txSearch），避免打斷輸入。
+    const txSearchInput = document.getElementById('tx-search-input');
+    if (txSearchInput && txSearchInput.value !== state.txSearch) {
+      txSearchInput.value = state.txSearch;
+    }
+
+    ui.renderTransactionTable(sortRows(searchedTx, state.txSort), {
       onDelete: handleDeleteTransaction,
       onEditStart: handleEditStart,
       onEditCancel: handleEditCancel,
@@ -512,6 +539,14 @@
       .getElementById('refresh-all-btn')
       .addEventListener('click', handleRefreshAll);
 
+    // txSearch 只存在記憶體中，不寫入 storage.saveUiFilters（它只序列化 state.filters）。
+    document
+      .getElementById('tx-search-input')
+      .addEventListener('input', (e) => {
+        state.txSearch = e.target.value;
+        render();
+      });
+
     document
       .querySelectorAll('#symbol-pnl-table thead th[data-sort-key]')
       .forEach((th) => {
@@ -682,5 +717,6 @@
     handlePriceOverrideChange,
     handlePriceOverrideClear,
     handleExport,
+    filterBySearch,
   };
 })();

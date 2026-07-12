@@ -95,7 +95,7 @@ describe('charts.renderSymbolAllocationChart', () => {
     FakeChart.instances = [];
   });
 
-  it('creates a pie chart sorted by descending value', () => {
+  it('creates a doughnut chart sorted by descending value', () => {
     const canvas = document.createElement('canvas');
     renderSymbolAllocationChart(
       canvas,
@@ -106,9 +106,32 @@ describe('charts.renderSymbolAllocationChart', () => {
       'USD',
     );
     const config = FakeChart.instances[0].config;
-    expect(config.type).toBe('pie');
+    expect(config.type).toBe('doughnut');
+    expect(config.options.plugins.title.display).toBe(false);
+    expect(config.options.plugins.legend.display).toBe(false);
+    expect(config.options.cutout).toBe('70%');
     expect(config.data.labels).toEqual(['B', 'A']);
     expect(config.data.datasets[0].data).toEqual([150, 50]);
+  });
+
+  it('renders a custom legend list into the given legend element', () => {
+    const canvas = document.createElement('canvas');
+    const legendEl = document.createElement('ul');
+    renderSymbolAllocationChart(
+      canvas,
+      [
+        { symbol: 'A', value: 50 },
+        { symbol: 'B', value: 150 },
+      ],
+      'USD',
+      legendEl,
+    );
+    const items = legendEl.querySelectorAll('.symbol-allocation-legend-item');
+    expect(items).toHaveLength(2);
+    expect(items[0].querySelector('.legend-symbol').textContent).toBe('B');
+    expect(items[0].querySelector('.legend-pct').textContent).toBe('75%');
+    expect(items[1].querySelector('.legend-symbol').textContent).toBe('A');
+    expect(items[1].querySelector('.legend-pct').textContent).toBe('25%');
   });
 
   it('destroys the previous symbol allocation chart before creating a new one', () => {

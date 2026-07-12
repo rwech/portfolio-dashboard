@@ -12,6 +12,7 @@
     '#ffa94d',
     '#74c0fc',
   ];
+  const OTHERS_COLOR = '#8b93ab';
 
   let allocationChart = null;
   let symbolAllocationChart = null;
@@ -111,8 +112,10 @@
     if (total <= 0) return;
 
     const sorted = groupTopN(perSymbolAmounts, TOP_SYMBOL_SLICES);
-    const colors = sorted.map(
-      (_, i) => SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
+    const colors = sorted.map((s, i) =>
+      s.symbol === OTHERS_LABEL
+        ? OTHERS_COLOR
+        : SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
     );
 
     symbolAllocationChart = new Chart(canvasEl, {

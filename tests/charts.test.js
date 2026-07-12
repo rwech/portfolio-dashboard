@@ -273,6 +273,18 @@ describe('charts.renderSymbolAllocationChart top-8 grouping', () => {
     expect(config.data.labels).toHaveLength(8);
     expect(config.data.labels).not.toContain('其他');
   });
+
+  it('gives 其他 a dedicated color instead of reusing the first symbol color', () => {
+    const canvas = document.createElement('canvas');
+    const holdings = Array.from({ length: 9 }, (_, i) => ({
+      symbol: `S${i + 1}`,
+      value: 90 - i * 10,
+    }));
+    renderSymbolAllocationChart(canvas, holdings, 'TWD');
+    const colors = FakeChart.instances[0].config.data.datasets[0].backgroundColor;
+    expect(colors).toHaveLength(9);
+    expect(colors[8]).not.toBe(colors[0]);
+  });
 });
 
 describe('charts.renderRoiTrendChart', () => {

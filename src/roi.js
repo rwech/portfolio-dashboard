@@ -68,8 +68,16 @@
     };
   }
 
-  function computeSymbolStats(transactions, year = 'all') {
-    const grouped = groupBySymbol(transactions);
+  function computeSymbolStats(
+    transactions,
+    year = 'all',
+    splitEventsCache = {},
+  ) {
+    const normalized = window.PFD.splitEvents.normalizeForSplits(
+      transactions,
+      splitEventsCache,
+    );
+    const grouped = groupBySymbol(normalized);
     const result = new Map();
     grouped.forEach((txs, symbol) => {
       const hasActivityInYear =
@@ -131,6 +139,7 @@
       fxRate,
       displayCurrency,
       today,
+      splitEventsCache = {},
     },
   ) {
     const marketFiltered = filterByMarket(allTx, market);
@@ -157,7 +166,7 @@
           : txsUpToD;
       if (txsForStats.length === 0) return;
 
-      const statsMap = computeSymbolStats(txsForStats, 'all');
+      const statsMap = computeSymbolStats(txsForStats, 'all', splitEventsCache);
 
       let totalInvested = 0;
       let realizedGain = 0;
@@ -254,15 +263,15 @@
 
   function computePortfolioSummary(
     allTx,
-    { priceOverrides, priceCache },
+    { priceOverrides, priceCache, splitEventsCache = {} },
     filters,
   ) {
     const marketFiltered = filterByMarket(allTx, filters.market);
     const twTx = marketFiltered.filter((tx) => tx.market === 'TW');
     const usTx = marketFiltered.filter((tx) => tx.market === 'US');
 
-    const twStats = computeSymbolStats(twTx, filters.year);
-    const usStats = computeSymbolStats(usTx, filters.year);
+    const twStats = computeSymbolStats(twTx, filters.year, splitEventsCache);
+    const usStats = computeSymbolStats(usTx, filters.year, splitEventsCache);
 
     const resolvePrice = window.PFD.stockPrice.resolveCurrentPrice;
 

@@ -30,6 +30,7 @@
     const storage = window.PFD.storage;
     const stockPrice = window.PFD.stockPrice;
     const cache = storage.loadHistoricalPriceCache();
+    const splitCache = storage.loadSplitEventsCache();
 
     if (gapEntries.length === 0) return cache;
 
@@ -67,27 +68,51 @@
     }
 
     if (data) {
+      const fetchedAt = new Date().toISOString();
       gapEntries.forEach((entry, i) => {
         const yahooSymbol = yahooSymbols[i];
-        const prices = data[yahooSymbol];
+        const result = data[yahooSymbol];
+        const prices = result?.prices;
         if (Array.isArray(prices)) {
           cache[entry.symbol] = {
             prices,
             rangeStart: fromDate,
             rangeEnd: toDate,
-            fetchedAt: new Date().toISOString(),
+            fetchedAt,
+          };
+          splitCache[entry.symbol] = {
+            splits: Array.isArray(result.splits) ? result.splits : [],
+            rangeStart: fromDate,
+            rangeEnd: toDate,
+            fetchedAt,
           };
         }
       });
       storage.saveHistoricalPriceCache(cache);
+      storage.saveSplitEventsCache(splitCache);
     }
 
     return cache;
   }
 
-  function buildResolver(cache) {
+  // 每個 symbol 的股價還原（除以分割比例）只算一次並快取在這個 closure 裡，
+  // 即使同一個 resolver 之後被呼叫多次（例如 ROI 趨勢圖逐月取價）。
+  function buildResolver(cache, splitEventsCache = {}) {
+    const splitEvents = window.PFD.splitEvents;
+    const adjustedBySymbol = {};
+
+    function adjustedPricesFor(symbol) {
+      if (!(symbol in adjustedBySymbol)) {
+        adjustedBySymbol[symbol] = splitEvents.adjustPricesForSplits(
+          cache[symbol]?.prices || [],
+          splitEventsCache[symbol]?.splits || [],
+        );
+      }
+      return adjustedBySymbol[symbol];
+    }
+
     return (symbol, dateStr) =>
-      findCloseOnOrBefore(cache[symbol]?.prices || [], dateStr);
+      findCloseOnOrBefore(adjustedPricesFor(symbol), dateStr);
   }
 
   window.PFD = window.PFD || {};

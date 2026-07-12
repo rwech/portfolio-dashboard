@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '../src/storage.js';
 import '../src/stockPrice.js';
+import '../src/splitEvents.js';
 import '../src/historicalPrice.js';
 
 const { findCloseOnOrBefore, findGaps, fetchHistoricalPrices, buildResolver } =
@@ -174,10 +175,13 @@ describe('historicalPrice.fetchHistoricalPrices', () => {
       vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          AAPL: [
-            { date: '2024-01-02', close: 100 },
-            { date: '2024-01-03', close: 101 },
-          ],
+          AAPL: {
+            prices: [
+              { date: '2024-01-02', close: 100 },
+              { date: '2024-01-03', close: 101 },
+            ],
+            splits: [],
+          },
         }),
       }),
     );
@@ -207,7 +211,7 @@ describe('historicalPrice.fetchHistoricalPrices', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ NEWCO: [] }),
+        json: async () => ({ NEWCO: { prices: [], splits: [] } }),
       }),
     );
 
@@ -222,6 +226,37 @@ describe('historicalPrice.fetchHistoricalPrices', () => {
     expect(cache.NEWCO.prices).toEqual([]);
     expect(cache.NEWCO.rangeStart).toBe('2024-01-01');
     expect(cache.NEWCO.rangeEnd).toBe('2024-01-31');
+  });
+
+  it('also writes split events from the same response into the split events cache', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          AAPL: {
+            prices: [{ date: '2024-01-02', close: 100 }],
+            splits: [
+              { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+            ],
+          },
+        }),
+      }),
+    );
+
+    await fetchHistoricalPrices([
+      {
+        symbol: 'AAPL',
+        market: 'US',
+        fromDate: '2024-01-01',
+        toDate: '2024-01-31',
+      },
+    ]);
+    expect(storage.loadSplitEventsCache().AAPL).toMatchObject({
+      splits: [{ date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 }],
+      rangeStart: '2024-01-01',
+      rangeEnd: '2024-01-31',
+    });
   });
 
   it('leaves existing cache entries untouched when the upstream fetch fails', async () => {
@@ -290,5 +325,34 @@ describe('historicalPrice.buildResolver', () => {
   it('returns null for a symbol not present in the cache', () => {
     const resolver = buildResolver({});
     expect(resolver('AAPL', '2024-01-04')).toBeNull();
+  });
+
+  it('adjusts pre-split closes by the split ratio when a splitEventsCache is given', () => {
+    const resolver = buildResolver(
+      {
+        AAPL: {
+          prices: [
+            { date: '2020-08-01', close: 400 },
+            { date: '2020-09-01', close: 120 },
+          ],
+        },
+      },
+      {
+        AAPL: {
+          splits: [
+            { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+          ],
+        },
+      },
+    );
+    expect(resolver('AAPL', '2020-08-01')).toBe(100);
+    expect(resolver('AAPL', '2020-09-01')).toBe(120);
+  });
+
+  it('defaults to no split adjustment when splitEventsCache is omitted', () => {
+    const resolver = buildResolver({
+      AAPL: { prices: [{ date: '2020-08-01', close: 400 }] },
+    });
+    expect(resolver('AAPL', '2020-08-01')).toBe(400);
   });
 });

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import '../src/storage.js';
 import '../src/stockPrice.js';
 import '../src/exchangeRate.js';
+import '../src/splitEvents.js';
 import '../src/roi.js';
 
 const {
@@ -72,6 +73,111 @@ describe('roi.computeSymbolStats', () => {
     const stat = computeSymbolStats(txs).get('AAA');
     expect(stat.remainingQty).toBe(0);
     expect(stat.realizedGain).toBe((150 - 100) * 10 - 5);
+  });
+});
+
+describe('roi.computeSymbolStats with stock splits', () => {
+  it('combines a pre-split buy and a post-split buy into one correct position, given a splitEventsCache', () => {
+    const txs = [
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-01-01',
+        action: 'buy',
+        quantity: 100,
+        price: 400,
+        fee: 0,
+      },
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-09-01',
+        action: 'buy',
+        quantity: 100,
+        price: 100,
+        fee: 0,
+      },
+    ];
+    const splitEventsCache = {
+      AAPL: {
+        splits: [
+          { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+        ],
+      },
+    };
+    const stat = computeSymbolStats(txs, 'all', splitEventsCache).get('AAPL');
+    // Pre-split 100 sh @ $400 becomes 400 sh @ $100 once normalized, plus the
+    // post-split 100 sh @ $100 buy: 500 sh total, all at the same $100 basis.
+    expect(stat.remainingQty).toBe(500);
+    expect(stat.avgCost).toBe(100);
+    expect(stat.totalInvested).toBe(50000);
+  });
+
+  it('produces the wrong combined result when no splitEventsCache is given (documents the bug this feature fixes)', () => {
+    const txs = [
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-01-01',
+        action: 'buy',
+        quantity: 100,
+        price: 400,
+        fee: 0,
+      },
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-09-01',
+        action: 'buy',
+        quantity: 100,
+        price: 100,
+        fee: 0,
+      },
+    ];
+    const stat = computeSymbolStats(txs).get('AAPL');
+    expect(stat.remainingQty).toBe(200);
+    expect(stat.avgCost).toBe(250);
+  });
+
+  it('correctly compounds two splits when computing a sell realized gain', () => {
+    const txs = [
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2019-01-01',
+        action: 'buy',
+        quantity: 100,
+        price: 800,
+        fee: 0,
+      },
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2023-01-01',
+        action: 'sell',
+        quantity: 400,
+        price: 150,
+        fee: 0,
+      },
+    ];
+    const splitEventsCache = {
+      AAPL: {
+        splits: [
+          { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+          { date: '2022-06-01', numerator: 2, denominator: 1, ratio: 2 },
+        ],
+      },
+    };
+    const stat = computeSymbolStats(txs, 'all', splitEventsCache).get('AAPL');
+    // 100 sh @ $800 normalizes to 800 sh @ $100 after both splits (x4 then x2).
+    expect(stat.remainingQty).toBe(400);
+    expect(stat.realizedGain).toBeCloseTo((150 - 100) * 400, 5);
   });
 });
 
@@ -294,6 +400,52 @@ describe('roi.computePortfolioSummary with a market filter', () => {
     expect(summary.perSymbol).toHaveLength(1);
     expect(summary.perSymbol[0].symbol).toBe('2330');
     expect(summary.byMarket.US.totalInvested).toBe(0);
+  });
+});
+
+describe('roi.computeRoiTrend with a splitEventsCache', () => {
+  it('threads splitEventsCache into per-snapshot stats so a pre/post-split pair is combined correctly', () => {
+    const txs = [
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-01-01',
+        action: 'buy',
+        quantity: 100,
+        price: 400,
+        fee: 0,
+      },
+      {
+        symbol: 'AAPL',
+        name: 'Apple',
+        market: 'US',
+        date: '2020-09-01',
+        action: 'buy',
+        quantity: 100,
+        price: 100,
+        fee: 0,
+      },
+    ];
+    const points = computeRoiTrend(txs, {
+      year: 'all',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => 100,
+      fxRate: null,
+      displayCurrency: 'USD',
+      today: '2020-09-30',
+      splitEventsCache: {
+        AAPL: {
+          splits: [
+            { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+          ],
+        },
+      },
+    });
+    const lastPoint = points[points.length - 1];
+    // 500 sh @ $100 avg cost, priced at $100 -> no unrealized gain, roiPct 0.
+    expect(lastPoint.roiPct).toBe(0);
+    expect(lastPoint.totalAssets).toBe(50000);
   });
 });
 

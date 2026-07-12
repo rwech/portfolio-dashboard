@@ -186,16 +186,120 @@ describe('api/historical-price handler', () => {
     const res = createRes();
     await handler(req, res);
     expect(res.statusCode).toBe(200);
-    expect(res.body.AAPL).toEqual([
+    expect(res.body.AAPL).toEqual({
+      prices: [
+        {
+          date: new Date(1700000000 * 1000).toISOString().slice(0, 10),
+          close: 150.5,
+        },
+        {
+          date: new Date(1700172800 * 1000).toISOString().slice(0, 10),
+          close: 152.25,
+        },
+      ],
+      splits: [],
+    });
+  });
+
+  it('requests the events=split parameter from Yahoo', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: false });
+    vi.stubGlobal('fetch', fetchSpy);
+    const req = {
+      headers: {},
+      method: 'GET',
+      query: { symbols: 'AAPL', period1: '1000', period2: '2000' },
+    };
+    const res = createRes();
+    await handler(req, res);
+    expect(fetchSpy.mock.calls[0][0]).toContain('events=split');
+  });
+
+  it('extracts split events keyed by timestamp into a sorted array with a derived ratio', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          chart: {
+            result: [
+              {
+                timestamp: [1700000000],
+                indicators: { quote: [{ close: [100] }] },
+                events: {
+                  splits: {
+                    1690000000: {
+                      date: 1690000000,
+                      numerator: 4,
+                      denominator: 1,
+                      splitRatio: '4:1',
+                    },
+                    1680000000: {
+                      date: 1680000000,
+                      numerator: 2,
+                      denominator: 1,
+                      splitRatio: '2:1',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    const req = {
+      headers: {},
+      method: 'GET',
+      query: { symbols: 'AAPL', period1: '1000', period2: '2000' },
+    };
+    const res = createRes();
+    await handler(req, res);
+    expect(res.body.AAPL.splits).toEqual([
       {
-        date: new Date(1700000000 * 1000).toISOString().slice(0, 10),
-        close: 150.5,
+        date: new Date(1680000000 * 1000).toISOString().slice(0, 10),
+        numerator: 2,
+        denominator: 1,
+        ratio: 2,
       },
       {
-        date: new Date(1700172800 * 1000).toISOString().slice(0, 10),
-        close: 152.25,
+        date: new Date(1690000000 * 1000).toISOString().slice(0, 10),
+        numerator: 4,
+        denominator: 1,
+        ratio: 4,
       },
     ]);
+  });
+
+  it('ignores malformed split entries instead of crashing', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          chart: {
+            result: [
+              {
+                timestamp: [1700000000],
+                indicators: { quote: [{ close: [100] }] },
+                events: {
+                  splits: {
+                    1690000000: { date: 1690000000, numerator: 4 },
+                  },
+                },
+              },
+            ],
+          },
+        }),
+      }),
+    );
+    const req = {
+      headers: {},
+      method: 'GET',
+      query: { symbols: 'AAPL', period1: '1000', period2: '2000' },
+    };
+    const res = createRes();
+    await handler(req, res);
+    expect(res.body.AAPL.splits).toEqual([]);
   });
 
   it('returns null when the chart response is missing timestamp/close arrays', async () => {

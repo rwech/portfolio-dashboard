@@ -61,6 +61,7 @@ async function setupApp() {
   await import('../src/importer.js');
   await import('../src/exchangeRate.js');
   await import('../src/stockPrice.js');
+  await import('../src/splitEvents.js');
   await import('../src/historicalPrice.js');
   await import('../src/roi.js');
   await import('../src/charts.js');
@@ -1191,6 +1192,7 @@ describe('app: render with no usable fx rate', () => {
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');
     await import('../src/stockPrice.js');
+    await import('../src/splitEvents.js');
     await import('../src/historicalPrice.js');
     await import('../src/roi.js');
     await import('../src/charts.js');
@@ -1231,6 +1233,7 @@ describe('app: restoring saved UI filters on init', () => {
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');
     await import('../src/stockPrice.js');
+    await import('../src/splitEvents.js');
     await import('../src/historicalPrice.js');
     await import('../src/roi.js');
     await import('../src/charts.js');

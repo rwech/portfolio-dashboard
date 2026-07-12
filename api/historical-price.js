@@ -14,12 +14,30 @@ function isAllowedOrigin(origin) {
   return allowed.includes(origin);
 }
 
+function extractSplits(result) {
+  return Object.values(result?.events?.splits || {})
+    .filter(
+      (s) =>
+        typeof s?.date === 'number' &&
+        typeof s?.numerator === 'number' &&
+        typeof s?.denominator === 'number' &&
+        s.denominator !== 0,
+    )
+    .map((s) => ({
+      date: new Date(s.date * 1000).toISOString().slice(0, 10),
+      numerator: s.numerator,
+      denominator: s.denominator,
+      ratio: s.numerator / s.denominator,
+    }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
 async function fetchYahooHistorical(yahooSymbol, period1, period2, interval) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(
-      `${YAHOO_CHART_URL}${encodeURIComponent(yahooSymbol)}?period1=${period1}&period2=${period2}&interval=${interval}`,
+      `${YAHOO_CHART_URL}${encodeURIComponent(yahooSymbol)}?period1=${period1}&period2=${period2}&interval=${interval}&events=split`,
       {
         signal: controller.signal,
         headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -40,7 +58,7 @@ async function fetchYahooHistorical(yahooSymbol, period1, period2, interval) {
       prices.push({ date, close });
     }
     prices.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-    return prices;
+    return { prices, splits: extractSplits(result) };
   } catch {
     return null;
   } finally {

@@ -16,6 +16,7 @@
     priceOverrides: {},
     priceCache: {},
     historicalPriceCache: {},
+    splitEventsCache: {},
     fxResult: null,
     filters: {
       year: 'all',
@@ -91,6 +92,7 @@
     const priceCtx = {
       priceOverrides: state.priceOverrides,
       priceCache: state.priceCache,
+      splitEventsCache: state.splitEventsCache,
     };
     const fxRate = state.fxResult ? state.fxResult.rate : null;
 
@@ -280,10 +282,12 @@
       mode: state.filters.roiTrendMode,
       resolveHistoricalPrice: historicalPrice.buildResolver(
         state.historicalPriceCache,
+        state.splitEventsCache,
       ),
       fxRate,
       displayCurrency: state.filters.displayCurrency,
       today,
+      splitEventsCache: state.splitEventsCache,
     });
     charts.renderRoiTrendChart(
       document.getElementById('roi-trend-chart'),
@@ -404,6 +408,7 @@
     const priceCtx = {
       priceOverrides: state.priceOverrides,
       priceCache: state.priceCache,
+      splitEventsCache: state.splitEventsCache,
     };
     const fullSummary = roi.computePortfolioSummary(
       state.transactions,
@@ -460,6 +465,7 @@
     try {
       await historicalPrice.fetchHistoricalPrices(gaps);
       state.historicalPriceCache = storage.loadHistoricalPriceCache();
+      state.splitEventsCache = storage.loadSplitEventsCache();
       render();
     } finally {
       isRefreshingHistoricalPrices = false;
@@ -779,6 +785,7 @@
     state.priceOverrides = storage.loadPriceOverrides();
     state.priceCache = storage.loadPriceCache();
     state.historicalPriceCache = storage.loadHistoricalPriceCache();
+    state.splitEventsCache = storage.loadSplitEventsCache();
 
     const savedFilters = storage.loadUiFilters();
     if (savedFilters) Object.assign(state.filters, savedFilters);

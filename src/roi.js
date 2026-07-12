@@ -123,13 +123,22 @@
 
   function computeRoiTrend(
     allTx,
-    { year, mode, resolveHistoricalPrice, fxRate, displayCurrency, today },
+    {
+      year,
+      market,
+      mode,
+      resolveHistoricalPrice,
+      fxRate,
+      displayCurrency,
+      today,
+    },
   ) {
-    if (allTx.length === 0) return [];
+    const marketFiltered = filterByMarket(allTx, market);
+    if (marketFiltered.length === 0) return [];
 
-    const earliestDate = allTx.reduce(
+    const earliestDate = marketFiltered.reduce(
       (min, tx) => (tx.date < min ? tx.date : min),
-      allTx[0].date,
+      marketFiltered[0].date,
     );
     const snapshotDates = generateMonthEndSnapshotDates(
       earliestDate,
@@ -139,7 +148,7 @@
 
     const points = [];
     snapshotDates.forEach((snapshotDate) => {
-      const txsUpToD = allTx.filter((tx) => tx.date <= snapshotDate);
+      const txsUpToD = marketFiltered.filter((tx) => tx.date <= snapshotDate);
       if (txsUpToD.length === 0) return;
 
       const txsForStats =

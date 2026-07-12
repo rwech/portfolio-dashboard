@@ -276,6 +276,7 @@
 
     const roiTrendSnapshots = roi.computeRoiTrend(state.transactions, {
       year: state.filters.year,
+      market: state.filters.market,
       mode: state.filters.roiTrendMode,
       resolveHistoricalPrice: historicalPrice.buildResolver(
         state.historicalPriceCache,

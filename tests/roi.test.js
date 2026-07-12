@@ -635,6 +635,52 @@ describe('roi.computeRoiTrend', () => {
       { date: '2024-02-29', roiPct: 32, totalAssets: 720 },
     ]);
   });
+
+  it('restricts the trend to the selected market, ignoring transactions from other markets', () => {
+    const txs = [
+      {
+        symbol: 'AAA',
+        name: 'A',
+        market: 'US',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 100,
+        fee: 0,
+      },
+      {
+        symbol: '2330',
+        name: '台積電',
+        market: 'TW',
+        date: '2024-01-01',
+        action: 'buy',
+        quantity: 10,
+        price: 3200,
+        fee: 0,
+      },
+    ];
+    const options = {
+      year: 'all',
+      mode: 'cumulative',
+      resolveHistoricalPrice: () => null,
+      fxRate: 32,
+      displayCurrency: 'USD',
+      today: '2024-01-31',
+    };
+
+    const usOnly = computeRoiTrend(txs, { ...options, market: 'US' });
+    expect(usOnly).toEqual([
+      { date: '2024-01-31', roiPct: 0, totalAssets: 1000 },
+    ]);
+
+    const twOnly = computeRoiTrend(txs, { ...options, market: 'TW' });
+    expect(twOnly).toEqual([
+      { date: '2024-01-31', roiPct: 0, totalAssets: 1000 },
+    ]);
+
+    const all = computeRoiTrend(txs, { ...options, market: 'all' });
+    expect(all).toEqual([{ date: '2024-01-31', roiPct: 0, totalAssets: 2000 }]);
+  });
 });
 
 describe('annualizedRoiPct', () => {

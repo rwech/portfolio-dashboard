@@ -281,7 +281,8 @@ describe('charts.renderSymbolAllocationChart top-8 grouping', () => {
       value: 90 - i * 10,
     }));
     renderSymbolAllocationChart(canvas, holdings, 'TWD');
-    const colors = FakeChart.instances[0].config.data.datasets[0].backgroundColor;
+    const colors =
+      FakeChart.instances[0].config.data.datasets[0].backgroundColor;
     expect(colors).toHaveLength(9);
     expect(colors[8]).not.toBe(colors[0]);
   });

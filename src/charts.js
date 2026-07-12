@@ -122,7 +122,9 @@
       type: 'doughnut',
       data: {
         labels: sorted.map((s) => s.symbol),
-        datasets: [{ data: sorted.map((s) => s.value), backgroundColor: colors }],
+        datasets: [
+          { data: sorted.map((s) => s.value), backgroundColor: colors },
+        ],
       },
       options: {
         responsive: true,

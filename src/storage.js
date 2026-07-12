@@ -5,6 +5,7 @@
     PRICE_CACHE: 'pfd.priceCache',
     HISTORICAL_PRICE_CACHE: 'pfd.historicalPriceCache',
     SPLIT_EVENTS_CACHE: 'pfd.splitEventsCache',
+    SEEN_SPLITS: 'pfd.seenSplits',
     PRICE_OVERRIDES: 'pfd.priceOverrides',
     FX_CACHE: 'pfd.exchangeRate.cache',
     UI_FILTERS: 'pfd.ui.lastFilters',
@@ -126,6 +127,14 @@
     writeJson(KEYS.SPLIT_EVENTS_CACHE, cache);
   }
 
+  function loadSeenSplits() {
+    return readJson(KEYS.SEEN_SPLITS, []);
+  }
+
+  function saveSeenSplits(list) {
+    writeJson(KEYS.SEEN_SPLITS, list);
+  }
+
   function loadPriceOverrides() {
     return readJson(KEYS.PRICE_OVERRIDES, {});
   }
@@ -214,6 +223,8 @@
     saveHistoricalPriceCache,
     loadSplitEventsCache,
     saveSplitEventsCache,
+    loadSeenSplits,
+    saveSeenSplits,
     loadPriceOverrides,
     savePriceOverride,
     clearPriceOverride,

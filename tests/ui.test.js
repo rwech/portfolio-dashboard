@@ -534,6 +534,29 @@ describe('ui import modal', () => {
       checkbox.dispatchEvent(new Event('change'));
       expect(document.getElementById('import-confirm-btn').disabled).toBe(true);
     });
+
+    it('renders split-consistency warnings as a non-blocking notice, confirm stays enabled', () => {
+      ui.renderImportPreviewStep(
+        {
+          ...basePreview,
+          splitWarnings: [
+            'AAPL 在 2020-08-31 有 4:1 分割，請確認股數是否正確。',
+          ],
+        },
+        {},
+      );
+      const warning = body().querySelector('.import-split-warning');
+      expect(warning).not.toBeNull();
+      expect(warning.textContent).toContain('AAPL');
+      expect(document.getElementById('import-confirm-btn').disabled).toBe(
+        false,
+      );
+    });
+
+    it('renders no split-warning block when there are none', () => {
+      ui.renderImportPreviewStep(basePreview, {});
+      expect(body().querySelector('.import-split-warning')).toBeNull();
+    });
   });
 });
 

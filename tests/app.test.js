@@ -1521,6 +1521,229 @@ describe('app: import flow (dedupe, mapping wizard, replace, cancel)', () => {
   });
 });
 
+async function setupAppWithSeededStorage({
+  transactionsUS,
+  historicalPriceCache,
+  seenSplits,
+  fetchOverrides,
+}) {
+  document.body.innerHTML = bodyHtml;
+  localStorage.clear();
+  if (transactionsUS) {
+    localStorage.setItem('pfd.transactions.us', JSON.stringify(transactionsUS));
+  }
+  if (historicalPriceCache) {
+    localStorage.setItem(
+      'pfd.historicalPriceCache',
+      JSON.stringify(historicalPriceCache),
+    );
+  }
+  if (seenSplits) {
+    localStorage.setItem('pfd.seenSplits', JSON.stringify(seenSplits));
+  }
+  delete window.PFD;
+  vi.resetModules();
+  global.Chart = FakeChart;
+  global.alert = vi.fn();
+  global.fetch = vi.fn(async (url) => {
+    const u = String(url);
+    if (fetchOverrides) {
+      for (const [match, response] of fetchOverrides) {
+        if (u.includes(match)) return response;
+      }
+    }
+    if (u.includes('open.er-api.com'))
+      return {
+        ok: true,
+        json: async () => ({ result: 'success', rates: { TWD: 32 } }),
+      };
+    if (u.includes('/api/stock-price'))
+      return { ok: true, json: async () => ({}) };
+    if (u.includes('/api/historical-price'))
+      return { ok: true, json: async () => ({}) };
+    return { ok: false, text: async () => '', json: async () => ({}) };
+  });
+
+  await import('../src/config.js');
+  await import('../src/fields.js');
+  await import('../src/storage.js');
+  await import('../src/csv.js');
+  await import('../src/importer.js');
+  await import('../src/exchangeRate.js');
+  await import('../src/stockPrice.js');
+  await import('../src/splitEvents.js');
+  await import('../src/historicalPrice.js');
+  await import('../src/roi.js');
+  await import('../src/charts.js');
+  await import('../src/ui.js');
+  await import('../src/app.js');
+
+  const app = window.PFD.app;
+  await app.init();
+  return app;
+}
+
+describe('app: stock split detection and correction', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const AAPL_TXS = [
+    {
+      id: 't1',
+      market: 'US',
+      date: '2020-01-01',
+      symbol: 'AAPL',
+      name: 'Apple',
+      action: 'buy',
+      quantity: 100,
+      price: 400,
+      fee: 0,
+    },
+    {
+      id: 't2',
+      market: 'US',
+      date: '2020-09-01',
+      symbol: 'AAPL',
+      name: 'Apple',
+      action: 'buy',
+      quantity: 100,
+      price: 100,
+      fee: 0,
+    },
+  ];
+
+  const SPLIT_RESPONSE = {
+    ok: true,
+    json: async () => ({
+      AAPL: {
+        prices: [{ date: '2020-01-02', close: 400 }],
+        splits: [
+          { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+        ],
+      },
+    }),
+  };
+
+  it('re-fetches split events even when the price cache already fully covers the range, applies the correction, badges the symbol, and shows a one-time toast', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    await setupAppWithSeededStorage({
+      transactionsUS: AAPL_TXS,
+      // Price cache already fully covers the range - only the split-events
+      // cache is missing, so the gap-union fix is what forces a re-fetch.
+      historicalPriceCache: {
+        AAPL: {
+          prices: [{ date: '2020-01-02', close: 400 }],
+          rangeStart: '2020-01-01',
+          rangeEnd: today,
+          fetchedAt: new Date().toISOString(),
+        },
+      },
+      fetchOverrides: [['/api/historical-price', SPLIT_RESPONSE]],
+    });
+
+    expect(
+      global.fetch.mock.calls.some(([url]) =>
+        String(url).includes('/api/historical-price'),
+      ),
+    ).toBe(true);
+
+    // ROI math combined the pre/post-split buys onto the current share basis:
+    // 100 sh @ $400 normalizes to 400 sh @ $100, plus 100 sh @ $100 = 500 sh.
+    const tbodyText = document.querySelector(
+      '#symbol-pnl-table tbody',
+    ).textContent;
+    expect(tbodyText).toContain('500');
+
+    const badge = document.querySelector('#symbol-pnl-table .badge-split');
+    expect(badge).not.toBeNull();
+    expect(badge.getAttribute('title')).toContain('2020-08-31');
+
+    const toastText = document.getElementById('toast-container').textContent;
+    expect(toastText).toContain('AAPL');
+    expect(toastText).toContain('2020-08-31');
+  });
+
+  it('batches the toast into a single count-based message when more than one split is newly discovered', async () => {
+    await setupAppWithSeededStorage({
+      transactionsUS: AAPL_TXS,
+      fetchOverrides: [
+        [
+          '/api/historical-price',
+          {
+            ok: true,
+            json: async () => ({
+              AAPL: {
+                prices: [{ date: '2020-01-02', close: 400 }],
+                splits: [
+                  {
+                    date: '2020-08-31',
+                    numerator: 4,
+                    denominator: 1,
+                    ratio: 4,
+                  },
+                  {
+                    date: '2022-06-01',
+                    numerator: 2,
+                    denominator: 1,
+                    ratio: 2,
+                  },
+                ],
+              },
+            }),
+          },
+        ],
+      ],
+    });
+
+    const toastText = document.getElementById('toast-container').textContent;
+    expect(toastText).toContain('2 筆股票分割事件');
+  });
+
+  it('does not re-toast a split that was already recorded as seen, but still applies the correction', async () => {
+    await setupAppWithSeededStorage({
+      transactionsUS: AAPL_TXS,
+      seenSplits: ['AAPL|2020-08-31|4/1'],
+      fetchOverrides: [['/api/historical-price', SPLIT_RESPONSE]],
+    });
+
+    const toastText = document.getElementById('toast-container').textContent;
+    expect(toastText).not.toContain('AAPL');
+
+    const badge = document.querySelector('#symbol-pnl-table .badge-split');
+    expect(badge).not.toBeNull();
+  });
+
+  it('warns (without blocking) when importing a pre-split-dated row whose price looks like it was already split-adjusted', async () => {
+    await setupAppWithSeededStorage({
+      // No existing transactions - the split cache is pre-seeded directly so
+      // the warning can be checked without depending on a live fetch.
+    });
+    window.PFD.storage.saveSplitEventsCache({
+      AAPL: {
+        splits: [
+          { date: '2020-08-31', numerator: 4, denominator: 1, ratio: 4 },
+        ],
+      },
+    });
+    window.PFD.app.state.splitEventsCache =
+      window.PFD.storage.loadSplitEventsCache();
+
+    const csvText =
+      'date,symbol,name,action,quantity,price,fee\n' +
+      '2020-01-01,AAPL,Apple,buy,100,105,0\n' + // pre-split, should be ~$400
+      '2020-09-01,AAPL,Apple,buy,100,100,0\n';
+    await window.PFD.app.handleImportFile(fakeCsvFile(csvText), 'US');
+
+    const warning = importModalBody().querySelector('.import-split-warning');
+    expect(warning).not.toBeNull();
+    expect(warning.textContent).toContain('AAPL');
+
+    // Non-blocking: confirm is still enabled and the import still proceeds.
+    expect(document.getElementById('import-confirm-btn').disabled).toBe(false);
+  });
+});
+
 describe('app: refresh-all-prices button', () => {
   beforeEach(() => {
     vi.restoreAllMocks();

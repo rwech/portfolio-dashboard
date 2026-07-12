@@ -204,6 +204,10 @@
         fxRate,
       ),
       roiPct: s.roiPct,
+      splits: window.PFD.splitEvents.getSplitsForSymbol(
+        s.symbol,
+        state.splitEventsCache,
+      ),
     }));
 
     const symbolAllocationData = filteredSummary.perSymbol
@@ -434,6 +438,45 @@
     return Array.from(map, ([symbol, market]) => ({ symbol, market }));
   }
 
+  function splitKey(symbol, split) {
+    return `${symbol}|${split.date}|${split.numerator}/${split.denominator}`;
+  }
+
+  // 一次性通知：每個分割事件只跳一次 toast，讓使用者知道數字變動是因為
+  // 系統自動校正了分割，而不是資料出錯。已通知過的紀錄持久化在 localStorage，
+  // 所以既有使用者升級後第一次看到既有分割時也會通知一次。
+  function notifyNewSplits() {
+    const seen = new Set(storage.loadSeenSplits());
+    const newlyFound = [];
+
+    allTransactedSymbols().forEach(({ symbol }) => {
+      const splits = state.splitEventsCache[symbol]?.splits || [];
+      splits.forEach((split) => {
+        const key = splitKey(symbol, split);
+        if (!seen.has(key)) {
+          seen.add(key);
+          newlyFound.push({ symbol, split });
+        }
+      });
+    });
+
+    if (newlyFound.length === 0) return;
+    storage.saveSeenSplits(Array.from(seen));
+
+    if (newlyFound.length === 1) {
+      const { symbol, split } = newlyFound[0];
+      ui.showToast(
+        `偵測到 ${symbol} 在 ${split.date} 有 ${split.numerator}:${split.denominator} 分割，相關持股成本與損益已自動調整`,
+        { type: 'info', durationMs: 8000 },
+      );
+    } else {
+      ui.showToast(
+        `偵測到 ${newlyFound.length} 筆股票分割事件，相關持股成本與損益已自動調整`,
+        { type: 'info', durationMs: 8000 },
+      );
+    }
+  }
+
   let isRefreshingHistoricalPrices = false;
 
   async function refreshHistoricalPrices() {
@@ -455,10 +498,21 @@
       }),
     );
 
-    const gaps = historicalPrice.findGaps(
+    // 分別對股價快取與分割事件快取算缺口再聯集：即使股價快取已經覆蓋整個
+    // 範圍（例如這個功能上線前就已快取過），只要分割事件快取還沒有資料，
+    // 仍需要重新抓一次，否則舊有使用者永遠不會補到分割事件。
+    const priceGaps = historicalPrice.findGaps(
       symbolDateRanges,
       state.historicalPriceCache,
     );
+    const splitGaps = historicalPrice.findGaps(
+      symbolDateRanges,
+      state.splitEventsCache,
+    );
+    const gapSymbols = new Set(
+      [...priceGaps, ...splitGaps].map((g) => g.symbol),
+    );
+    const gaps = symbolDateRanges.filter((r) => gapSymbols.has(r.symbol));
     if (gaps.length === 0) return;
 
     isRefreshingHistoricalPrices = true;
@@ -467,6 +521,7 @@
       state.historicalPriceCache = storage.loadHistoricalPriceCache();
       state.splitEventsCache = storage.loadSplitEventsCache();
       render();
+      notifyNewSplits();
     } finally {
       isRefreshingHistoricalPrices = false;
     }
@@ -522,6 +577,11 @@
     const { rows, errors } = importer.parseWithMapping(text, mapping, market);
     const existing = storage.loadTransactions(market);
     const analysis = importer.analyzeImport(rows, existing);
+    const splitWarnings = importer.detectSplitWarnings(
+      analysis.newRows,
+      existing,
+      state.splitEventsCache,
+    );
 
     ui.renderImportPreviewStep(
       {
@@ -535,6 +595,7 @@
         existingCount: existing.length,
         previewRows: rows.slice(0, 5),
         encoding,
+        splitWarnings,
       },
       {
         onConfirm: ({ replace }) => {

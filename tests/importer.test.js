@@ -303,3 +303,65 @@ describe('importer.analyzeImport', () => {
     expect(newRows).toEqual([]);
   });
 });
+
+describe('importer.detectSplitWarnings', () => {
+  const tx = (over = {}) => ({
+    date: '2024-01-10',
+    symbol: 'AAPL',
+    action: 'buy',
+    quantity: 100,
+    price: 400,
+    fee: 0,
+    ...over,
+  });
+
+  const splitCache = (ratio = 4) => ({
+    AAPL: {
+      splits: [
+        {
+          date: '2020-08-31',
+          numerator: ratio,
+          denominator: 1,
+          ratio,
+        },
+      ],
+    },
+  });
+
+  it('warns when a pre-split row price is close to the post-split price instead of ~ratio times higher', () => {
+    const existing = [tx({ date: '2020-09-01', price: 100 })];
+    const newRows = [tx({ date: '2020-01-01', price: 105 })]; // should be ~400, not ~100
+    const warnings = importer.detectSplitWarnings(
+      newRows,
+      existing,
+      splitCache(),
+    );
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain('AAPL');
+    expect(warnings[0]).toContain('2020-08-31');
+  });
+
+  it('does not warn when the pre-split price is correctly ~ratio times the post-split price', () => {
+    const existing = [tx({ date: '2020-09-01', price: 100 })];
+    const newRows = [tx({ date: '2020-01-01', price: 400 })];
+    expect(
+      importer.detectSplitWarnings(newRows, existing, splitCache()),
+    ).toEqual([]);
+  });
+
+  it('does nothing for a symbol with no known splits', () => {
+    const newRows = [tx({ symbol: 'MSFT' })];
+    expect(importer.detectSplitWarnings(newRows, [], {})).toEqual([]);
+  });
+
+  it('does nothing when there are no transactions on one side of the split', () => {
+    // Only pre-split transactions exist so far - nothing to compare against yet.
+    const newRows = [tx({ date: '2020-01-01', price: 105 })];
+    expect(importer.detectSplitWarnings(newRows, [], splitCache())).toEqual([]);
+  });
+
+  it('handles a symbol with no splitEventsCache entry at all without crashing', () => {
+    const newRows = [tx()];
+    expect(importer.detectSplitWarnings(newRows, [], undefined)).toEqual([]);
+  });
+});

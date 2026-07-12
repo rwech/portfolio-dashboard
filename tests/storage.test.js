@@ -239,6 +239,28 @@ describe('storage price cache and overrides', () => {
     storage.clearPriceOverride('AAPL');
     expect(storage.loadPriceOverrides()).toEqual({ 2330: 600 });
   });
+
+  it('loadSplitEventsCache defaults to an empty object', () => {
+    expect(storage.loadSplitEventsCache()).toEqual({});
+  });
+
+  it('round-trips the split events cache', () => {
+    storage.saveSplitEventsCache({
+      AAPL: { splits: [{ date: '2020-08-31', ratio: 4 }] },
+    });
+    expect(storage.loadSplitEventsCache()).toEqual({
+      AAPL: { splits: [{ date: '2020-08-31', ratio: 4 }] },
+    });
+  });
+
+  it('loadSeenSplits defaults to an empty array', () => {
+    expect(storage.loadSeenSplits()).toEqual([]);
+  });
+
+  it('round-trips the seen-splits list', () => {
+    storage.saveSeenSplits(['AAPL|2020-08-31|4/1']);
+    expect(storage.loadSeenSplits()).toEqual(['AAPL|2020-08-31|4/1']);
+  });
 });
 
 describe('storage fx cache, ui filters, and unexported change tracking', () => {

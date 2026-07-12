@@ -235,6 +235,40 @@ describe('renderSymbolPnlTable stale price tag', () => {
       document.querySelector('#symbol-pnl-table tbody').textContent,
     ).toContain('mystery');
   });
+
+  it('renders a split badge with a tooltip when the stat carries split events', () => {
+    window.PFD.ui.renderSymbolPnlTable(
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'cache',
+          priceFetchedAt: new Date().toISOString(),
+          splits: [{ date: '2020-08-31', numerator: 4, denominator: 1 }],
+        },
+      ],
+      'USD',
+    );
+    const badge = document.querySelector('#symbol-pnl-table .badge-split');
+    expect(badge).not.toBeNull();
+    expect(badge.getAttribute('title')).toContain('4:1 分割 @ 2020-08-31');
+  });
+
+  it('shows no split badge for a stat with no split events', () => {
+    window.PFD.ui.renderSymbolPnlTable(
+      [
+        {
+          ...baseStat,
+          currentPrice: 100,
+          priceSource: 'cache',
+          priceFetchedAt: new Date().toISOString(),
+          splits: [],
+        },
+      ],
+      'USD',
+    );
+    expect(document.querySelector('#symbol-pnl-table .badge-split')).toBeNull();
+  });
 });
 
 describe('renderSymbolPnlTable totals row', () => {

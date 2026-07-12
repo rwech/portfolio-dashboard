@@ -432,6 +432,12 @@ body.demo-mode-active .override-clear-btn {
   margin-top: 0.5rem;
 }
 
+.modal .import-split-warning {
+  color: #ffd166;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
 #charts {
   display: flex;
   flex-direction: column;
@@ -851,6 +857,10 @@ button[type='submit']:hover {
 .badge-us {
   background: rgba(177, 74, 255, 0.18);
   color: #b14aff;
+}
+.badge-split {
+  background: rgba(255, 209, 102, 0.18);
+  color: #ffd166;
 }
 
 footer {

@@ -192,6 +192,15 @@
       : '';
   }
 
+  function splitBadge(stat) {
+    const splits = stat.splits || [];
+    if (splits.length === 0) return '';
+    const title = splits
+      .map((s) => `${s.numerator}:${s.denominator} 分割 @ ${s.date}`)
+      .join('；');
+    return ` <span class="badge badge-split" title="${escapeHtml(title)}">已分割調整</span>`;
+  }
+
   function svgIcon(paths) {
     return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
   }
@@ -287,7 +296,7 @@
         const currency = stat.market === 'TW' ? 'TWD' : 'USD';
         const badgeClass = `badge badge-${stat.priceSource}`;
         return `<tr data-symbol="${escapeHtml(stat.symbol)}" data-market="${stat.market}">
-          <td>${escapeHtml(stat.symbol)} ${escapeHtml(stat.name || '')}</td>
+          <td>${escapeHtml(stat.symbol)} ${escapeHtml(stat.name || '')}${splitBadge(stat)}</td>
           <td><span class="badge badge-${stat.market === 'TW' ? 'tw' : 'us'}">${stat.market === 'TW' ? '台股' : '美股'}</span></td>
           <td class="${signedClass(stat.roiPct)}">${withSign(formatPct(stat.roiPct), stat.roiPct)}</td>
           <td class="${signedClass(stat.realizedGain)}">${withSign(formatMoney(stat.realizedGain, displayCurrency), stat.realizedGain)}</td>
@@ -536,6 +545,13 @@
       .addEventListener('click', handlers.onCancel);
   }
 
+  function splitWarningListHtml(splitWarnings) {
+    if (!splitWarnings || splitWarnings.length === 0) return '';
+    return `<div class="import-split-warning">⚠ <ul>${splitWarnings
+      .map((w) => `<li>${escapeHtml(w)}</li>`)
+      .join('')}</ul></div>`;
+  }
+
   // 匯入精靈第二步：統計預覽與確認。
   function renderImportPreviewStep(preview, handlers) {
     const body = document.getElementById('import-modal-body');
@@ -550,6 +566,7 @@
       existingCount,
       previewRows,
       encoding,
+      splitWarnings,
     } = preview;
 
     const rangeText = dateRange ? `${dateRange.from} ～ ${dateRange.to}、` : '';
@@ -569,6 +586,7 @@
       ${encoding === 'big5' ? '<p class="import-encoding-note">已自動偵測為 Big5 編碼並轉換。</p>' : ''}
       <p class="import-stats">解析成功 <b>${validCount}</b> 筆（${rangeText}${symbolCount} 檔標的），與現有${marketLabel}資料重複 <b>${duplicateCount}</b> 筆。</p>
       ${importErrorListHtml(errors)}
+      ${splitWarningListHtml(splitWarnings)}
       <p class="import-will-add">將新增 <b id="import-add-count">${newCount}</b> 筆${marketLabel}交易</p>
       ${previewRows.length ? `<p class="import-preview-caption">前 ${previewRows.length} 筆預覽：</p>${previewTable}` : ''}
       <label class="import-replace-option">

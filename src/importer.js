@@ -182,6 +182,42 @@
     };
   }
 
+  // 軟性一致性檢查（非阻擋）：若某標的已知有分割事件，比較分割前後交易的
+  // 平均單價。分割前價格理論上應約為分割後的 ratio 倍；如果兩者接近，代表
+  // 使用者很可能把分割前的交易誤填成分割後的等值股數/單價。
+  const SPLIT_PRICE_RATIO_TOLERANCE = 0.5;
+
+  function detectSplitWarnings(newRows, existingRows, splitEventsCache) {
+    const bySymbol = new Map();
+    [...existingRows, ...newRows].forEach((tx) => {
+      if (!bySymbol.has(tx.symbol)) bySymbol.set(tx.symbol, []);
+      bySymbol.get(tx.symbol).push(tx);
+    });
+
+    const avgPrice = (txs) =>
+      txs.reduce((sum, tx) => sum + tx.price, 0) / txs.length;
+
+    const warnings = [];
+    bySymbol.forEach((txs, symbol) => {
+      const splits = splitEventsCache?.[symbol]?.splits || [];
+      splits.forEach((split) => {
+        const before = txs.filter((tx) => tx.date < split.date);
+        const after = txs.filter((tx) => tx.date >= split.date);
+        if (before.length === 0 || after.length === 0) return;
+
+        const observedRatio = avgPrice(before) / avgPrice(after);
+        if (observedRatio < split.ratio * SPLIT_PRICE_RATIO_TOLERANCE) {
+          warnings.push(
+            `${symbol} 在 ${split.date} 有 ${split.numerator}:${split.denominator} 分割，` +
+              `但分割前交易的價格看起來已經接近分割後的等值價格，` +
+              `請確認分割前的股數/單價是否為當時實際成交數字（而非自行換算過的股數）。`,
+          );
+        }
+      });
+    });
+    return warnings;
+  }
+
   window.PFD = window.PFD || {};
   window.PFD.importer = {
     TARGET_FIELDS,
@@ -195,5 +231,6 @@
     normalizeRow,
     parseWithMapping,
     analyzeImport,
+    detectSplitWarnings,
   };
 })();

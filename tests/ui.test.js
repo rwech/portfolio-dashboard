@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '../src/stockPrice.js';
+import '../src/fields.js';
 import '../src/csv.js';
 import '../src/importer.js';
 import '../src/ui.js';

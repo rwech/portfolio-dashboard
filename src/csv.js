@@ -1,13 +1,5 @@
 (function () {
-  const CSV_HEADER = [
-    'date',
-    'symbol',
-    'name',
-    'action',
-    'quantity',
-    'price',
-    'fee',
-  ];
+  const CSV_HEADER = window.PFD.fields.TARGET_FIELDS;
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
   function fileNameFor(market, suffix) {

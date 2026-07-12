@@ -1602,7 +1602,7 @@ describe('app: overview summary cards (merged cost, total value, market breakdow
     return document.getElementById('summary-cards').textContent;
   }
 
-  it('renders three cards with the held cost merged into the invested-cost card', async () => {
+  it('renders three cards with the held cost as a sub-field on the total-value card', async () => {
     const app = await setupApp();
     app.handleAddTransaction('TW', {
       date: '2024-01-01',
@@ -1615,7 +1615,7 @@ describe('app: overview summary cards (merged cost, total value, market breakdow
     });
     const cards = document.querySelectorAll('#summary-cards .summary-card');
     expect(cards).toHaveLength(3);
-    expect(cards[0].textContent).toContain('總投入成本');
+    expect(cards[0].textContent).toContain('目前總價值');
     expect(cards[0].textContent).toContain('目前持股成本');
   });
 

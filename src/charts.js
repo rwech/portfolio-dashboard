@@ -12,6 +12,7 @@
     '#ffa94d',
     '#74c0fc',
   ];
+  const OTHERS_COLOR = '#8b93ab';
 
   let allocationChart = null;
   let symbolAllocationChart = null;
@@ -99,33 +100,36 @@
     canvasEl,
     perSymbolAmounts,
     displayCurrency,
+    legendEl,
   ) {
     if (symbolAllocationChart) {
       symbolAllocationChart.destroy();
       symbolAllocationChart = null;
     }
+    if (legendEl) legendEl.innerHTML = '';
     if (perSymbolAmounts.some((s) => !Number.isFinite(s.value))) return;
     const total = perSymbolAmounts.reduce((sum, s) => sum + s.value, 0);
     if (total <= 0) return;
 
     const sorted = groupTopN(perSymbolAmounts, TOP_SYMBOL_SLICES);
+    const colors = sorted.map((s, i) =>
+      s.symbol === OTHERS_LABEL
+        ? OTHERS_COLOR
+        : SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
+    );
 
     symbolAllocationChart = new Chart(canvasEl, {
-      type: 'pie',
+      type: 'doughnut',
       data: {
         labels: sorted.map((s) => s.symbol),
         datasets: [
-          {
-            data: sorted.map((s) => s.value),
-            backgroundColor: sorted.map(
-              (_, i) => SEGMENT_PALETTE[i % SEGMENT_PALETTE.length],
-            ),
-          },
+          { data: sorted.map((s) => s.value), backgroundColor: colors },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        cutout: '70%',
         animation: {
           animateRotate: true,
           animateScale: true,
@@ -133,8 +137,8 @@
           easing: 'easeOutQuart',
         },
         plugins: {
-          title: { display: true, text: '個股持股市值占比' },
-          legend: { position: 'bottom' },
+          title: { display: false },
+          legend: { display: false },
           tooltip: {
             callbacks: {
               label: (ctx) =>
@@ -144,6 +148,17 @@
         },
       },
     });
+
+    if (legendEl) renderSymbolAllocationLegend(legendEl, sorted, colors, total);
+  }
+
+  function renderSymbolAllocationLegend(legendEl, sorted, colors, total) {
+    legendEl.innerHTML = sorted
+      .map(
+        (s, i) =>
+          `<li class="symbol-allocation-legend-item"><span class="legend-dot" style="background-color:${colors[i]}"></span><span class="legend-symbol">${s.symbol}</span><span class="legend-pct">${((s.value / total) * 100).toFixed(0)}%</span></li>`,
+      )
+      .join('');
   }
 
   function renderRoiTrendChart(

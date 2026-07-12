@@ -123,20 +123,14 @@
     // 每張卡：[主標籤, 主值, 主值 class, 子欄位群組陣列]
     const cards = [
       [
-        '總投入成本',
-        formatMoney(summary.totalInvested, summary.currency),
+        '目前總價值',
+        formatMoney(summary.totalValue, summary.currency),
         '',
         [
-          // 持股成本與總價值並排對照，兩者差額即未實現損益
           [
             [
               '目前持股成本',
               formatMoney(summary.costBasisHeld, summary.currency),
-              '',
-            ],
-            [
-              '目前總價值',
-              formatMoney(summary.totalValue, summary.currency),
               '',
             ],
           ],

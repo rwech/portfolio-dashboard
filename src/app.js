@@ -272,6 +272,7 @@
       document.getElementById('symbol-allocation-chart'),
       symbolAllocationData,
       state.filters.displayCurrency,
+      document.getElementById('symbol-allocation-legend'),
     );
 
     const roiTrendSnapshots = roi.computeRoiTrend(state.transactions, {

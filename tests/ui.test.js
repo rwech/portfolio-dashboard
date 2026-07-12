@@ -215,17 +215,14 @@ describe('ui.renderSummaryCards', () => {
     return document.querySelectorAll('#summary-cards .summary-card');
   }
 
-  it('renders exactly three cards: cost (with held-cost and total-value sub-fields), gain, and ROI', () => {
+  it('renders exactly three cards: total value (with held-cost sub-field), gain, and ROI', () => {
     ui.renderSummaryCards(baseSummary);
     expect(cards()).toHaveLength(3);
     const costCard = cards()[0];
-    expect(costCard.querySelector('.label').textContent).toBe('總投入成本');
-    expect(costCard.querySelector('.value').textContent).toContain('1,000');
+    expect(costCard.querySelector('.label').textContent).toBe('目前總價值');
+    expect(costCard.querySelector('.value').textContent).toContain('850');
     expect(costCard.textContent).toContain('目前持股成本');
     expect(costCard.textContent).toContain('800 TWD');
-    // 總價值與持股成本並排對照（差額即未實現損益）
-    expect(costCard.textContent).toContain('目前總價值');
-    expect(costCard.textContent).toContain('850 TWD');
   });
 
   it('renders the gain with a positive sign and class', () => {

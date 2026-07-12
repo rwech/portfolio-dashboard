@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import '../src/fields.js';
 import '../src/csv.js';
 
 const {
@@ -10,6 +11,12 @@ const {
   fileNameFor,
   validateRow,
 } = window.PFD.csv;
+
+describe('csv.CSV_HEADER', () => {
+  it('is the same array as the shared field schema, not a duplicate copy', () => {
+    expect(window.PFD.csv.CSV_HEADER).toBe(window.PFD.fields.TARGET_FIELDS);
+  });
+});
 
 describe('csv.parseCsv', () => {
   it('parses valid rows into transactions', () => {

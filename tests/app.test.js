@@ -55,6 +55,7 @@ async function setupApp() {
   global.alert = vi.fn();
 
   await import('../src/config.js');
+  await import('../src/fields.js');
   await import('../src/storage.js');
   await import('../src/csv.js');
   await import('../src/importer.js');
@@ -1185,6 +1186,7 @@ describe('app: render with no usable fx rate', () => {
     });
 
     await import('../src/config.js');
+    await import('../src/fields.js');
     await import('../src/storage.js');
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');
@@ -1224,6 +1226,7 @@ describe('app: restoring saved UI filters on init', () => {
     global.alert = vi.fn();
 
     await import('../src/config.js');
+    await import('../src/fields.js');
     await import('../src/storage.js');
     await import('../src/csv.js');
     await import('../src/exchangeRate.js');

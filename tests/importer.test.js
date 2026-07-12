@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import '../src/fields.js';
 import '../src/csv.js';
 import '../src/importer.js';
 

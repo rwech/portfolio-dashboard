@@ -23,5 +23,11 @@ export default [
       globals: { ...globals.node },
     },
   },
+  {
+    files: ['functions/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.worker },
+    },
+  },
   prettierConfig,
 ];
